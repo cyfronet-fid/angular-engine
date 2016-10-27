@@ -1,0 +1,45 @@
+{
+  "name": "angular-engine",
+  "version": "0.0.0",
+  "authors": [
+    "Michał Szostak <szostak.m.f@gmail.com>"
+  ],
+  "description": "Front-end library for engine backend",
+  "main": "",
+  "moduleType": [
+    "amd"
+  ],
+  "keywords": [
+    "angular"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "src",
+    ".bowerrc",
+    ".gitignore",
+    ".jshintignore",
+    ".jshintrc",
+    "bower.json",
+    "gruntfile.js",
+    "package.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "angular": "^1.5.8",
+    "angular-bootstrap": "^2.2.0",
+    "bootstrap": "^3.3.7",
+    "angular-route": "^1.5.8",
+    "angular-resource": "^1.5.8",
+    "angular-animate": "^1.5.8"
+  },
+  "devDependencies": {
+    "angular-mocks": "^1.5.8"
+  }
+}
