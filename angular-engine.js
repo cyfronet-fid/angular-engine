@@ -16,22 +16,28 @@ angular.module('engine.document').controller('engineDocumentCtrl', function ($sc
 
 angular.module('engine').provider('$engine', function ($routeProvider) {
 
-    this.document = function (list_route, document_route, query, options) {
+    this.document = function (list_route, list_options, document_route, document_options, query, common_options) {
 
-        if (!options) options = {};
+        if (!list_options) list_options = {};
 
-        if (!options.listTemplateUrl) options.listTemplateUrl = 'src/list/list.tpl.html';
+        if (!document_options) document_options = {};
 
-        if (!options.documentTemplateUrl) options.documentTemplateUrl = 'src/document/document.tpl.html';
+        if (!common_options) common_options = {};
 
-        $routeProvider.when(list_route, { templateUrl: options.listTemplateUrl, controller: 'engineListCtrl',
+        if (!list_options.templateUrl) list_options.templateUrl = '/src/list/list.tpl.html';
+
+        if (!document_options.templateUrl) document_options.templateUrl = '/src/document/document.tpl.html';
+
+        $routeProvider.when(list_route, { templateUrl: list_options.templateUrl, controller: 'engineListCtrl',
             query: query,
-            options: options
+            options: list_options,
+            common_options: common_options
         });
 
-        $routeProvider.when(document_route, { templateUrl: options.documentTemplateUrl, controller: 'engineDocumentCtrl',
+        $routeProvider.when(document_route, { templateUrl: document_options.templateUrl, controller: 'engineDocumentCtrl',
             query: query,
-            options: options
+            options: document_options,
+            common_options: common_options
         });
     };
 
@@ -73,18 +79,21 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
 
 angular.module('engine').service('engineQuery', function ($engine, $resource, EngineInterceptor) {
 
-    var query = $resource($engine.baseUrl + '/query/documents?queryId=:query', { query_id: '@query' }, {
+    var _query = $resource($engine.baseUrl + '/query/documents?queryId=:query', { query_id: '@query' }, {
         get: { method: 'GET', interceptor: EngineInterceptor }
     });
 
     return function (query) {
-        return query.get({ query: query });
+        // return _query.get({ query: query });
+        return [{id: 0, }]
     };
 });
 'use strict';
 
 angular.module('engine.list').controller('engineListCtrl', function ($scope, $route, engineQuery) {
     $scope.query = $route.current.$$route.query;
+    $scope.caption = $route.current.$$route.options.caption;
+    $scope.document_type = $route.current.$$route.common_options.document_type;
 
     $scope.documents = engineQuery($scope.query);
 });

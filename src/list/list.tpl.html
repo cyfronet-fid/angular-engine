@@ -1,3 +1,31 @@
-<div>
+<h1>{{ caption }}</h1>
 
+<div class="text-box">
+    <div>
+        <table class="proposal-list">
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+                <th class="text-center">Beamline</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Created</th>
+                <th class="text-center"></th>
+                <th class="text-right"></th>
+            </tr>
+            <tr ng-repeat="document in $ctrl.documents">
+                <td ng-repeat="column in columns">{{ document[column.name] }}</td>
+                <!--<td><a ng-href="#/proposals/{{proposal.id}}" class="proposal-title">{{ proposal.title }}</a></td>-->
+                <!--<td class="text-center">{{ proposal.beamline }}</td>-->
+                <!--<td class="text-center table-status">{{ proposal.status }}</td>-->
+                <!--<td class="text-center">{{ proposal.createdAt | date }}</td>-->
+                <!--<td class="text-center"><a href="" class="blue-button"></a></td>-->
+                <!--<td class="text-right">-->
+                    <!--<a href="" ng-click="$ctrl.destroy(proposal)" class="table-trash">-->
+                        <!--<i class="fa fa-trash-o" aria-hidden="true"></i>-->
+                    <!--</a>-->
+                <!--</td>-->
+            </tr>
+        </table>
+    </div>
 </div>
+<a href="#/proposals/new" class="btn btn-primary">create {{document_type}}</a>

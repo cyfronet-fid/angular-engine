@@ -1,0 +1,177 @@
+/*!
+ * Start Bootstrap - Simple Sidebar (http://startbootstrap.com/)
+ * Copyright 2013-2016 Start Bootstrap
+ * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap/blob/gh-pages/LICENSE)
+ */
+
+body {
+    overflow-x: hidden;
+}
+
+
+.logo {
+    background: #fff;
+    padding: 20px 0;
+}
+
+.logo a {
+    display: block;
+    background: url(../img/logo.png) top left no-repeat;
+    width: 42px;
+    height: 42px;
+    margin: 0 auto;
+}
+
+
+/* Toggle Styles */
+
+#wrapper {
+    padding-left: 230px;
+}
+
+#wrapper.toggled {
+    padding-left: 0;
+}
+
+#wrapper.toggled > #page-content-wrapper > .container-fluid > .row {margin-left: 4px;}
+
+#sidebar-wrapper {
+    z-index: 99;
+    position: fixed;
+    left: 230px;
+    width: 230px;
+    height: 100%;
+    margin-left: -230px;
+
+    background: #1f222b; /* Old browsers */
+    background: -moz-linear-gradient(left,  #1f222b 0%, #1f222b 50px, #232735 16%, #232735 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(left,  #1f222b 0%,#1f222b 50px,#232735 16%,#232735 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right,  #1f222b 0%,#1f222b 50px,#232735 16%,#232735 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1f222b', endColorstr='#232735',GradientType=1 ); /* IE6-9 */
+}
+
+#wrapper.toggled #sidebar-wrapper {
+    width: 50px;
+}
+
+#page-content-wrapper {
+    padding-left: 1px;
+    position: relative;
+}
+
+#wrapper.toggled #page-content-wrapper {
+    position: relative;
+    margin-right: 0;
+    margin-left: 31px;
+}
+
+#page-content-wrapper > .container-fluid > .row > .main-content {margin-left: 20px; width: 99%;}
+
+#wrapper.toggled .sidebar-nav li a i {left:0;}
+
+
+#wrapper.toggled li span {display: none;}
+
+/* Sidebar Styles */
+
+.sidebar-nav {
+    position: absolute;
+    top: 0;
+    width: 230px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sidebar-nav li {
+    overflow: hidden;
+}
+
+.sidebar-nav li a {
+    display: block;
+    text-decoration: none;
+    color: #fff;
+    position: relative;
+}
+
+.sidebar-nav li a:hover {
+    text-decoration: none;
+    color: #fff;
+    background: rgba(255,255,255,0.2);
+}
+
+.sidebar-nav li a:active,
+.sidebar-nav li a:focus {
+    text-decoration: none;
+}
+
+.sidebar-nav li a i {
+    background: #1f222b;
+    display: block;
+    padding: 0.8em 0;
+    float: left;
+    width: 50px;
+    text-align: center;
+    }
+.sidebar-nav li a span {
+    margin-left: 8px;
+    display: block;
+    float:left;
+    padding: 0.6em 0.3em;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: 0.95em;
+    width: 160px;
+    }
+
+.sidebar-nav > .sidebar-brand {
+    height: 65px;
+    font-size: 18px;
+    line-height: 60px;
+}
+
+.sidebar-nav > .sidebar-brand a {
+    color: #999999;
+}
+
+.sidebar-nav > .sidebar-brand a:hover {
+    color: #fff;
+    background: none;
+}
+
+.btn-toggle,
+.btn-toggle:hover,
+.btn-toggle:active,
+.btn-toggle:focus{
+    background: #4a506c;
+    width: 18px;
+    height: 18px;
+    color: #fff;
+    position: absolute;
+    right: -18px;
+    top: 82px;
+    z-index: 100;
+    font-size: 0.85em;
+    text-align: center;
+}
+
+
+@media(min-width:768px) {
+
+    #wrapper.toggled #page-content-wrapper,
+    {
+        position: relative;
+        margin-right: 0;
+        margin-left: 50px;
+    }
+
+
+
+    #wrapper.toggled .logo {
+        width:50px;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    #wrapper.toggled .logo a{background-size: 70%; background-position: center;}
+}

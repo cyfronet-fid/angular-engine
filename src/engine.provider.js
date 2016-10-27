@@ -1,25 +1,33 @@
 angular.module('engine')
 .provider('$engine', function ($routeProvider) {
 
-    this.document = function (list_route, document_route, query, options) {
+    this.document = function (list_route, list_options, document_route, document_options, query, common_options) {
 
-        if(!options)
-            options = {};
+        if(!list_options)
+            list_options = {};
 
-        if(!options.listTemplateUrl)
-            options.listTemplateUrl = 'src/list/list.tpl.html';
+        if(!document_options)
+            document_options = {};
 
-        if(!options.documentTemplateUrl)
-            options.documentTemplateUrl = 'src/document/document.tpl.html';
+        if(!common_options)
+            common_options = {};
 
-        $routeProvider.when(list_route, {templateUrl: options.listTemplateUrl, controller: 'engineListCtrl',
+        if(!list_options.templateUrl)
+            list_options.templateUrl = '/src/list/list.tpl.html';
+
+        if(!document_options.templateUrl)
+            document_options.templateUrl = '/src/document/document.tpl.html';
+
+        $routeProvider.when(list_route, {templateUrl: list_options.templateUrl, controller: 'engineListCtrl',
             query: query,
-            options: options
+            options: list_options,
+            common_options: common_options
         });
 
-        $routeProvider.when(document_route, {templateUrl: options.documentTemplateUrl, controller: 'engineDocumentCtrl',
+        $routeProvider.when(document_route, {templateUrl: document_options.templateUrl, controller: 'engineDocumentCtrl',
             query: query,
-            options: options
+            options: document_options,
+            common_options: common_options
         });
     };
 
