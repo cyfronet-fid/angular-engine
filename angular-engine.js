@@ -15,14 +15,19 @@ angular.module('engine.document').controller('engineDocumentCtrl', function ($sc
 'use strict';
 
 angular.module('engine').provider('$engine', function ($routeProvider) {
+    var documents = [];
 
     this.document = function (list_route, list_options, document_route, document_options, query, common_options) {
+        documents.push({ list_route: list_route, document_route: document_route });
 
         if (!list_options) list_options = {};
 
         if (!document_options) document_options = {};
 
         if (!common_options) common_options = {};
+
+        common_options.list_route = list_route;
+        common_options.document_route = document_route;
 
         if (!list_options.templateUrl) list_options.templateUrl = '/src/list/list.tpl.html';
 
@@ -48,8 +53,10 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
     };
 
     this.$get = function () {
+
         return new function () {
             this.baseUrl = _baseUrl;
+            this.documents = documents;
         }();
     };
 }).provider('EngineInterceptor', function () {
@@ -84,18 +91,40 @@ angular.module('engine').service('engineQuery', function ($engine, $resource, En
     });
 
     return function (query) {
-        // return _query.get({ query: query });
-        return [{id: 0, }]
+        // return _query.get({query: query});
+        return [{ "id": 25, "description": null, "shift": 0, "start": null, "title": "12", "attachments": [], "previousProposal": null, "publications": [], "submissionType": null, "keywords": null, "explanation": null, "end": null, "status": "DRAFT", "beamline": null, "createdAt": 1477607621000, "periodType": null, "discipline": null, "subDiscipline": null, "peemEndStation": false, "xasEndStation": false, "userEndStation": false, "photonEnergyRange": 0, "linearHorizontalPhotonPolarization": false, "linearVerticalPhotonPolarization": false, "circularElipticalPhotonPolarization": false, "totalElectronMeasurementType": false, "fluorescenceYieldMeasurementType": false, "transmissionMeasurementType": false, "linearSkewed": false, "fromTemperature": 0, "toTemperature": 0, "samplePreparationInSitu": false, "evaporation": false, "arSputtering": false, "evaporationMaterial": null, "evaporationThickness": null, "cryogenicTemperature": null, "acceptTermsAndConditions": false, "photonEnergyResolution": 0, "higherHarmonicContamination": 0, "heating": false, "temperatureFrom": 0, "temperatureTo": 0, "gasDosing": false, "gasName": null, "gasAmount": null, "highVoltage": false, "shifts": 0, "nextProposals": [], "proposalAbstract": null, "descriptionFile": null, "objectives": null, "background": null, "purpose": null, "submittedSomewhereElse": false, "continuation": false, "proposalReferences": null, "laboratoryUsage": false, "processes": null, "equipmentAndProductsProvidedBySolaris": null, "equipmentBrought": null, "otherRequirements": null }];
     };
 });
 'use strict';
 
-angular.module('engine.list').controller('engineListCtrl', function ($scope, $route, engineQuery) {
+angular.module('engine.list').controller('engineListCtrl', function ($scope, $route, $engine, engineQuery) {
+    var self = this;
+
     $scope.query = $route.current.$$route.query;
     $scope.caption = $route.current.$$route.options.caption;
+    $scope.columns = $route.current.$$route.options.columns;
     $scope.document_type = $route.current.$$route.common_options.document_type;
+    $scope.document_route = $route.current.$$route.common_options.document_route;
+    $scope.list_route = $route.current.$$route.common_options.list_route;
 
     $scope.documents = engineQuery($scope.query);
+
+    $scope.renderCell = function (document, column) {
+        return document[column.name];
+    };
+    $scope.getCellTemplate = function (document, column, force_type) {
+        if (!force_type && column.type == 'link') {
+            return '/src/list/cell/link.tpl.html';
+        }
+
+        if (column.type) {
+            if (column.type == 'date') return '/src/list/cell/date.tpl.html';
+        }
+        return '/src/list/cell/text.tpl.html';
+    };
+    $scope.genDocumentLink = function (document_route, document) {
+        return '#' + $scope.document_route.replace(':id', document);
+    };
 });
 'use strict';
 

@@ -4,28 +4,24 @@
     <div>
         <table class="proposal-list">
             <tr>
-                <th>Id</th>
-                <th>Title</th>
-                <th class="text-center">Beamline</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Created</th>
-                <th class="text-center"></th>
+                <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;" ng-repeat="column in columns">{{column.caption || column.name}}</th>
                 <th class="text-right"></th>
             </tr>
-            <tr ng-repeat="document in $ctrl.documents">
-                <td ng-repeat="column in columns">{{ document[column.name] }}</td>
-                <!--<td><a ng-href="#/proposals/{{proposal.id}}" class="proposal-title">{{ proposal.title }}</a></td>-->
-                <!--<td class="text-center">{{ proposal.beamline }}</td>-->
-                <!--<td class="text-center table-status">{{ proposal.status }}</td>-->
-                <!--<td class="text-center">{{ proposal.createdAt | date }}</td>-->
-                <!--<td class="text-center"><a href="" class="blue-button"></a></td>-->
-                <!--<td class="text-right">-->
-                    <!--<a href="" ng-click="$ctrl.destroy(proposal)" class="table-trash">-->
-                        <!--<i class="fa fa-trash-o" aria-hidden="true"></i>-->
-                    <!--</a>-->
-                <!--</td>-->
+            <tr ng-repeat="document in documents">
+                <td ng-repeat="column in columns" class="{{column.css}}" ng-include="getCellTemplate(document, column)"></td>
+                <td class="text-right">
+                    <a href="" ng-click="$ctrl.destroy(document)" class="table-trash">
+                        <i class="fa fa-trash-o" aria-hidden="true"></i>
+                    </a>
+                </td>
             </tr>
         </table>
+        <!--<td><a ng-href="#/proposals/{{proposal.id}}" class="proposal-title">{{ proposal.title }}</a></td>-->
+        <!--<td class="text-center">{{ proposal.beamline }}</td>-->
+        <!--<td class="text-center table-status">{{ proposal.status }}</td>-->
+        <!--<td class="text-center">{{ proposal.createdAt | date }}</td>-->
+        <!--<td class="text-center"><a href="" class="blue-button"></a></td>-->
+
     </div>
 </div>
-<a href="#/proposals/new" class="btn btn-primary">create {{document_type}}</a>
+<a href="{{genDocumentLink(document_route, 'new')}}" class="btn btn-primary">create {{document_type}}</a>

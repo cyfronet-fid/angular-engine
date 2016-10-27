@@ -1,7 +1,9 @@
 angular.module('engine')
 .provider('$engine', function ($routeProvider) {
+    var documents = [];
 
     this.document = function (list_route, list_options, document_route, document_options, query, common_options) {
+        documents.push({list_route: list_route, document_route: document_route});
 
         if(!list_options)
             list_options = {};
@@ -11,6 +13,9 @@ angular.module('engine')
 
         if(!common_options)
             common_options = {};
+
+        common_options.list_route = list_route;
+        common_options.document_route = document_route;
 
         if(!list_options.templateUrl)
             list_options.templateUrl = '/src/list/list.tpl.html';
@@ -37,10 +42,12 @@ angular.module('engine')
         _baseUrl = url;
     };
 
-
     this.$get = function () {
+
+
         return new function() {
             this.baseUrl = _baseUrl;
+            this.documents = documents;
         };
     };
 
