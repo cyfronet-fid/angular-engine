@@ -51,15 +51,11 @@ angular.module('engine')
         };
     };
 
-}).provider('EngineInterceptor', function () {
+}).service('EngineInterceptor', function () {
 
-    this.$get = function ($resource) {
         return {
-            response: function (response) {
-                return response.resource.data;
-            },
-            responseError: function (response) {
-                return response;
+            response: function (data, headersGetter, status) {
+                return data.data;
             },
             request: function (data, headersGetter) {
                 var site = data.site;
@@ -71,7 +67,6 @@ angular.module('engine')
 
                 return angular.toJson(data)
             }
-        }
     }
 
 });
