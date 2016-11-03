@@ -3,21 +3,27 @@
 angular.module('engine.document', ['ngRoute']);
 'use strict';
 
-angular.module('engine', ['ngRoute', 'ngResource', 'engine.list', 'engine.document']);
+angular.module('engine', ['ngRoute', 'ngResource', 'formly',
+// 'formly-bootstrap',
+'engine.list', 'engine.document']);
 'use strict';
 
 angular.module('engine.list', ['ngRoute']);
 'use strict';
 
-angular.module('engine.document').controller('engineDocumentCtrl', function ($scope, $route) {
+angular.module('engine.document').controller('engineDocumentCtrl', function ($scope, $route, metrics) {
     $scope.query = $route.current.$$route.query;
+    $scope.document_type = $route.current.$$route.common_options.document_type;
+
+    $scope.metrics = metrics($scope.document_type);
 });
 'use strict';
 
 angular.module('engine').provider('$engine', function ($routeProvider) {
     var documents = [];
+    var documents_d = {};
 
-    this.document = function (list_route, list_options, document_route, document_options, query, common_options) {
+    this.document = function (documentType, list_route, list_options, document_route, document_options, query, common_options) {
         documents.push({ list_route: list_route, document_route: document_route });
 
         if (!list_options) list_options = {};
@@ -25,7 +31,7 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
         if (!document_options) document_options = {};
 
         if (!common_options) common_options = {};
-
+        common_options.document_type = documentType;
         common_options.list_route = list_route;
         common_options.document_route = document_route;
 
@@ -44,6 +50,14 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
             options: document_options,
             common_options: common_options
         });
+
+        documents_d[documentType] = { list_options: list_options, document_options: document_options, common_options: common_options,
+            query: query, modal: false };
+    };
+
+    this.subdocument = function (documentType, list_options, document_options, common_options, query, modal) {
+        documents_d[documentType] = { list_options: list_options, document_options: document_options, common_options: common_options,
+            query: query, modal: modal || false };
     };
 
     var _baseUrl = '';
@@ -52,18 +66,45 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
         _baseUrl = url;
     };
 
+    var _visibleDocumentFields = [{ name: 'id', caption: 'ID', type: 'link' }, { name: 'name', caption: 'Name' }];
+
+    this.setDocumentFields = function (document_fields) {
+        _visibleDocumentFields = document_fields;
+    };
+
+    this.addDocumentFields = function (document_fields) {
+        if (document_fields instanceof Array) angular.forEach(document_fields, function (field) {
+            _visibleDocumentFields.push(field);
+        });else _visibleDocumentFields.push(document_fields);
+    };
+
     this.$get = function () {
 
         return new function () {
             this.baseUrl = _baseUrl;
             this.documents = documents;
+            this.documents_d = documents_d;
+            this.visibleDocumentFields = _visibleDocumentFields;
         }();
     };
 }).service('EngineInterceptor', function () {
 
+    function processData(data) {
+        if (data.metrics !== null && data.metrics !== undefined) {
+            for (var metric in data.metrics) {
+                data[metric] = data.metrics[metric];
+            }
+        }
+    }
+
     return {
         response: function response(data, headersGetter, status) {
-            return data.data;
+            data = data.data;
+            if (data instanceof Array) {
+                angular.forEach(data, processData);
+            } else processData(data);
+
+            return data;
         },
         request: function request(data, headersGetter) {
             var site = data.site;
@@ -76,6 +117,8 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
             return angular.toJson(data);
         }
     };
+}).service('MetricToFormly', function () {
+    return function (data, headersGetter, status) {};
 });
 'use strict';
 
@@ -88,10 +131,20 @@ angular.module('engine').service('engineQuery', function ($engine, $resource, En
     return function (query) {
         return _query.get({ query: query });
     };
-});
-'use strict';
+}).service('metrics', function ($engine, $resource, EngineInterceptor) {
+    var _query = $resource($engine.baseUrl + '/metrics', {}, {
+        post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: true }
+    });
 
-angular.module('engine.list').controller('engineListCtrl', function ($scope, $route, $engine, engineQuery) {
+    return function (documentType) {
+        return _query.post({ states: { documentType: documentType }, metrics: null }, function (data) {
+            console.log(data);
+        });
+    };
+});
+;'use strict';
+
+angular.module('engine.list').controller('engineListCtrl', function ($scope, $route, metrics, $engine, engineQuery) {
     var self = this;
 
     $scope.query = $route.current.$$route.query;
@@ -102,6 +155,20 @@ angular.module('engine.list').controller('engineListCtrl', function ($scope, $ro
     $scope.list_route = $route.current.$$route.common_options.list_route;
 
     $scope.documents = engineQuery($scope.query);
+
+    if ($scope.columns === null || $scope.columns === undefined) {
+        $scope.columns = [];
+
+        $engine.visibleDocumentFields.forEach(function (field) {
+            if (field.caption === undefined && field.id === undefined) $scope.columns.push({ name: field });else $scope.columns.push(field);
+        });
+
+        metrics($scope.document_type).$promise.then(function (data) {
+            angular.forEach(data, function (metric) {
+                $scope.columns.push({ name: metric.id, caption: metric.label });
+            });
+        });
+    }
 
     $scope.renderCell = function (document, column) {
         return document[column.name];

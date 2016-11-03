@@ -1,5 +1,5 @@
 angular.module('engine.list')
-.controller('engineListCtrl', function ($scope, $route, $engine, engineQuery) {
+.controller('engineListCtrl', function ($scope, $route, metrics, $engine, engineQuery) {
     var self = this;
 
 
@@ -11,6 +11,23 @@ angular.module('engine.list')
     $scope.list_route = $route.current.$$route.common_options.list_route;
 
     $scope.documents = engineQuery($scope.query);
+
+    if($scope.columns === null || $scope.columns === undefined) {
+        $scope.columns = [];
+
+        $engine.visibleDocumentFields.forEach(function (field) {
+            if(field.caption === undefined && field.id === undefined)
+                $scope.columns.push({name: field});
+            else
+                $scope.columns.push(field);
+        });
+
+        metrics($scope.document_type).$promise.then(function (data) {
+            angular.forEach(data, function (metric) {
+                $scope.columns.push({name: metric.id, caption: metric.label});
+            })
+        });
+    }
 
     $scope.renderCell = function (document, column) {
         return document[column.name];

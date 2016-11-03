@@ -8,4 +8,17 @@ angular.module('engine')
     return function (query) {
         return _query.get({query: query});
     }
-});
+})
+.service('metrics', function ($engine, $resource, EngineInterceptor) {
+    var _query = $resource($engine.baseUrl+'/metrics', {}, {
+        post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
+    });
+
+    return function (documentType) {
+        return _query.post({states: {documentType: documentType},metrics: null}, function (data) {
+            console.log(data);
+        });
+    }
+})
+
+

@@ -1,1 +1,7 @@
-angular.module('engine', ['ngRoute', 'ngResource', 'engine.list', 'engine.document']);
+angular.module('engine',
+    ['ngRoute',
+    'ngResource',
+    'formly',
+    // 'formly-bootstrap',
+    'engine.list',
+    'engine.document']);

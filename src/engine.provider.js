@@ -1,8 +1,9 @@
 angular.module('engine')
 .provider('$engine', function ($routeProvider) {
     var documents = [];
+    var documents_d = {};
 
-    this.document = function (list_route, list_options, document_route, document_options, query, common_options) {
+    this.document = function (documentType, list_route, list_options, document_route, document_options, query, common_options) {
         documents.push({list_route: list_route, document_route: document_route});
 
         if(!list_options)
@@ -13,7 +14,7 @@ angular.module('engine')
 
         if(!common_options)
             common_options = {};
-
+        common_options.document_type = documentType;
         common_options.list_route = list_route;
         common_options.document_route = document_route;
 
@@ -34,6 +35,14 @@ angular.module('engine')
             options: document_options,
             common_options: common_options
         });
+
+        documents_d[documentType] = {list_options: list_options, document_options: document_options, common_options: common_options,
+                                     query: query, modal: false};
+    };
+
+    this.subdocument = function (documentType, list_options, document_options, common_options, query, modal) {
+        documents_d[documentType] = {list_options: list_options, document_options: document_options, common_options: common_options,
+                                     query: query, modal: modal || false}
     };
 
     var _baseUrl = '';
@@ -42,20 +51,53 @@ angular.module('engine')
         _baseUrl = url;
     };
 
+    var _visibleDocumentFields = [{name: 'id', caption: 'ID', type: 'link'}, {name: 'name', caption: 'Name'}];
+
+    this.setDocumentFields = function (document_fields) {
+        _visibleDocumentFields = document_fields;
+    };
+
+    this.addDocumentFields = function (document_fields) {
+        if(document_fields instanceof Array)
+            angular.forEach(document_fields, function (field) {
+                _visibleDocumentFields.push(field);
+            });
+        else
+            _visibleDocumentFields.push(document_fields);
+    };
+
+
     this.$get = function () {
 
 
         return new function() {
             this.baseUrl = _baseUrl;
             this.documents = documents;
+            this.documents_d = documents_d;
+            this.visibleDocumentFields = _visibleDocumentFields;
         };
     };
 
 }).service('EngineInterceptor', function () {
 
+    function processData(data) {
+        if(data.metrics !== null && data.metrics !== undefined) {
+            for (var metric in data.metrics) {
+                data[metric] = data.metrics[metric];
+            }
+        }
+    }
+
         return {
             response: function (data, headersGetter, status) {
-                return data.data;
+                data = data.data;
+                if(data instanceof Array) {
+                    angular.forEach(data, processData);
+                }
+                else
+                    processData(data);
+
+                return data;
             },
             request: function (data, headersGetter) {
                 var site = data.site;
@@ -69,4 +111,8 @@ angular.module('engine')
             }
     }
 
+}).service('MetricToFormly', function () {
+    return function (data, headersGetter, status) {
+
+    };
 });
