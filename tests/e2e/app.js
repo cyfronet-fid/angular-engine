@@ -31,6 +31,9 @@ angular.module('engine-test-app', ['ngRoute', 'engine', 'ngMockE2E'])
             {}, true);
 
         $engineProvider.setBaseUrl('/engine/rest');
+    })
+    .config(function ($routeProvider) {
+        $routeProvider.otherwise('/proposal')
     });
 
 angular.module('engine-test-app').controller('MainCtrl', function ($engine, $httpBackend) {
@@ -703,6 +706,664 @@ angular.module('engine-test-app').controller('MainCtrl', function ($engine, $htt
             "msg": null
         }
     );
+    $httpBackend.whenGET($engine.baseUrl + '/query/documents-with-extra-data?queryId=workingSla').respond(
+        {
+            "data": [
+                {
+                    "document": {
+                        "id": "57fe0eafe62091bd1e621e5a",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "NAsrgTjrsE",
+                        "slaUuid": "BYOzkAtLyM",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe0ff4e62091bd1e621e5b",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "SQaGcgGDRU",
+                        "slaUuid": "bxphQmNJbI",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe100de62091bd1e621e5c",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "ZtyQbOyLGP",
+                        "slaUuid": "kgekhWLdji",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1014e62091bd1e621e5d",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "bWZqTnQXst",
+                        "slaUuid": "MqyKxvObZh",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1021e62091bd1e621e5e",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "kuywSsdzYY",
+                        "slaUuid": "nZmWXmVskB",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe116ce620a7cab55d26ff",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": "TEST_NAME",
+                        "isLeaf": true,
+                        "rootUuid": "tdbrwbCEhx",
+                        "slaUuid": "rukJTAxRqq",
+                        "team": null,
+                        "author": null,
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1467e6204d016aac46a9",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": "TEST_NAME",
+                        "isLeaf": true,
+                        "rootUuid": "LaPLtzjxQo",
+                        "slaUuid": "LkBrxmtHPp",
+                        "team": null,
+                        "author": "admin",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe146de62091bd1e621e5f",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "KQzPtdXbtA",
+                        "slaUuid": "OXZefMFeVu",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe14b4e62025cc9dab822b",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": "TEST_NAME",
+                        "isLeaf": true,
+                        "rootUuid": "bnWxIWuoac",
+                        "slaUuid": "pfBogokjHt",
+                        "team": null,
+                        "author": "0",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe14dbe62091bd1e621e60",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "mAHjjTMddL",
+                        "slaUuid": "kreKCEhUuw",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe16ebe62099c817395117",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": "TEST_NAME",
+                        "isLeaf": true,
+                        "rootUuid": "mwpZxUFURR",
+                        "slaUuid": "YFUhFazjOO",
+                        "team": null,
+                        "author": "admin",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1741e6201f933ec7922b",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": "TEST_NAME",
+                        "isLeaf": true,
+                        "rootUuid": "iCSiTjgyaV",
+                        "slaUuid": "RpvRpPYXPY",
+                        "team": null,
+                        "author": "admin",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1a0ce620c7bb38faaddf",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": "TEST_NAME",
+                        "isLeaf": true,
+                        "rootUuid": "WzSbnPuqUT",
+                        "slaUuid": "gTQVQyjVFJ",
+                        "team": null,
+                        "author": "admin",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1a2be6208be98ec11570",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": "test",
+                        "isLeaf": true,
+                        "rootUuid": "leZKiuYDiH",
+                        "slaUuid": "gkxYOgMaiG",
+                        "team": null,
+                        "author": "3",
+                        "relatedDocumentsForQuery": null,
+                        "site": "BARI",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1a87e6205f906b08216a",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "SqBOgWxLaW",
+                        "slaUuid": "sdUpXFMfsb",
+                        "team": null,
+                        "author": null,
+                        "relatedDocumentsForQuery": null,
+                        "site": null,
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "57fe1ab8e62082b6499b6388",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": true,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "dvTZRhvWfg",
+                        "slaUuid": "cvzDbrQXth",
+                        "team": null,
+                        "author": null,
+                        "relatedDocumentsForQuery": null,
+                        "site": null,
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "58062547e620c1f46b33880f",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": false,
+                        "name": "4401ac5dc8cfbbb737b0a025758cf045",
+                        "isLeaf": true,
+                        "rootUuid": "fUnaOiXBgS",
+                        "slaUuid": "UCDSPUmdUb",
+                        "team": null,
+                        "author": "6",
+                        "relatedDocumentsForQuery": null,
+                        "site": "",
+                        "siteName": null
+                    },
+                    "actions": null
+                },
+                {
+                    "document": {
+                        "id": "58062a74e62036cbaa4941bb",
+                        "parentId": null,
+                        "states": {
+                            "serviceType": "computing",
+                            "documentType": "sla",
+                            "mainState": "draft"
+                        },
+                        "metrics": {
+                            "publicIP-totalGuaranteed": null,
+                            "publicIP-userLimit": null,
+                            "computingTime-totalLimit": null,
+                            "computingTime-userGuaranteed": null,
+                            "publicIP-totalLimit": null,
+                            "computingTime-instanceGuaranteed": null,
+                            "publicIP-instanceGuaranteed": null,
+                            "computingTime-instanceLimit": null,
+                            "publicIP-userGuaranteed": null,
+                            "computingTime-userLimit": null,
+                            "publicIP-instanceLimit": null,
+                            "computingTime-totalGuaranteed": null
+                        },
+                        "hasValidMetrics": false,
+                        "name": null,
+                        "isLeaf": true,
+                        "rootUuid": "gRZRBwkkgi",
+                        "slaUuid": "gYLArkDVJM",
+                        "team": null,
+                        "author": "9",
+                        "relatedDocumentsForQuery": null,
+                        "site": "test",
+                        "siteName": null
+                    },
+                    "actions": null
+                }
+            ],
+            "msg": null
+        }
+    );
+
+
+
 
     var metrics_request_body = '{"states": {"documentType": "proposal"},"metrics": null}';
 

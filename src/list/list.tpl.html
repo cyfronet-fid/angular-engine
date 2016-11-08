@@ -7,10 +7,10 @@
                 <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;" ng-repeat="column in columns">{{column.caption || column.name}}</th>
                 <th class="text-right"></th>
             </tr>
-            <tr ng-repeat="document in documents">
-                <td ng-repeat="column in columns" class="{{column.css}}" ng-include="getCellTemplate(document, column)"></td>
+            <tr ng-repeat="document_entry in documents">
+                <td ng-repeat="column in columns" class="{{column.css}}" ng-include="getCellTemplate(document_entry.document, column)"></td>
                 <td class="text-right">
-                    <a href="" ng-click="$ctrl.destroy(document)" class="table-trash">
+                    <a href="" ng-click="$ctrl.destroy(document_entry.document)" class="table-options">
                         <i class="fa fa-trash-o" aria-hidden="true"></i>
                     </a>
                 </td>
