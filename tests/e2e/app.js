@@ -1,4 +1,4 @@
-angular.module('engine-test-app', ['ngRoute', 'engine', 'ngMockE2E'])
+angular.module('engine-test-app', ['ngRoute', 'engine', 'ngMockE2E', 'ui.bootstrap'])
     .config(function ($engineProvider) {
         $engineProvider.document('proposal', '/proposal', {
                 caption: "Proposals list",
@@ -10,10 +10,21 @@ angular.module('engine-test-app', ['ngRoute', 'engine', 'ngMockE2E'])
                     {'name': 'createdAt', 'caption': 'Created', 'css': 'text-center', type: 'date'},
                 ]
             },
-            '/proposal/:id', {caption: "Proposals"},
+            '/proposal/:id', {caption: "Proposals", steps: [
+                {name: 'First step', categories: ['documentationSettings']},
+                {name: 'Second step', categories: ['ExperimentCategory']}
+            ]},
             'proposalDraftsCustomer');
         $engineProvider.document('openCall', '/openCall', {}, '/openCall/:id', {}, 'review');
-        $engineProvider.document('sla', '/sla', {}, '/sla/:id', {}, 'workingSla');
+        $engineProvider.document('sla', '/sla', {
+            caption: "SLA List",
+            columns: [
+                {name: 'id', type: 'link'},
+                {name: 'name'},
+                {name: 'start'},
+                {name: 'end'}
+            ]
+        }, '/sla/:id', {}, 'workingSla');
 
         $engineProvider.subdocument('sample', {caption: "References",
             columns: [{'name': 'id', 'caption': '#'},
@@ -35,6 +46,25 @@ angular.module('engine-test-app', ['ngRoute', 'engine', 'ngMockE2E'])
     .config(function ($routeProvider) {
         $routeProvider.otherwise('/proposal')
     });
+
+angular.module('engine-test-app').component('teamPlaceholder', {
+    template: '<div class="team-placeholder">Sample Placeholder Component of document {{ngModel.id}}</div>',
+    controller: function ($scope, $route, $routeParams, $location) {
+        console.log($scope);
+
+        $scope.$on('documentPreSave', function () {
+
+        });
+
+        $scope.$on('documentPostSave', function () {
+
+        });
+    },
+    bindings: {
+        ngModel: '=',
+        document: '='
+    }
+});
 
 angular.module('engine-test-app').controller('MainCtrl', function ($engine, $httpBackend) {
     $httpBackend.whenGET($engine.baseUrl + '/query/documents?queryId=proposalDraftsCustomer').respond(
@@ -743,7 +773,7 @@ angular.module('engine-test-app').controller('MainCtrl', function ($engine, $htt
                         "site": "BARI",
                         "siteName": null
                     },
-                    "actions": null
+                    "actions": [{id: 'actionDelete', label: 'Delete'}]
                 },
                 {
                     "document": {
@@ -1362,7 +1392,21 @@ angular.module('engine-test-app').controller('MainCtrl', function ($engine, $htt
         }
     );
 
+    $httpBackend.whenPOST($engine.baseUrl + '/action/invoke?documentId=57fe0eafe62091bd1e621e5a&actionId=actionDelete').respond({
+        data: null,
+        msg: null
+    });
 
+    $httpBackend.whenGET($engine.baseUrl + '/query/documents-with-extra-data?queryId=proposalDraftsCustomer').respond(
+        {
+            "data": [],
+            "msg": null
+        }
+    );
+
+    $httpBackend.whenGET($engine.baseUrl + '/document/getwithextradata?documentId=582a8c01e4b09e9b00350eb3').respond(
+        {"data":{"document":{"id":"582a8c01e4b09e9b00350eb3","parentId":null,"states":{"serviceType":"computing","sideState":"customer","documentType":"sla","mainState":"draft"},"metrics":{"endComp":"2016-11-14T23:00:00.000Z","public_ip-user_guaranteed":null,"computing_time-total_guaranteed":12,"computing_time-total_limit":null,"computing_time-instance_limit":null,"public_ip-total_guaranteed":null,"public_ip-user_limit":null,"computing_time-user_limit":null,"public_ip-total_limit":null,"startComp":"2016-11-14T23:00:00.000Z","computing_time-user_guaranteed":null},"hasValidMetrics":true,"name":"test","isLeaf":true,"rootUuid":"GsOuAdKJhi","slaUuid":"rgIZLCJQNq","team":null,"author":"michal.szostak@cyfronet.pl","relatedDocumentsForQuery":null,"site":"4401ac5dc8cfbbb737b0a025758cf045","siteName":"provider-100IT"},"actions":[{"id":"deleteDraft","type":null,"actions":[{"id":null,"type":null,"actions":[],"secondStepActions":[],"label":null,"constraint":null,"visible":true,"attributes":null,"documentAlias":"newLeaf","states":{"mainState":"deleted"}}],"secondStepActions":[],"label":"Delete this draft","constraint":{"id":null,"negation":false,"type":"AND","children":[{"id":null,"negation":false,"documentAlias":"BASE"},{"id":null,"negation":false,"documentAlias":"BASE","state":"documentType","value":"sla"},{"id":null,"negation":false,"documentAlias":"BASE","state":"mainState","value":"draft"},{"id":null,"negation":false,"role":"manager"}]},"visible":true,"attributes":null,"metricSource":"ALIAS","copyMetricsFromAlias":"BASE","copyNameFromAlias":"BASE","copyRelationsFromAlias":"BASE","copyStatesFromAlias":"BASE","setTeamFromAlias":"BASE","desiredId":null,"alias":"newLeaf","redirectToThisVersion":true,"parentAlias":"BASE"},{"id":"saveDraft","type":null,"actions":[{"id":null,"type":null,"actions":[],"secondStepActions":[],"label":null,"constraint":null,"visible":true,"attributes":null,"documentAlias":"newLeaf","states":{"mainState":"draft"}},{"id":null,"type":null,"actions":[],"secondStepActions":[],"label":null,"constraint":null,"visible":true,"attributes":null,"fromAlias":"BASE","toAlias":"newLeaf"}],"secondStepActions":[],"label":"Save as draft","constraint":{"id":null,"negation":false,"type":"AND","children":[{"id":null,"negation":false,"documentAlias":"BASE"},{"id":null,"negation":false,"documentAlias":"BASE","state":"documentType","value":"sla"},{"id":null,"negation":false,"documentAlias":"BASE","state":"mainState","value":"draft"},{"id":null,"negation":false,"role":"manager"}]},"visible":true,"attributes":null,"metricSource":"ALIAS","copyMetricsFromAlias":"FORM","copyNameFromAlias":"BASE","copyRelationsFromAlias":"BASE","copyStatesFromAlias":"BASE","setTeamFromAlias":"BASE","desiredId":null,"alias":"newLeaf","redirectToThisVersion":true,"parentAlias":"BASE"},{"id":"sendDraft","type":null,"actions":[{"id":null,"type":null,"actions":[],"secondStepActions":[],"label":null,"constraint":null,"visible":true,"attributes":null,"documentAlias":"newLeaf","states":{"sideState":"provider","mainState":"sent"}},{"id":null,"type":null,"actions":[],"secondStepActions":[],"label":null,"constraint":null,"visible":true,"attributes":null,"fromAlias":"BASE","toAlias":"newLeaf"}],"secondStepActions":[],"label":"Send to provider","constraint":{"id":null,"negation":false,"type":"AND","children":[{"id":null,"negation":false,"documentAlias":"BASE"},{"id":null,"negation":false,"documentAlias":"BASE","state":"documentType","value":"sla"},{"id":null,"negation":false,"documentAlias":"BASE","state":"mainState","value":"draft"},{"id":null,"negation":false,"role":"manager"}]},"visible":true,"attributes":null,"metricSource":"ALIAS","copyMetricsFromAlias":"FORM","copyNameFromAlias":"BASE","copyRelationsFromAlias":"BASE","copyStatesFromAlias":"BASE","setTeamFromAlias":"BASE","desiredId":null,"alias":"newLeaf","redirectToThisVersion":true,"parentAlias":"BASE"}],"queries":[{"queryLabel":"My signed computing SLAs","documents":[]},{"queryLabel":"SLAs in progrees","documents":[{"id":"580de3a4e4b09e9b00350eb2","parentId":null,"states":{"serviceType":"computing","sideState":"provider","documentType":"sla","mainState":"sent"},"metrics":{"endComp":"2016-10-30T23:00:00.000Z","public_ip-user_guaranteed":null,"computing_time-total_guaranteed":null,"computing_time-total_limit":null,"computing_time-instance_limit":null,"public_ip-total_guaranteed":null,"public_ip-user_limit":null,"computing_time-user_limit":null,"public_ip-total_limit":null,"startComp":"2016-10-01T22:00:00.000Z","computing_time-user_guaranteed":null},"hasValidMetrics":true,"name":"lkjhlkjkl","isLeaf":true,"rootUuid":"nyaSejiYka","slaUuid":"vdwmoPBAsl","team":null,"author":"tomasz.szepieniec@gmail.com","relatedDocumentsForQuery":null,"site":"4401ac5dc8cfbbb737b0a025758d51b3","siteName":"provider-IN2P3-IRES"},{"id":"582a8c01e4b09e9b00350eb3","parentId":null,"states":{"serviceType":"computing","sideState":"customer","documentType":"sla","mainState":"draft"},"metrics":{"endComp":"2016-11-14T23:00:00.000Z","public_ip-user_guaranteed":null,"computing_time-total_guaranteed":12,"computing_time-total_limit":null,"computing_time-instance_limit":null,"public_ip-total_guaranteed":null,"public_ip-user_limit":null,"computing_time-user_limit":null,"public_ip-total_limit":null,"startComp":"2016-11-14T23:00:00.000Z","computing_time-user_guaranteed":null},"hasValidMetrics":true,"name":"test","isLeaf":true,"rootUuid":"GsOuAdKJhi","slaUuid":"rgIZLCJQNq","team":null,"author":"michal.szostak@cyfronet.pl","relatedDocumentsForQuery":null,"site":"4401ac5dc8cfbbb737b0a025758cf045","siteName":"provider-100IT"}]},{"queryLabel":"Rejected SLAs","documents":[]},{"queryLabel":"Signed SLAs","documents":[]},{"queryLabel":"SLA in negotiations","documents":[{"id":"580de3a4e4b09e9b00350eb2","parentId":null,"states":{"serviceType":"computing","sideState":"provider","documentType":"sla","mainState":"sent"},"metrics":{"endComp":"2016-10-30T23:00:00.000Z","public_ip-user_guaranteed":null,"computing_time-total_guaranteed":null,"computing_time-total_limit":null,"computing_time-instance_limit":null,"public_ip-total_guaranteed":null,"public_ip-user_limit":null,"computing_time-user_limit":null,"public_ip-total_limit":null,"startComp":"2016-10-01T22:00:00.000Z","computing_time-user_guaranteed":null},"hasValidMetrics":true,"name":"lkjhlkjkl","isLeaf":true,"rootUuid":"nyaSejiYka","slaUuid":"vdwmoPBAsl","team":null,"author":"tomasz.szepieniec@gmail.com","relatedDocumentsForQuery":null,"site":"4401ac5dc8cfbbb737b0a025758d51b3","siteName":"provider-IN2P3-IRES"}]}],"messages":[{"body":"thisIsDraft","type":"success","id":"sampleMsg","constraint":{"id":null,"negation":false,"type":"AND","children":[{"id":null,"negation":true,"documentAlias":"BASE","state":"asfsd","value":"drfasdfsdafaft"}]}}]},"msg":null}
+    );
 
 
     var metrics_request_body = '{"states": {"documentType": "proposal"},"metrics": null}';
@@ -1741,6 +1785,74 @@ angular.module('engine-test-app').controller('MainCtrl', function ($engine, $htt
                             "shortString"
                         ]
                     },
+
+                    {
+                        "id": "placeholder",
+                        "label": "placeholder",
+                        "unit": null,
+                        "description": "placeholder",
+                        "required": true,
+                        "categoryId": "documentationSettings",
+                        "position": 0,
+                        "defaultValue": null,
+                        "inputType": "COMPONENT",
+                        "componentType": "team-placeholder",
+                        "constraint": {
+                            "id": null,
+                            "negation": false,
+                            "type": "AND",
+                            "children": [
+                                {
+                                    "id": null,
+                                    "negation": false,
+                                    "documentAlias": "TEMP_STATES_AND_METRICS",
+                                    "state": "documentType",
+                                    "value": "proposal"
+                                }
+                            ]
+                        },
+                        "visualClass": [
+                            "testVisualClass",
+                            "shortString"
+                        ]
+                    },
+
+                    {
+                        "id": "TestSubDocument",
+                        "label": "labTestSubDocument",
+                        "unit": null,
+                        "description": "subdocument",
+                        "required": true,
+                        "categoryId": "documentationSettings",
+                        "position": 0,
+                        "defaultValue": null,
+                        "inputType": "DOCUMENT",
+                        "query": "testSubDocument",
+                        "documentType": "testSubDocument",
+                        "constraint": {
+                            "id": null,
+                            "negation": false,
+                            "type": "AND",
+                            "children": [
+                                {
+                                    "id": null,
+                                    "negation": false,
+                                    "documentAlias": "TEMP_STATES_AND_METRICS",
+                                    "state": "documentType",
+                                    "value": "proposal"
+                                }
+                            ]
+                        },
+                        "visualClass": [
+                            "testVisualClass",
+                            "shortString"
+                        ]
+                    },
+
+
+
+
+
                     {
                         "id": "UserCategory",
                         "label": "labUserCategory",

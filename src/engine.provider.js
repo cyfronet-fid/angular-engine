@@ -22,7 +22,7 @@ angular.module('engine')
             list_options.templateUrl = '/src/list/list.tpl.html';
 
         if(!document_options.templateUrl)
-            document_options.templateUrl = '/src/document/document.tpl.html';
+            document_options.templateUrl = '/src/document/document.wrapper.tpl.html';
 
         $routeProvider.when(list_route, {templateUrl: list_options.templateUrl, controller: 'engineListCtrl',
             query: query,
@@ -30,7 +30,7 @@ angular.module('engine')
             common_options: common_options
         });
 
-        $routeProvider.when(document_route, {templateUrl: document_options.templateUrl, controller: 'engineDocumentCtrl',
+        $routeProvider.when(document_route, {templateUrl: document_options.templateUrl, controller: 'engineDocumentWrapperCtrl',
             query: query,
             options: document_options,
             common_options: common_options
@@ -81,6 +81,10 @@ angular.module('engine')
 }).service('EngineInterceptor', function () {
 
     function processData(data) {
+        if(data == null)
+            return;
+        if(data.document !== undefined)
+            data = data.document;
         if(data.metrics !== null && data.metrics !== undefined) {
             for (var metric in data.metrics) {
                 data[metric] = data.metrics[metric];
