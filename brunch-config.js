@@ -18,7 +18,7 @@ module.exports = {
         },
         javascripts: {
             joinTo: {
-                'angular-engine.js': 'src/**!(.spec).js',
+                'angular-engine.js': ['src/**!(.spec).js', 'src/templates.js']
             },
             order: {
                 before: [
@@ -28,7 +28,7 @@ module.exports = {
         },
     },
     conventions: {
-        ignored: []
+        ignored: ['node_modules/**', 'bower_components/**']
     },
     plugins: {
         //babel: {presets: ['es2015']},
@@ -40,7 +40,7 @@ module.exports = {
         // },
         angularTemplate: {
             moduleName: 'engine',
-            pathToSrc: function(x) { return x },
+            pathToSrc: function(x) { return '/'+x },
             jadeOptions: {},
             ignore: []
         }
