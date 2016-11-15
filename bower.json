@@ -28,6 +28,9 @@
     ".jshintrc",
     "bower.json",
     "gruntfile.js",
+    "karma.conf.js",
+    "brunch-config.js",
+    ".bower.json",
     "package.json",
     "README.md"
   ],
