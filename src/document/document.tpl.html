@@ -1,8 +1,10 @@
 <div>
-    <formly-form model="document" fields="documentFields">
-        <div class="text-left">
-            <button type="submit" ng-if="step < steps.length && step >= 1" style="margin-left: 5px" class="btn btn-default" ng-click="changeStep(step-1)">{{steps[step-1].name}}</button>
-            <button type="submit" ng-if="step < steps.length-1" style="margin-left: 5px" class="btn btn-default" ng-click="changeStep(step+1)">{{steps[step+1].name}}</button>
+    <formly-form model="document" fields="documentFields" class="horizontal">
+
+
+        <div class="btn-group">
+            <button class="btn btn-primary dark-blue-btn" ng-click="changeStep(step+1)">Next Step:</button>
+            <button class="btn btn-primary" ng-click="changeStep(step+1)">{{step+1}}. {{steps[step+1].name}}</button>
             <button type="submit" ng-repeat="action in actions" ng-if="step == steps.length - 1" style="margin-left: 5px" class="btn btn-default" ng-click="engineAction(action.id, document)">{{action.label}}</button>
         </div>
     </formly-form>

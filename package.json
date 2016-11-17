@@ -27,9 +27,10 @@
     "uglify-js-brunch": "^2.0.0"
   },
   "scripts": {
+    "ssl": "openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem",
     "postinstall": "bower install",
     "prestart": "npm install",
-    "start": "http-server . -a localhost -p 8000 -c-1",
+    "start": "http-server . --ssl -a localhost -p 8000 -C cert.pem ",
     "pretest": "npm install",
     "test": "karma start karma.conf.js",
     "test-single-run": "karma start karma.conf.js --single-run",

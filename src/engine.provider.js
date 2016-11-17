@@ -1,4 +1,5 @@
 angular.module('engine')
+
 .provider('$engine', function ($routeProvider) {
     var documents = [];
     var documents_d = {};
@@ -94,6 +95,9 @@ angular.module('engine')
 
         return {
             response: function (data, headersGetter, status) {
+                if(angular.isString(data))
+                    data = angular.fromJson(data);
+
                 data = data.data;
                 if(data instanceof Array) {
                     angular.forEach(data, processData);

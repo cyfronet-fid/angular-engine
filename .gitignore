@@ -52,3 +52,5 @@ fabric.properties
 /src/templates.js.map
 /src/templates.js
 /npm-debug.log
+/key.pem
+/cert.pem

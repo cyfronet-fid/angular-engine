@@ -2,7 +2,7 @@ angular.module('engine',
     ['ngRoute',
     'ngResource',
     'formly',
-    'formlyBootstrap',
+    'engine.formly',
     'ui.bootstrap',
     'engine.list',
     'engine.steps',
@@ -54,7 +54,7 @@ angular.module('engine',
     formlyConfig.setType({
         name: 'datepicker',
         templateUrl:  '/src/document/fields/datepicker.tpl.html',
-        wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+        // wrapper: ['bootstrapLabel', 'bootstrapHasError'],
         defaultOptions: {
             ngModelAttrs: ngModelAttrs,
             templateOptions: {
@@ -84,4 +84,8 @@ angular.module('engine',
             return chr ? chr.toLowerCase() : '';
         });
     }
+
+
+
+
 });

@@ -5,8 +5,8 @@ angular.module('engine')
         get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
     });
 
-    return function (query) {
-        return _query.get({query: query});
+    return function (query, callback) {
+        return _query.get({query: query}, callback);
     }
 })
 .service('metrics', function ($engine, $resource, EngineInterceptor) {
@@ -14,10 +14,8 @@ angular.module('engine')
         post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
     });
 
-    return function (documentType) {
-        return _query.post({states: {documentType: documentType},metrics: null}, function (data) {
-            console.log(data);
-        });
+    return function (documentType, callback) {
+        return _query.post({states: {documentType: documentType},metrics: null}, callback);
     }
 })
 .service('engineAction', function ($engine, $resource, EngineInterceptor) {
@@ -25,8 +23,8 @@ angular.module('engine')
         post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: false}
     });
     
-    return function (actionId, document) {
-        return _action.post({actionId: actionId, documentId: document.id, statesAndmetrics: {metrics: document.metrics}});
+    return function (actionId, document, callback) {
+        return _action.post({actionId: actionId, documentId: document.id, statesAndmetrics: {metrics: document.metrics}}, callback);
     }
 })
 .service('engineDocument', function ($engine, $resource, EngineInterceptor) {
@@ -35,8 +33,8 @@ angular.module('engine')
             get: {method: 'GET', transformResponse: EngineInterceptor.response}
         });
 
-    return {get: function (documentId) {
-        return _document.get({documentId: documentId});
+    return {get: function (documentId, callback) {
+        return _document.get({documentId: documentId}, callback);
     }}
 })
 ;

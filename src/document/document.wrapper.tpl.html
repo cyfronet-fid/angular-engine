@@ -1,4 +1,5 @@
 <div>
-    <engine-document class="col-md-9"></engine-document>
-    <engine-steps class="col-md-3"></engine-steps>
+    <h1>CREATE {{ options.name }}: <span class="bold">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>
+    <engine-document class="col-md-8"></engine-document>
+    <engine-steps step="step" steps="steps" class="col-md-4"></engine-steps>
 </div>

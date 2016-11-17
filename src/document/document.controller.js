@@ -8,20 +8,22 @@ angular.module('engine.document')
     }
 })
 .controller('engineDocumentWrapperCtrl', function ($scope, $route, metrics, $routeParams, engineAction) {
-
+    $scope.steps = $route.current.$$route.options.steps || null;
+    $scope.step = parseInt($routeParams.step) || 0;
 })
 .controller('engineDocumentCtrl', function ($scope, $route, metrics, $routeParams, engineAction, engineDocument, $location) {
     var self = this;
-
     $scope.query = $route.current.$$route.query;
     $scope.document_type = $route.current.$$route.common_options.document_type;
-    $scope.steps = $route.current.$$route.options.steps;
+    $scope.steps = $route.current.$$route.options.steps || null;
     $scope.documentId = $routeParams.id;
+    $scope.options = $route.current.$$route.common_options;
+    console.log($scope.options);
 
     $scope.step = parseInt($routeParams.step) || 0;
-    $scope.currentCategories = $scope.steps[$scope.step].categories || [];
+    $scope.currentCategories = $scope.steps == null ? [] : $scope.steps[$scope.step].categories || [];
 
-    if($scope.documentId) {
+    if($scope.documentId && $scope.documentId != 'new') {
         $scope.document = engineDocument.get($scope.documentId);
     }
 
@@ -30,7 +32,7 @@ angular.module('engine.document')
     };
 
     $scope.isLastStep = function (step) {
-        if(parseInt(step) == $scope.steps.length)
+        if($scope.steps == null || parseInt(step) == $scope.steps.length)
             return true;
     };
 
@@ -38,14 +40,17 @@ angular.module('engine.document')
 
     ];
 
-    $scope.metrics = metrics($scope.document_type).$promise.then(function (data) {
-        var generalGroup = {className: 'field-group', fieldGroup: []};
+    // var categoryClass = options.document.categoryClass || 'text-box';
+    var categoryClass = 'text-box';
+
+    $scope.metrics = metrics($scope.document_type, function (data) {
         if($scope.step == 0) {
+            var generalGroup = {templateOptions: {wrapperClass: categoryClass, label: null}, fieldGroup: [],  wrapper: 'category'};
             generalGroup.fieldGroup.push({
                 key: 'name',
                 type: 'input',
                 templateOptions: {
-                type: 'text',
+                    type: 'text',
                     label: 'Name',
                     placeholder: 'Enter name'
                 }
@@ -55,15 +60,14 @@ angular.module('engine.document')
                 type: 'input',
                 templateOptions: {
                     type: 'text',
-                    label: '',
+                    label: 'id',
                     disabled: true
                 }
             });
+            $scope.documentFields.push(generalGroup);
         }
 
-        $scope.documentFields.push(generalGroup);
-
-        console.log(data);
+        // console.log(data);
 
         function engineOptionsToFormly(engineOptions) {
             var r = [];
@@ -73,21 +77,18 @@ angular.module('engine.document')
             return r;
         }
         var categories = {};
-        angular.forEach($scope.currentCategories, function (category) {
-            categories[category] = {className: 'field-group', fieldGroup: []};
-        });
-
         angular.forEach(data, function (metric) {
-            if($scope.currentCategories.indexOf(metric.categoryId) != -1) {
+            // console.log(metric)
+            if($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
                 var field = {
                     key: metric.id,
                     type: 'input',
                     className: metric.visualClass.join(' '),
-                    templateOptions: {
-                        type: 'text',
+                     templateOptions: {
+                         type: 'text',
                         label: metric.label,
                         placeholder: 'Enter '+metric.label
-                    }
+                     }
                 };
 
                 if(metric.visualClass.indexOf('select') != -1) {
@@ -107,8 +108,8 @@ angular.module('engine.document')
                 else if(metric.inputType == 'TEXTAREA') {
                     field.type = "textarea";
                     field.templateOptions = {
-                        // "placeholder": "",
-                        // "label": "",
+                        "placeholder": "",
+                        "label": "",
 
                         //these needs to be specified somewhere?
                         "rows": 4,
@@ -122,12 +123,17 @@ angular.module('engine.document')
                     field = {template: '<engine-document-list query="'+metric.query+'" document-type="'+metric.documentType+'"></engine-document-list>', templateOptions: {ngModel: $scope.document}}
                 }
 
-
+                if(categories[metric.categoryId] == undefined)
+                    categories[metric.categoryId] = {templateOptions: {wrapperClass: categoryClass, label: metric.categoryId}, fieldGroup: [],
+                        wrapper: 'category'};
+                if(metric.label == 'labFinancialSupport')
+                    console.log(metric);
                 categories[metric.categoryId].fieldGroup.push(field);
 
             }
         });
-
+        // console.log('categories');
+        // console.log(categories);
 
         angular.forEach(categories, function (category) {
             $scope.documentFields.push(category);

@@ -18,7 +18,7 @@ module.exports = {
         },
         javascripts: {
             joinTo: {
-                'angular-engine.js': ['src/**!(.spec).js', 'src/templates.js']
+                'angular-engine.js': ['src/**.js', 'src/templates.js']
             },
             order: {
                 before: [
