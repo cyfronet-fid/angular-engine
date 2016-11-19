@@ -127,8 +127,9 @@ angular.module('engine.document')
                 else if(metric.inputType == 'COMPONENT') {
                     field = {template: '<'+metric.componentType+'>'+'</'+metric.componentType+'>', templateOptions: {ngModel: $scope.document}}
                 }
-                else if(metric.inputType == 'DOCUMENT') {
-                    field = {template: '<engine-document-list query="'+metric.query+'" document-type="'+metric.documentType+'"></engine-document-list>', templateOptions: {ngModel: $scope.document}}
+                else if(metric.inputType == 'QUERIED_LIST') {
+                    field.type = undefined;
+                    field = {template: '<engine-document-list query="'+metric.queryId+'" options="options"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
                 }
 
                 if(categories[metric.categoryId] == undefined)

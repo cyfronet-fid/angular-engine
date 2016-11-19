@@ -55,7 +55,7 @@ angular.module('engine')
             options: options
         });
 
-        documents_d[documentModelType] = {options: options, modal: false};
+        documents_d[documentModelType] = options;
     };
 
     this.subdocument = function (documentModelType, query, options) {
@@ -101,6 +101,12 @@ angular.module('engine')
             this.documents = documents;
             this.documents_d = documents_d;
             this.visibleDocumentFields = _visibleDocumentFields;
+
+            this.getOptions = function (documentModelId) {
+                _apiCheck.string(documentModelId);
+
+                return documents_d[documentModelId] || {}
+            };
         };
     };
 

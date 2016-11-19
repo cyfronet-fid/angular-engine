@@ -179,8 +179,9 @@ angular.module('engine.document').component('engineDocument', {
                     };
                 } else if (metric.inputType == 'COMPONENT') {
                     field = { template: '<' + metric.componentType + '>' + '</' + metric.componentType + '>', templateOptions: { ngModel: $scope.document } };
-                } else if (metric.inputType == 'DOCUMENT') {
-                    field = { template: '<engine-document-list query="' + metric.query + '" document-type="' + metric.documentType + '"></engine-document-list>', templateOptions: { ngModel: $scope.document } };
+                } else if (metric.inputType == 'QUERIED_LIST') {
+                    field.type = undefined;
+                    field = { template: '<engine-document-list query="' + metric.queryId + '" options="options"></engine-document-list>', templateOptions: { options: $engine.getOptions(metric.modelId) } };
                 }
 
                 if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: metric.categoryId }, fieldGroup: [],
@@ -280,7 +281,7 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
             options: options
         });
 
-        documents_d[documentModelType] = { options: options, modal: false };
+        documents_d[documentModelType] = options;
     };
 
     this.subdocument = function (documentModelType, query, options) {
@@ -321,6 +322,12 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
             this.documents = documents;
             this.documents_d = documents_d;
             this.visibleDocumentFields = _visibleDocumentFields;
+
+            this.getOptions = function (documentModelId) {
+                _apiCheck.string(documentModelId);
+
+                return documents_d[documentModelId] || {};
+            };
         }();
     };
 });
@@ -575,7 +582,7 @@ angular.module('engine.list').component('engineDocumentList', {
 "use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n\n        <div class=\"btn-group\">\n            <button class=\"btn btn-primary dark-blue-btn\" ng-click=\"changeStep(step+1)\">Next Step:</button>\n            <button class=\"btn btn-primary\" ng-click=\"changeStep(step+1)\">{{step+1}}. {{steps[step+1].name}}</button>\n            <button type=\"submit\" ng-repeat=\"action in actions\" ng-if=\"step == steps.length - 1\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n        </div>\n    </formly-form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n\n        <div class=\"btn-group\">\n            <button class=\"btn btn-primary dark-blue-btn\" ng-click=\"changeStep(step+1)\">Next Step:</button>\n            <button class=\"btn btn-primary\" ng-click=\"changeStep(step+1)\">{{step+2}}. {{steps[step+1].name}}</button>\n            <button type=\"submit\" ng-repeat=\"action in actions\" ng-if=\"step == steps.length - 1\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n        </div>\n    </formly-form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document ng-model=\"document\" step=\"step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"step\" steps=\"options.document.steps\" options=\"options\" ng-change=\"changeStep(step)\" class=\"col-md-4\"></engine-steps>\n</div>");
