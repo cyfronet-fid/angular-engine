@@ -1,19 +1,19 @@
-angular.module('engine')
-    .config(function (formlyConfigProvider) {
+angular.module('engine.formly')
+    .run(function (formlyConfig, $engineFormly) {
 
-        formlyConfigProvider.setWrapper({
+        formlyConfig.setWrapper({
             name: 'engineLabel',
-            templateUrl: '/src/formly/label.tpl.html',
+            templateUrl: $engineFormly.wrapperUrls['label'],
             // apiCheck:
             overwriteOk: true
         });
-        formlyConfigProvider.setWrapper({
+        formlyConfig.setWrapper({
             name: 'engineHasError',
-            templateUrl: '/src/formly/has-error.tpl.html',
+            templateUrl: $engineFormly.wrapperUrls['hasError'],
             overwriteOk: true
         });
-        formlyConfigProvider.setWrapper({
+        formlyConfig.setWrapper({
             name: 'category',
-            templateUrl: '/src/document/category.tpl.html'
+            templateUrl: $engineFormly.wrapperUrls['category']
         });
     });

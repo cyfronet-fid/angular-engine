@@ -1,50 +1,73 @@
 angular.module('engine')
+.provider('$engine', function ($routeProvider, $engineFormlyProvider) {
+    var self = this;
 
-.provider('$engine', function ($routeProvider) {
     var documents = [];
     var documents_d = {};
 
-    this.document = function (documentType, list_route, list_options, document_route, document_options, query, common_options) {
-        documents.push({list_route: list_route, document_route: document_route});
+    this.apiCheck = apiCheck({
 
-        if(!list_options)
-            list_options = {};
+    });
 
-        if(!document_options)
-            document_options = {};
+    var _apiCheck = this.apiCheck;
 
-        if(!common_options)
-            common_options = {};
-        common_options.document_type = documentType;
-        common_options.list_route = list_route;
-        common_options.document_route = document_route;
+    _apiCheck.documentOptions = _apiCheck.shape({
+        documentJSON: _apiCheck.object,
+        name: _apiCheck.string,
+        list: _apiCheck.shape({
+            caption: _apiCheck.string,
+            templateUrl: _apiCheck.string
+        }),
+        document: _apiCheck.shape({
+            templateUrl: _apiCheck.string,
+            steps: _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, categories: _apiCheck.arrayOf(_apiCheck.string)}))
+        })
+    });
 
-        if(!list_options.templateUrl)
-            list_options.templateUrl = '/src/list/list.tpl.html';
+    this.document = function (documentModelType, listUrl, documentUrl, query, options) {
+        var _options = {
+            list: {
+                templateUrl: '/src/list/list.wrapper.tpl.html'
+            },
+            document: {
+                templateUrl: '/src/document/document.wrapper.tpl.html',
+                steps: []
+            }
+        };
 
-        if(!document_options.templateUrl)
-            document_options.templateUrl = '/src/document/document.wrapper.tpl.html';
+        options = angular.merge(_options, options);
 
-        $routeProvider.when(list_route, {templateUrl: list_options.templateUrl, controller: 'engineListCtrl',
-            query: query,
-            options: list_options,
-            common_options: common_options
+        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
+
+        options.documentModelType = documentModelType;
+        options.listUrl = listUrl;
+        options.documentUrl = documentUrl;
+        options.query = query;
+        options.subdocument = false;
+
+        documents.push({list_route: listUrl, document_route: documentUrl});
+
+        $routeProvider.when(listUrl, {templateUrl: options.list.templateUrl, controller: 'engineListWrapperCtrl',
+            options: options
         });
 
-        $routeProvider.when(document_route, {templateUrl: document_options.templateUrl, controller: 'engineDocumentWrapperCtrl',
-            query: query,
-            options: document_options,
-            common_options: common_options
+        $routeProvider.when(documentUrl, {templateUrl: options.document.templateUrl, controller: 'engineDocumentWrapperCtrl',
+            options: options
         });
 
-        documents_d[documentType] = {list_options: list_options, document_options: document_options, common_options: common_options,
-                                     query: query, modal: false};
+        documents_d[documentModelType] = {options: options, modal: false};
     };
 
-    this.subdocument = function (documentType, list_options, document_options, common_options, query, modal) {
-        documents_d[documentType] = {list_options: list_options, document_options: document_options, common_options: common_options,
-                                     query: query, modal: modal || false}
+    this.subdocument = function (documentModelType, query, options) {
+        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, query, options]);
+
+        options.query = query;
+        options.subdocument = true;
+
+        documents_d[documentModelType] = options;
     };
+
+    this.formly = $engineFormlyProvider;
 
     var _baseUrl = '';
 
@@ -68,10 +91,12 @@ angular.module('engine')
     };
 
 
-    this.$get = function () {
+    this.$get = function ($engineFormly) {
 
 
         return new function() {
+            this.apiCheck = _apiCheck;
+            this.formly = $engineFormly;
             this.baseUrl = _baseUrl;
             this.documents = documents;
             this.documents_d = documents_d;
@@ -79,48 +104,4 @@ angular.module('engine')
         };
     };
 
-}).service('EngineInterceptor', function () {
-
-    function processData(data) {
-        if(data == null)
-            return;
-        if(data.document !== undefined)
-            data = data.document;
-        if(data.metrics !== null && data.metrics !== undefined) {
-            for (var metric in data.metrics) {
-                data[metric] = data.metrics[metric];
-            }
-        }
-    }
-
-        return {
-            response: function (data, headersGetter, status) {
-                if(angular.isString(data))
-                    data = angular.fromJson(data);
-
-                data = data.data;
-                if(data instanceof Array) {
-                    angular.forEach(data, processData);
-                }
-                else
-                    processData(data);
-
-                return data;
-            },
-            request: function (data, headersGetter) {
-                var site = data.site;
-                console.log('parsing request');
-                if(site && site.id) {
-                    data.site = site.id;
-                    data.siteName = site.value.provider_id;
-                }
-
-                return angular.toJson(data)
-            }
-    }
-
-}).service('MetricToFormly', function () {
-    return function (data, headersGetter, status) {
-
-    };
-});
+})

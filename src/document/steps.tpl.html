@@ -1,7 +1,7 @@
 <div class="text-box text-box-nav">
     <ul class="nav nav-pills nav-stacked nav-steps">
-        <li ng-repeat="_step in steps" ng-class="{active: step == $index}" class="ng-scope">
-            <a href="" ng-click="changeStep($index)">
+        <li ng-repeat="_step in $ctrl.steps" ng-class="{active: $ctrl.step == $index}" class="ng-scope">
+            <a href="" ng-click="$ctrl.changeStep($index)">
                 <span class="menu-icons"><i class="fa fa-circle-o" aria-hidden="true"></i><i class="fa fa-check-circle" aria-hidden="true"></i></span>
                 <span class="menu-steps-desc ng-binding">{{$index + 1}}. {{_step.name}}</span>
             </a>

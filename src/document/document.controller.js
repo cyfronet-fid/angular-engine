@@ -3,24 +3,27 @@ angular.module('engine.document')
     templateUrl: '/src/document/document.tpl.html',
     controller: 'engineDocumentCtrl',
     bindings: {
-        ngModel: '@',
-        steps: '@'
+        ngModel: '=',
+        options: '=',
+        steps: '=',
+        step: '='
     }
 })
-.controller('engineDocumentWrapperCtrl', function ($scope, $route, metrics, $routeParams, engineAction) {
-    $scope.steps = $route.current.$$route.options.steps || null;
+.controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, engineAction) {
+    $scope.options = $route.current.$$route.options;
+    $scope.steps = $route.current.$$route.options.document.steps || null;
     $scope.step = parseInt($routeParams.step) || 0;
-})
-.controller('engineDocumentCtrl', function ($scope, $route, metrics, $routeParams, engineAction, engineDocument, $location) {
-    var self = this;
-    $scope.query = $route.current.$$route.query;
-    $scope.document_type = $route.current.$$route.common_options.document_type;
-    $scope.steps = $route.current.$$route.options.steps || null;
-    $scope.documentId = $routeParams.id;
-    $scope.options = $route.current.$$route.common_options;
-    console.log($scope.options);
+    $scope.document = {};
 
-    $scope.step = parseInt($routeParams.step) || 0;
+    $scope.changeStep = function (step) {
+        $location.search({step: step})
+    }
+})
+.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, engineAction, engineDocument, $location) {
+    var self = this;
+    console.log($scope);
+
+    $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null ? [] : $scope.steps[$scope.step].categories || [];
 
     if($scope.documentId && $scope.documentId != 'new') {
@@ -43,7 +46,7 @@ angular.module('engine.document')
     // var categoryClass = options.document.categoryClass || 'text-box';
     var categoryClass = 'text-box';
 
-    $scope.metrics = metrics($scope.document_type, function (data) {
+    $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
         if($scope.step == 0) {
             var generalGroup = {templateOptions: {wrapperClass: categoryClass, label: null}, fieldGroup: [],  wrapper: 'category'};
             generalGroup.fieldGroup.push({

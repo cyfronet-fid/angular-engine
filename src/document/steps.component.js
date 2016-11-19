@@ -1,17 +1,19 @@
 angular.module('engine.steps')
     .component('engineSteps', {
         templateUrl: '/src/document/steps.tpl.html',
-        controller: function ($scope, $route, $routeParams, $location) {
-            $scope.steps = $route.current.$$route.options.steps;
-            $scope.step = $routeParams.step || 0;
+        controller: function ($timeout) {
+            var self = this;
 
-            $scope.changeStep = function (newStep) {
-                $routeParams.step = newStep;
-                $location.search({step: newStep})
+            this.changeStep = function (newStep) {
+                self.step = newStep;
+                $timeout(self.ngChange);
             }
         },
         bindings: {
-            // ngModel: '@',
-            // steps: '@'
+            ngModel: '=',
+            step: '=',
+            steps: '=',
+            options: '=',
+            ngChange: '&'
         }
     });

@@ -1,13 +1,13 @@
-angular.module('engine')
-    .config(function (formlyConfigProvider) {
+angular.module('engine.formly')
+    .run(function (formlyConfig, $engineFormly) {
 
-        formlyConfigProvider.setType({
+        formlyConfig.setType({
             name: 'input',
-            template: '<input class="form-control" ng-model="model[options.key]">',
+            templateUrl: $engineFormly.templateUrls['input'],
             wrapper: ['engineLabel', 'engineHasError']
         });
 
-        formlyConfigProvider.setType({
+        formlyConfig.setType({
                 name: 'radio',
                 templateUrl: '/src/formly/radio.html',
                 wrapper: ['engineLabel', 'engineHasError'],
@@ -23,9 +23,9 @@ angular.module('engine')
             // })
         });
 
-        formlyConfigProvider.setType({
+        formlyConfig.setType({
                 name: 'select',
-                template: '<select class="form-control" ng-model="model[options.key]"></select>',
+                templateUrl: $engineFormly.templateUrls['select'],
                 wrapper: ['engineLabel', 'engineHasError'],
                 // defaultOptions(options) {
                     /* jshint maxlen:195 */
@@ -49,9 +49,9 @@ angular.module('engine')
             // })
         });
 
-        formlyConfigProvider.setType({
+        formlyConfig.setType({
                 name: 'textarea',
-                template: '<textarea class="form-control" ng-model="model[options.key]"></textarea>',
+                templateUrl: $engineFormly.templateUrls['textarea'],
                 wrapper: ['engineLabel', 'engineHasError'],
                 defaultOptions: {
                     ngModelAttrs: {

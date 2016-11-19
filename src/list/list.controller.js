@@ -1,31 +1,22 @@
 angular.module('engine.list')
-.component('engine-document-list', {
-    templateUrl: '/src/document/list.tpl.html',
-    controller: function ($scope, $route, metrics, $engine, engineQuery, engineAction) {
-        // $scope.query = $route.current.$$route.query;
-        // $scope.caption = $route.current.$$route.options.caption;
-        // $scope.columns = $route.current.$$route.options.columns;
-        // $scope.document_type = $route.current.$$route.common_options.document_type;
-        // $scope.document_route = $route.current.$$route.common_options.document_route;
-        // $scope.list_route = $route.current.$$route.common_options.list_route;
-    },
+.component('engineDocumentList', {
+    templateUrl: '/src/list/list.tpl.html',
+    controller: 'engineListCtrl',
     bindings: {
-        documentType: '@',
-        query: '@'
+        options: '=',
+        query: '='
     }
 })
-.controller('engineListCtrl', function ($scope, $route, metrics, $engine, engineQuery, engineAction) {
+.controller('engineListWrapperCtrl', function ($scope, $route) {
+    $scope.options = $route.current.$$route.options;
+    $scope.query = $route.current.$$route.options.query;
+})
+.controller('engineListCtrl', function ($scope, $route, engineMetric, $engine, engineQuery, engineAction) {
     var self = this;
 
+    $scope.options = this.options;
 
-    $scope.query = $route.current.$$route.query;
-    $scope.caption = $route.current.$$route.options.caption;
-    $scope.columns = $route.current.$$route.options.columns;
-    $scope.document_type = $route.current.$$route.common_options.document_type;
-    $scope.document_route = $route.current.$$route.common_options.document_route;
-    $scope.list_route = $route.current.$$route.common_options.list_route;
-
-    $scope.documents = engineQuery($scope.query);
+    $scope.documents = engineQuery($scope.options.query);
 
     $scope.engineAction = function (actionId, document) {
         engineAction(actionId, document).$promise.then(function (data) {
@@ -43,7 +34,7 @@ angular.module('engine.list')
                 $scope.columns.push(field);
         });
 
-        metrics($scope.document_type).$promise.then(function (data) {
+        engineMetric($scope.options.documentJSON, function (data) {
             angular.forEach(data, function (metric) {
                 $scope.columns.push({name: metric.id, caption: metric.label});
             })
@@ -64,8 +55,8 @@ angular.module('engine.list')
         }
         return '/src/list/cell/text.tpl.html'
     };
-    $scope.genDocumentLink = function(document_route, document) {
-        return '#' + $scope.document_route.replace(':id', document);
+    $scope.genDocumentLink = function(document) {
+        return '#' + $scope.options.documentUrl.replace(':id', document);
     };
 
 });

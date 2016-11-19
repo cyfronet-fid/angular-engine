@@ -69,22 +69,25 @@ angular.module('engine.document').component('engineDocument', {
     templateUrl: '/src/document/document.tpl.html',
     controller: 'engineDocumentCtrl',
     bindings: {
-        ngModel: '@',
-        steps: '@'
+        ngModel: '=',
+        options: '=',
+        steps: '=',
+        step: '='
     }
-}).controller('engineDocumentWrapperCtrl', function ($scope, $route, metrics, $routeParams, engineAction) {
-    $scope.steps = $route.current.$$route.options.steps || null;
+}).controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, engineAction) {
+    $scope.options = $route.current.$$route.options;
+    $scope.steps = $route.current.$$route.options.document.steps || null;
     $scope.step = parseInt($routeParams.step) || 0;
-}).controller('engineDocumentCtrl', function ($scope, $route, metrics, $routeParams, engineAction, engineDocument, $location) {
-    var self = this;
-    $scope.query = $route.current.$$route.query;
-    $scope.document_type = $route.current.$$route.common_options.document_type;
-    $scope.steps = $route.current.$$route.options.steps || null;
-    $scope.documentId = $routeParams.id;
-    $scope.options = $route.current.$$route.common_options;
-    console.log($scope.options);
+    $scope.document = {};
 
-    $scope.step = parseInt($routeParams.step) || 0;
+    $scope.changeStep = function (step) {
+        $location.search({ step: step });
+    };
+}).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, engineAction, engineDocument, $location) {
+    var self = this;
+    console.log($scope);
+
+    $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null ? [] : $scope.steps[$scope.step].categories || [];
 
     if ($scope.documentId && $scope.documentId != 'new') {
@@ -104,7 +107,7 @@ angular.module('engine.document').component('engineDocument', {
     // var categoryClass = options.document.categoryClass || 'text-box';
     var categoryClass = 'text-box';
 
-    $scope.metrics = metrics($scope.document_type, function (data) {
+    $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
         if ($scope.step == 0) {
             var generalGroup = { templateOptions: { wrapperClass: categoryClass, label: null }, fieldGroup: [], wrapper: 'category' };
             generalGroup.fieldGroup.push({
@@ -201,62 +204,91 @@ angular.module('engine.document').component('engineDocument', {
 
 angular.module('engine.steps').component('engineSteps', {
     templateUrl: '/src/document/steps.tpl.html',
-    controller: function controller($scope, $route, $routeParams, $location) {
-        $scope.steps = $route.current.$$route.options.steps;
-        $scope.step = $routeParams.step || 0;
+    controller: function controller($timeout) {
+        var self = this;
 
-        $scope.changeStep = function (newStep) {
-            $routeParams.step = newStep;
-            $location.search({ step: newStep });
+        this.changeStep = function (newStep) {
+            self.step = newStep;
+            $timeout(self.ngChange);
         };
     },
     bindings: {
-        // ngModel: '@',
-        // steps: '@'
+        ngModel: '=',
+        step: '=',
+        steps: '=',
+        options: '=',
+        ngChange: '&'
     }
 });
 'use strict';
 
-angular.module('engine').provider('$engine', function ($routeProvider) {
+angular.module('engine').provider('$engine', function ($routeProvider, $engineFormlyProvider) {
+    var self = this;
+
     var documents = [];
     var documents_d = {};
 
-    this.document = function (documentType, list_route, list_options, document_route, document_options, query, common_options) {
-        documents.push({ list_route: list_route, document_route: document_route });
+    this.apiCheck = apiCheck({});
 
-        if (!list_options) list_options = {};
+    var _apiCheck = this.apiCheck;
 
-        if (!document_options) document_options = {};
+    _apiCheck.documentOptions = _apiCheck.shape({
+        documentJSON: _apiCheck.object,
+        name: _apiCheck.string,
+        list: _apiCheck.shape({
+            caption: _apiCheck.string,
+            templateUrl: _apiCheck.string
+        }),
+        document: _apiCheck.shape({
+            templateUrl: _apiCheck.string,
+            steps: _apiCheck.arrayOf(_apiCheck.shape({ name: _apiCheck.string, categories: _apiCheck.arrayOf(_apiCheck.string) }))
+        })
+    });
 
-        if (!common_options) common_options = {};
-        common_options.document_type = documentType;
-        common_options.list_route = list_route;
-        common_options.document_route = document_route;
+    this.document = function (documentModelType, listUrl, documentUrl, query, options) {
+        var _options = {
+            list: {
+                templateUrl: '/src/list/list.wrapper.tpl.html'
+            },
+            document: {
+                templateUrl: '/src/document/document.wrapper.tpl.html',
+                steps: []
+            }
+        };
 
-        if (!list_options.templateUrl) list_options.templateUrl = '/src/list/list.tpl.html';
+        options = angular.merge(_options, options);
 
-        if (!document_options.templateUrl) document_options.templateUrl = '/src/document/document.wrapper.tpl.html';
+        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
 
-        $routeProvider.when(list_route, { templateUrl: list_options.templateUrl, controller: 'engineListCtrl',
-            query: query,
-            options: list_options,
-            common_options: common_options
+        options.documentModelType = documentModelType;
+        options.listUrl = listUrl;
+        options.documentUrl = documentUrl;
+        options.query = query;
+        options.subdocument = false;
+
+        documents.push({ list_route: listUrl, document_route: documentUrl });
+
+        $routeProvider.when(listUrl, { templateUrl: options.list.templateUrl, controller: 'engineListWrapperCtrl',
+            options: options
         });
 
-        $routeProvider.when(document_route, { templateUrl: document_options.templateUrl, controller: 'engineDocumentWrapperCtrl',
-            query: query,
-            options: document_options,
-            common_options: common_options
+        $routeProvider.when(documentUrl, { templateUrl: options.document.templateUrl, controller: 'engineDocumentWrapperCtrl',
+            options: options
         });
 
-        documents_d[documentType] = { list_options: list_options, document_options: document_options, common_options: common_options,
-            query: query, modal: false };
+        documents_d[documentModelType] = { options: options, modal: false };
     };
 
-    this.subdocument = function (documentType, list_options, document_options, common_options, query, modal) {
-        documents_d[documentType] = { list_options: list_options, document_options: document_options, common_options: common_options,
-            query: query, modal: modal || false };
+    this.subdocument = function (documentModelType, query, options) {
+        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, query, options]);
+
+        options.query = query;
+        options.subdocument = true;
+
+        documents_d[documentModelType] = options;
     };
+
+    this.formly = $engineFormlyProvider;
 
     var _baseUrl = '';
 
@@ -276,15 +308,60 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
         });else _visibleDocumentFields.push(document_fields);
     };
 
-    this.$get = function () {
+    this.$get = function ($engineFormly) {
 
         return new function () {
+            this.apiCheck = _apiCheck;
+            this.formly = $engineFormly;
             this.baseUrl = _baseUrl;
             this.documents = documents;
             this.documents_d = documents_d;
             this.visibleDocumentFields = _visibleDocumentFields;
         }();
     };
+});
+;'use strict';
+
+angular.module('engine').service('engineQuery', function ($engine, $resource, EngineInterceptor) {
+
+    var _query = $resource($engine.baseUrl + '/query/documents-with-extra-data?queryId=:query', { query_id: '@query' }, {
+        get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
+    });
+
+    return function (query, callback, errorCallback) {
+        $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
+        return _query.get({ query: query }, callback, errorCallback);
+    };
+}).service('engineMetric', function ($engine, $resource, EngineInterceptor) {
+    var _query = $resource($engine.baseUrl + '/metrics', {}, {
+        post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: true }
+    });
+
+    return function (documentJSON, callback, errorCallback) {
+        $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+
+        return _query.post(documentJSON, callback, errorCallback);
+    };
+}).service('engineAction', function ($engine, $resource, EngineInterceptor) {
+    var _action = $resource($engine.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', { actionId: '@actionId', documentId: '@documentId' }, {
+        post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: false }
+    });
+
+    return function (actionId, document, callback, errorCallback) {
+        $engine.apiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
+
+        return _action.post({ actionId: actionId, documentId: document.id, statesAndmetrics: { metrics: document.metrics } }, callback);
+    };
+}).service('engineDocument', function ($engine, $resource, EngineInterceptor) {
+    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId', { documentId: '@documentId' }, {
+        get: { method: 'GET', transformResponse: EngineInterceptor.response }
+    });
+
+    return { get: function get(documentId, callback, errorCallback) {
+            $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
+
+            return _document.get({ documentId: documentId }, callback, errorCallback);
+        } };
 }).service('EngineInterceptor', function () {
 
     function processData(data) {
@@ -299,7 +376,9 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
 
     return {
         response: function response(data, headersGetter, status) {
-            if (angular.isString(data)) data = angular.fromJson(data);
+            if (angular.isString(data)) {
+                if (data == "") return {};else data = angular.fromJson(data);
+            }
 
             data = data.data;
             if (data instanceof Array) {
@@ -324,51 +403,52 @@ angular.module('engine').provider('$engine', function ($routeProvider) {
 });
 'use strict';
 
-angular.module('engine').service('engineQuery', function ($engine, $resource, EngineInterceptor) {
+angular.module('engine.formly').provider('$engineFormly', function () {
+    var self = this;
 
-    var _query = $resource($engine.baseUrl + '/query/documents-with-extra-data?queryId=:query', { query_id: '@query' }, {
-        get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
-    });
-
-    return function (query, callback) {
-        return _query.get({ query: query }, callback);
+    var _typeTemplateUrls = {
+        input: '/src/formly/input.tpl.html',
+        select: '/src/formly/select.tpl.html',
+        checkbox: '/src/formly/checkbox.tpl.html',
+        radio: '/src/formly/radio.tpl.html',
+        textarea: '/src/formly/textarea.tpl.html',
+        multiCheckbox: '/src/formly/multiCheckbox.tpl.html'
     };
-}).service('metrics', function ($engine, $resource, EngineInterceptor) {
-    var _query = $resource($engine.baseUrl + '/metrics', {}, {
-        post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: true }
-    });
-
-    return function (documentType, callback) {
-        return _query.post({ states: { documentType: documentType }, metrics: null }, callback);
+    var _wrapperTemplateUrls = {
+        category: '/src/formly/category.tpl.html',
+        label: '/src/formly/label.tpl.html',
+        hasError: '/src/formly/has-error.tpl.html'
     };
-}).service('engineAction', function ($engine, $resource, EngineInterceptor) {
-    var _action = $resource($engine.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', { actionId: '@actionId', documentId: '@documentId' }, {
-        post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: false }
-    });
 
-    return function (actionId, document, callback) {
-        return _action.post({ actionId: actionId, documentId: document.id, statesAndmetrics: { metrics: document.metrics } }, callback);
+    this.templateUrls = _typeTemplateUrls;
+    this.wrapperUrls = _wrapperTemplateUrls;
+
+    this.setTypeTemplateUrl = function (type, url) {
+        _typeTemplateUrls[type] = url;
     };
-}).service('engineDocument', function ($engine, $resource, EngineInterceptor) {
-    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId', { documentId: '@documentId' }, {
-        get: { method: 'GET', transformResponse: EngineInterceptor.response }
-    });
 
-    return { get: function get(documentId, callback) {
-            return _document.get({ documentId: documentId }, callback);
-        } };
+    this.setWrapperTemplateUrl = function (wrapper, url) {
+        _wrapperTemplateUrls[wrapper] = url;
+    };
+
+    this.$get = function () {
+        return new function () {
+            this.templateUrls = _typeTemplateUrls;
+            this.wrapperUrls = _wrapperTemplateUrls;
+        }();
+    };
 });
 'use strict';
 
-angular.module('engine').config(function (formlyConfigProvider) {
+angular.module('engine.formly').run(function (formlyConfig, $engineFormly) {
 
-    formlyConfigProvider.setType({
+    formlyConfig.setType({
         name: 'input',
-        template: '<input class="form-control" ng-model="model[options.key]">',
+        templateUrl: $engineFormly.templateUrls['input'],
         wrapper: ['engineLabel', 'engineHasError']
     });
 
-    formlyConfigProvider.setType({
+    formlyConfig.setType({
         name: 'radio',
         templateUrl: '/src/formly/radio.html',
         wrapper: ['engineLabel', 'engineHasError'],
@@ -384,15 +464,15 @@ angular.module('engine').config(function (formlyConfigProvider) {
         // })
     });
 
-    formlyConfigProvider.setType({
+    formlyConfig.setType({
         name: 'select',
-        template: '<select class="form-control" ng-model="model[options.key]"></select>',
+        templateUrl: $engineFormly.templateUrls['select'],
         wrapper: ['engineLabel', 'engineHasError']
     });
 
-    formlyConfigProvider.setType({
+    formlyConfig.setType({
         name: 'textarea',
-        template: '<textarea class="form-control" ng-model="model[options.key]"></textarea>',
+        templateUrl: $engineFormly.templateUrls['textarea'],
         wrapper: ['engineLabel', 'engineHasError'],
         defaultOptions: {
             ngModelAttrs: {
@@ -404,51 +484,42 @@ angular.module('engine').config(function (formlyConfigProvider) {
 });
 'use strict';
 
-angular.module('engine').config(function (formlyConfigProvider) {
+angular.module('engine.formly').run(function (formlyConfig, $engineFormly) {
 
-    formlyConfigProvider.setWrapper({
+    formlyConfig.setWrapper({
         name: 'engineLabel',
-        templateUrl: '/src/formly/label.tpl.html',
+        templateUrl: $engineFormly.wrapperUrls['label'],
         // apiCheck:
         overwriteOk: true
     });
-    formlyConfigProvider.setWrapper({
+    formlyConfig.setWrapper({
         name: 'engineHasError',
-        templateUrl: '/src/formly/has-error.tpl.html',
+        templateUrl: $engineFormly.wrapperUrls['hasError'],
         overwriteOk: true
     });
-    formlyConfigProvider.setWrapper({
+    formlyConfig.setWrapper({
         name: 'category',
-        templateUrl: '/src/document/category.tpl.html'
+        templateUrl: $engineFormly.wrapperUrls['category']
     });
 });
 'use strict';
 
-angular.module('engine.list').component('engine-document-list', {
-    templateUrl: '/src/document/list.tpl.html',
-    controller: function controller($scope, $route, metrics, $engine, engineQuery, engineAction) {
-        // $scope.query = $route.current.$$route.query;
-        // $scope.caption = $route.current.$$route.options.caption;
-        // $scope.columns = $route.current.$$route.options.columns;
-        // $scope.document_type = $route.current.$$route.common_options.document_type;
-        // $scope.document_route = $route.current.$$route.common_options.document_route;
-        // $scope.list_route = $route.current.$$route.common_options.list_route;
-    },
+angular.module('engine.list').component('engineDocumentList', {
+    templateUrl: '/src/list/list.tpl.html',
+    controller: 'engineListCtrl',
     bindings: {
-        documentType: '@',
-        query: '@'
+        options: '=',
+        query: '='
     }
-}).controller('engineListCtrl', function ($scope, $route, metrics, $engine, engineQuery, engineAction) {
+}).controller('engineListWrapperCtrl', function ($scope, $route) {
+    $scope.options = $route.current.$$route.options;
+    $scope.query = $route.current.$$route.options.query;
+}).controller('engineListCtrl', function ($scope, $route, engineMetric, $engine, engineQuery, engineAction) {
     var self = this;
 
-    $scope.query = $route.current.$$route.query;
-    $scope.caption = $route.current.$$route.options.caption;
-    $scope.columns = $route.current.$$route.options.columns;
-    $scope.document_type = $route.current.$$route.common_options.document_type;
-    $scope.document_route = $route.current.$$route.common_options.document_route;
-    $scope.list_route = $route.current.$$route.common_options.list_route;
+    $scope.options = this.options;
 
-    $scope.documents = engineQuery($scope.query);
+    $scope.documents = engineQuery($scope.options.query);
 
     $scope.engineAction = function (actionId, document) {
         engineAction(actionId, document).$promise.then(function (data) {
@@ -463,7 +534,7 @@ angular.module('engine.list').component('engine-document-list', {
             if (field.caption === undefined && field.id === undefined) $scope.columns.push({ name: field });else $scope.columns.push(field);
         });
 
-        metrics($scope.document_type).$promise.then(function (data) {
+        engineMetric($scope.options.documentJSON, function (data) {
             angular.forEach(data, function (metric) {
                 $scope.columns.push({ name: metric.id, caption: metric.label });
             });
@@ -483,32 +554,35 @@ angular.module('engine.list').component('engine-document-list', {
         }
         return '/src/list/cell/text.tpl.html';
     };
-    $scope.genDocumentLink = function (document_route, document) {
-        return '#' + $scope.document_route.replace(':id', document);
+    $scope.genDocumentLink = function (document) {
+        return '#' + $scope.options.documentUrl.replace(':id', document);
     };
 });
 "use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\">{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
-}]);
-angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n\n        <div class=\"btn-group\">\n            <button class=\"btn btn-primary dark-blue-btn\" ng-click=\"changeStep(step+1)\">Next Step:</button>\n            <button class=\"btn btn-primary\" ng-click=\"changeStep(step+1)\">{{step+1}}. {{steps[step+1].name}}</button>\n            <button type=\"submit\" ng-repeat=\"action in actions\" ng-if=\"step == steps.length - 1\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n        </div>\n    </formly-form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document class=\"col-md-8\"></engine-document>\n    <engine-steps step=\"step\" steps=\"steps\" class=\"col-md-4\"></engine-steps>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document ng-model=\"document\" step=\"step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"step\" steps=\"options.document.steps\" options=\"options\" ng-change=\"changeStep(step)\" class=\"col-md-4\"></engine-steps>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/fields/datepicker.tpl.html", "<p class=\"input-group\">\n    <input  type=\"text\"\n            id=\"{{::id}}\"\n            name=\"{{::id}}\"\n            ng-model=\"model[options.key]\"\n            class=\"form-control\"\n            ng-click=\"datepicker.open($event)\"\n            uib-datepicker-popup=\"{{to.datepickerOptions.format}}\"\n            is-open=\"datepicker.opened\"\n            datepicker-options=\"to.datepickerOptions\" />\n    <span class=\"input-group-btn\">\n            <button type=\"button\" class=\"btn btn-default\" ng-click=\"datepicker.open($event)\" ng-disabled=\"to.disabled\"><i class=\"glyphicon glyphicon-calendar\"></i></button>\n        </span>\n</p>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in steps\" ng-class=\"{active: step == $index}\" class=\"ng-scope\">\n            <a href=\"\" ng-click=\"changeStep($index)\">\n                <span class=\"menu-icons\"><i class=\"fa fa-circle-o\" aria-hidden=\"true\"></i><i class=\"fa fa-check-circle\" aria-hidden=\"true\"></i></span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
+  $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.steps\" ng-class=\"{active: $ctrl.step == $index}\" class=\"ng-scope\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\"><i class=\"fa fa-circle-o\" aria-hidden=\"true\"></i><i class=\"fa fa-check-circle\" aria-hidden=\"true\"></i></span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\">{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/checkbox.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/has-error.tpl.html", "<div class=\"form-group\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n</div>\n");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/input.tpl.html", "<input class=\"form-control\" ng-model=\"model[options.key]\">");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/label.tpl.html", "<div>\n    <label for=\"{{id}}\" class=\"control-label {{to.labelSrOnly ? 'sr-only' : ''}}\" ng-if=\"to.label\">\n        {{to.label}}\n        {{to.required ? '*' : ''}}\n        <span class=\"grey-text\" ng-if=\"to.description\">({{to.description}})</span>\n    </label>\n    <formly-transclude></formly-transclude>\n</div>\n");
@@ -520,6 +594,12 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/radio.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/select.tpl.html", "<select class=\"form-control\" ng-model=\"model[options.key]\"></select>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/textarea.tpl.html", "<textarea class=\"form-control\" ng-model=\"model[options.key]\"></textarea>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{document_entry.document[column.name] | date}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
@@ -529,10 +609,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{document_entry.document[column.name]}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <!--<a href=\"\" ng-click=\"$ctrl.destroy(document_entry.document)\" class=\"table-options\">-->\n                        <!--<i class=\"fa fa-trash-o\" aria-hidden=\"true\"></i>-->\n                    <!--</a>-->\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action.id, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <!--<td><a ng-href=\"#/proposals/{{proposal.id}}\" class=\"proposal-title\">{{ proposal.title }}</a></td>-->\n        <!--<td class=\"text-center\">{{ proposal.beamline }}</td>-->\n        <!--<td class=\"text-center table-status\">{{ proposal.status }}</td>-->\n        <!--<td class=\"text-center\">{{ proposal.createdAt | date }}</td>-->\n        <!--<td class=\"text-center\"><a href=\"\" class=\"blue-button\"></a></td>-->\n\n    </div>\n</div>\n<a href=\"{{genDocumentLink(document_route, 'new')}}\" class=\"btn btn-primary\">create {{document_type}}</a>\n");
+  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <!--<a href=\"\" ng-click=\"$ctrl.destroy(document_entry.document)\" class=\"table-options\">-->\n                        <!--<i class=\"fa fa-trash-o\" aria-hidden=\"true\"></i>-->\n                    <!--</a>-->\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action.id, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <!--<td><a ng-href=\"#/proposals/{{proposal.id}}\" class=\"proposal-title\">{{ proposal.title }}</a></td>-->\n        <!--<td class=\"text-center\">{{ proposal.beamline }}</td>-->\n        <!--<td class=\"text-center table-status\">{{ proposal.status }}</td>-->\n        <!--<td class=\"text-center\">{{ proposal.createdAt | date }}</td>-->\n        <!--<td class=\"text-center\"><a href=\"\" class=\"blue-button\"></a></td>-->\n\n    </div>\n</div>\n<a href=\"{{genDocumentLink('new')}}\" class=\"btn btn-primary\">create {{options.name}}</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.wrapper.tpl.html", "<engine-document-list query=\"{{query}}\"></engine-document-list>");
+  $templateCache.put("/src/list/list.wrapper.tpl.html", "<engine-document-list query=\"query\" options=\"options\"></engine-document-list>");
 }]);
 
 //# sourceMappingURL=templates.js.map
