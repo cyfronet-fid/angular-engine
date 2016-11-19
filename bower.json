@@ -42,7 +42,8 @@
     "angular-resource": "^1.5.8",
     "angular-animate": "^1.5.8",
     "angular-formly": "^8.4.0",
-    "api-check": "^7.5.5"
+    "api-check": "^7.5.5",
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
     "angular-mocks": "^1.5.8"

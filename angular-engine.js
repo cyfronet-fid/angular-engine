@@ -87,6 +87,8 @@ angular.module('engine.document').component('engineDocument', {
     var self = this;
     console.log($scope);
 
+    $scope.steps = this.options.document.steps;
+
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null ? [] : $scope.steps[$scope.step].categories || [];
 
@@ -163,6 +165,8 @@ angular.module('engine.document').component('engineDocument', {
                     field.templateOptions.options = engineOptionsToFormly(metric.options);
                 } else if (metric.visualClass.indexOf('date') != -1 && metric.inputType == 'DATE') {
                     field.type = 'datepicker';
+                } else if (_.contains(metric.visualClass, 'checkbox')) {
+                    field.type = 'checkbox';
                 } else if (metric.inputType == 'NUMBER') {} else if (metric.inputType == 'TEXTAREA') {
                     field.type = "textarea";
                     field.templateOptions = {
@@ -440,12 +444,19 @@ angular.module('engine.formly').provider('$engineFormly', function () {
 });
 'use strict';
 
-angular.module('engine.formly').run(function (formlyConfig, $engineFormly) {
+angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engine) {
+    var _apiCheck = $engine.apiCheck;
 
     formlyConfig.setType({
         name: 'input',
         templateUrl: $engineFormly.templateUrls['input'],
         wrapper: ['engineLabel', 'engineHasError']
+    });
+
+    formlyConfig.setType({
+        name: 'checkbox',
+        templateUrl: $engineFormly.templateUrls['checkbox'],
+        wrapper: ['engineHasError']
     });
 
     formlyConfig.setType({
@@ -455,19 +466,22 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly) {
         defaultOptions: {
             noFormControl: false
         }
-        // apiCheck: check => ({
-        // templateOptions: {
-        //     options: check.arrayOf(check.object),
-        //     labelProp: check.string.optional,
-        //     valueProp: check.string.optional
-        // }
-        // })
     });
 
     formlyConfig.setType({
         name: 'select',
         templateUrl: $engineFormly.templateUrls['select'],
-        wrapper: ['engineLabel', 'engineHasError']
+        wrapper: ['engineLabel', 'engineHasError'],
+        defaultOptions: function defaultOptions(options) {
+            var ngOptions = options.templateOptions.ngOptions || "option[to.valueProp || 'value'] as option[to.labelProp || 'name'] group by option[to.groupProp || 'group'] for option in to.options";
+            var _options = {
+                ngModelAttrs: {}
+            };
+
+            _options.ngModelAttrs[ngOptions] = { value: options.templateOptions.optionsAttr || 'ng-options' };
+
+            return _options;
+        }
     });
 
     formlyConfig.setType({
@@ -576,7 +590,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\">{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/checkbox.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
+  $templateCache.put("/src/formly/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/has-error.tpl.html", "<div class=\"form-group\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n</div>\n");
@@ -588,7 +602,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/label.tpl.html", "<div>\n    <label for=\"{{id}}\" class=\"control-label {{to.labelSrOnly ? 'sr-only' : ''}}\" ng-if=\"to.label\">\n        {{to.label}}\n        {{to.required ? '*' : ''}}\n        <span class=\"grey-text\" ng-if=\"to.description\">({{to.description}})</span>\n    </label>\n    <formly-transclude></formly-transclude>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/multiCheckbox.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"checkbox\">\n    <label>\n      <input type=\"checkbox\"\n             id=\"{{id + '_'+ $index}}\"\n             ng-model=\"multiCheckbox.checked[$index]\"\n             ng-change=\"multiCheckbox.change()\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
+  $templateCache.put("/src/formly/multiCheckbox.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"checkbox\">\n    <label>\n      <input type=\"checkbox\"\n             id=\"{{id + '_'+ $index}}\"\n             ng-model=\"multiCheckbox.checked[$index]\"\n             ng-change=\"multiCheckbox.change()\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/radio.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");

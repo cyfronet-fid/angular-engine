@@ -23,6 +23,8 @@ angular.module('engine.document')
     var self = this;
     console.log($scope);
 
+    $scope.steps = this.options.document.steps;
+
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null ? [] : $scope.steps[$scope.step].categories || [];
 
@@ -104,6 +106,9 @@ angular.module('engine.document')
                 }
                 else if(metric.visualClass.indexOf('date') != -1 && metric.inputType == 'DATE') {
                     field.type = 'datepicker';
+                }
+                else if(_.contains(metric.visualClass, 'checkbox')) {
+                    field.type = 'checkbox';
                 }
                 else if(metric.inputType == 'NUMBER') {
 

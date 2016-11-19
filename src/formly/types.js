@@ -1,5 +1,6 @@
 angular.module('engine.formly')
-    .run(function (formlyConfig, $engineFormly) {
+    .run(function (formlyConfig, $engineFormly, $engine) {
+        var _apiCheck = $engine.apiCheck;
 
         formlyConfig.setType({
             name: 'input',
@@ -8,17 +9,23 @@ angular.module('engine.formly')
         });
 
         formlyConfig.setType({
+            name: 'checkbox',
+            templateUrl: $engineFormly.templateUrls['checkbox'],
+            wrapper: ['engineHasError']
+        });
+
+        formlyConfig.setType({
                 name: 'radio',
                 templateUrl: '/src/formly/radio.html',
                 wrapper: ['engineLabel', 'engineHasError'],
                 defaultOptions: {
                     noFormControl: false
-                }
-                // apiCheck: check => ({
+                },
+                // apiCheck: _apiCheck({
                 // templateOptions: {
-                //     options: check.arrayOf(check.object),
-                //     labelProp: check.string.optional,
-                //     valueProp: check.string.optional
+                //     options: _apiCheck.arrayOf(_apiCheck.object),
+                //     labelProp: _apiCheck.string.optional,
+                //     valueProp: _apiCheck.string.optional
                 // }
             // })
         });
@@ -27,17 +34,17 @@ angular.module('engine.formly')
                 name: 'select',
                 templateUrl: $engineFormly.templateUrls['select'],
                 wrapper: ['engineLabel', 'engineHasError'],
-                // defaultOptions(options) {
-                    /* jshint maxlen:195 */
-                    // let ngOptions = options.templateOptions.ngOptions || 'option[to.valueProp || 'value'] as option[to.labelProp || 'name'] group by option[to.groupProp || 'group'] for option in to.options;
-                    // return {
-                    //     ngModelAttrs: {
-                    //         [ngOptions]: {
-                    //             value: options.templateOptions.optionsAttr || 'ng-options'
-                    //         }
-                    //     }
-                    // };
-                // },
+                defaultOptions: function(options) {
+                    var ngOptions = options.templateOptions.ngOptions || "option[to.valueProp || 'value'] as option[to.labelProp || 'name'] group by option[to.groupProp || 'group'] for option in to.options";
+                    var _options = {
+                        ngModelAttrs: {
+                        }
+                    };
+
+                    _options.ngModelAttrs[ngOptions] = {value: options.templateOptions.optionsAttr || 'ng-options'};
+
+                    return _options;
+                },
                 // apiCheck: check => ({
                 // templateOptions: {
                 //     options: check.arrayOf(check.object),
