@@ -68,19 +68,66 @@ angular.module('engine.formly', []);
 angular.module('engine.list', ['ngRoute']);
 'use strict';
 
+angular.module('engine.common').constant('ENGINE_SAVE_ACTIONS', ['CREATE', 'UPDATE']);
+'use strict';
+
+angular.module('engine.common').factory('DocumentEventCtx', function () {
+    return function (document, action, options) {
+        this.document = document;
+        this.action = document;
+        this.options = options;
+    };
+}).factory('ErrorEventCtx', function () {
+    return function (errorId, errorMessage) {
+        this.errorId = errorId;
+        this.errorMessage = errorMessage;
+    };
+}).factory('engineActionUtils', function ($rootScope, ErrorEventCtx, ENGINE_SAVE_ACTIONS) {
+    var isSaveAction = function isSaveAction(action) {
+        if (_.contains(ENGINE_SAVE_ACTIONS, action.type)) return true;
+    };
+
+    var getCreateUpdateAction = function getCreateUpdateAction(actions) {
+        for (var i = 0; i < actions.length; ++i) {
+            var action = actions[i];
+            if (isSaveAction(action)) {
+                return action;
+            }
+        }
+        $rootScope.$broadcast('engine.common.error', new ErrorEventCtx('noCreateUpdateAction', 'Document has no available create / update action, angular-engine framework requires that at least one update and one create action is specified'));
+    };
+
+    return {
+        getCreateUpdateAction: getCreateUpdateAction,
+        isSaveAction: isSaveAction
+    };
+});
+'use strict';
+
 angular.module('engine.common').component('engineDocumentActions', {
     templateUrl: '/src/common/document-actions/document-actions.tpl.html',
-    controller: function controller($timeout, engineAction) {
+    controller: function controller($timeout, $rootScope, engineAction, $scope, DocumentEventCtx, ErrorEventCtx, ENGINE_SAVE_ACTIONS, $log) {
         var self = this;
 
-        this.engineAction = engineAction;
+        if (!this.documentScope) {
+            $log.warn('engineDocumentActions document-scope argument not specified, using local $scope, which may be not what you want');
+            this._documentScope = $scope;
+        } else this._documentScope = this.documentScope;
+
+        this.engineAction = function (action) {
+            $scope.$emit('engine.common.action.invoke', action, self.document);
+        };
 
         this.changeStep = function (newStep) {
-            self.step = newStep;
-            $timeout(self.stepChange);
+            $scope.$emit('engine.common.step.change', newStep, self.document);
+            // self.engineAction(self.getCreateUpdateAction(), self.document, function () {
+            //     self.step = newStep;
+            // $timeout(self.stepChange);
+            // });
         };
     },
     bindings: {
+        documentScope: '=',
         document: '=',
         options: '=',
         actions: '=',
@@ -97,31 +144,41 @@ angular.module('engine.document').component('engineDocument', {
         ngModel: '=',
         options: '=',
         steps: '=',
-        step: '='
+        step: '=',
+        documentId: '@'
     }
 }).controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
     $scope.options = $route.current.$$route.options;
     $scope.steps = $route.current.$$route.options.document.steps || null;
     $scope.step = parseInt($routeParams.step) || 0;
     $scope.document = {};
+    $scope.documentId = $routeParams.id;
 
     $scope.changeStep = function (step) {
-        $location.search({ step: step });
+        $scope.$broadcast('engine.common.step.before', step);
     };
-}).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location) {
+}).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction) {
     var self = this;
     console.log($scope);
-
+    $scope.documentScope = $scope;
+    $scope.document = {};
     $scope.steps = this.options.document.steps;
 
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null || angular.isArray($scope.steps) && $scope.steps.length == 0 ? [] : $scope.steps[$scope.step].categories || [];
 
-    if ($scope.documentId && $scope.documentId != 'new') {
-        $scope.document = engineDocument.get($scope.documentId);
+    if (self.documentId && self.documentId != 'new') {
+        $scope.document = angular.copy(self.options.documentJSON);
+        engineDocument.get(self.documentId, function (data) {
+            // $scope.document = data.document;
+            $scope.actions = engineActionsAvailable($scope.document);
+        });
     } else {
-        engineActionsAvailable(self.options.documentJSON);
+        $scope.document = angular.copy(self.options.documentJSON);
+        $scope.actions = engineActionsAvailable($scope.document);
     }
+
+    this.onChange = function () {};
 
     $scope.isLastStep = function (step) {
         if ($scope.steps == null || parseInt(step) == $scope.steps.length) return true;
@@ -170,6 +227,7 @@ angular.module('engine.document').component('engineDocument', {
             // console.log(metric)
             if ($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
                 var field = {
+                    model: $scope.document.metrics,
                     key: metric.id,
                     type: 'input',
                     className: metric.visualClass.join(' '),
@@ -191,7 +249,9 @@ angular.module('engine.document').component('engineDocument', {
                     field.type = 'datepicker';
                 } else if (_.contains(metric.visualClass, 'checkbox')) {
                     field.type = 'checkbox';
-                } else if (metric.inputType == 'NUMBER') {} else if (metric.inputType == 'TEXTAREA') {
+                } else if (metric.inputType == 'NUMBER') {
+                    field.type = 'input';
+                } else if (metric.inputType == 'TEXTAREA') {
                     field.type = "textarea";
                     field.templateOptions = {
                         "placeholder": "",
@@ -201,17 +261,17 @@ angular.module('engine.document').component('engineDocument', {
                         "rows": 4,
                         "cols": 15
                     };
-                } else if (metric.inputType == 'COMPONENT') {
-                    field = { template: '<' + metric.componentType + ' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="' + metric.visualClass + '">' + '</' + metric.componentType + '>',
+                } else if (metric.inputType == 'EXTERNAL') {
+                    field = { template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '">' + '</' + metric.externalType + '>',
                         templateOptions: { ngModel: $scope.document, options: self.options } };
                 } else if (metric.inputType == 'QUERIED_LIST') {
                     field.type = undefined;
-                    field = { template: '<engine-document-list form-widget="true" options="options.templateOptions.options"></engine-document-list>', templateOptions: { options: $engine.getOptions(metric.modelId) } };
+                    field.model = undefined;
+                    field = { template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '"></engine-document-list>', templateOptions: { options: $engine.getOptions(metric.modelId) } };
                 }
 
-                if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: metric.categoryId }, fieldGroup: [],
-                    wrapper: 'category' };
-                if (metric.label == 'labFinancialSupport') console.log(metric);
+                if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: metric.categoryId }, fieldGroup: [], wrapper: 'category' };
+
                 categories[metric.categoryId].fieldGroup.push(field);
             }
         });
@@ -223,12 +283,65 @@ angular.module('engine.document').component('engineDocument', {
         });
     });
 
-    $scope.onChangeStep = function (newStep) {
-        $routeParams.step = newStep;
-        $location.search({ step: newStep });
+    $scope.saveDocument = function (onSuccess, onError) {
+
+        var saveAction = engineActionUtils.getCreateUpdateAction($scope.actions);
+
+        self.engineAction(saveAction, $scope.document, function (data) {
+            if (onSuccess) onSuccess(data);
+
+            $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
+        }, onError);
     };
 
-    $scope.document = {};
+    $scope.onChangeStep = function (newStep) {
+        $scope.saveDocument(function () {
+            $routeParams.step = newStep;
+            $location.search({ step: newStep });
+        });
+    };
+
+    this.engineAction = function (action, document, callback, errorCallback) {
+
+        var actionId = action.id;
+
+        var eventBeforeAction = $scope.$broadcast('engine.common.action.before', new DocumentEventCtx(document, action));
+
+        if (eventBeforeAction.defaultPrevented) return;
+
+        if (engineActionUtils.isSaveAction(action)) {
+            var eventBeforeSave = $scope.$broadcast('engine.common.save.before', new DocumentEventCtx(document, action));
+
+            if (eventBeforeSave.defaultPrevented) return;
+        }
+
+        engineAction(actionId, document, function (data) {
+            $scope.$broadcast('engine.common.action.after', new DocumentEventCtx(document, action));
+
+            if (engineActionUtils.isSaveAction(action)) $scope.$broadcast('engine.common.save.after', new DocumentEventCtx(document, action));
+
+            if (callback) callback(data);
+        }, function (response) {
+            $scope.$broadcast('engine.common.action.error', new DocumentEventCtx(document, response));
+
+            if (engineActionUtils.isSaveAction(action)) $scope.$broadcast('engine.common.save.error', new DocumentEventCtx(document, action));
+
+            if (errorCallback) errorCallback(response);
+        });
+    };
+
+    this.changeStep = function (newStep) {
+        self.engineAction(self.getCreateUpdateAction(), self.document, function () {
+            self.step = newStep;
+            $timeout(self.stepChange);
+        });
+    };
+
+    $scope.$on('engine.common.step.before', function (event, newStep) {
+        $scope.onChangeStep(newStep);
+    });
+
+    $scope.$on('engine.common.action.invoke', function (event, action, document) {});
 });
 'use strict';
 
@@ -317,7 +430,9 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
 
         options.documentModelType = documentModelType;
         options.listUrl = listUrl;
+        options.list.url = listUrl;
         options.documentUrl = documentUrl;
+        options.document.url = documentUrl;
         options.query = query;
         options.subdocument = false;
 
@@ -378,6 +493,15 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
 
                 return documents_d[documentModelId] || {};
             };
+
+            this.pathToDocument = function (options, documentId) {
+                _apiCheck([_apiCheck.object, _apiCheck.string.optional], arguments);
+
+                if (!document) {
+                    return options.document.documentUrl.replace(':id', 'new');
+                }
+                return options.document.url.replace(':id', documentId);
+            };
         }();
     };
 });
@@ -411,7 +535,7 @@ angular.module('engine').service('engineQuery', function ($engine, $resource, En
     return function (document, callback, errorCallback) {
         $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-        return _action.post({}, document, callback, errorCallback);
+        return _action.post({ documentId: document.id }, document, callback, errorCallback);
     };
 }).service('engineAction', function ($engine, $resource, EngineInterceptor) {
     var _action = $resource($engine.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', { actionId: '@actionId', documentId: '@documentId' }, {
@@ -424,8 +548,8 @@ angular.module('engine').service('engineQuery', function ($engine, $resource, En
         return _action.post({ actionId: actionId, documentId: document.id }, document, callback, errorCallback);
     };
 }).service('engineDocument', function ($engine, $resource, EngineInterceptor) {
-    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId', { documentId: '@documentId' }, {
-        get: { method: 'GET', transformResponse: EngineInterceptor.response }
+    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', { documentId: '@documentId' }, {
+        get: { method: 'POST', transformResponse: EngineInterceptor.response }
     });
 
     return { get: function get(documentId, callback, errorCallback) {
@@ -650,16 +774,16 @@ angular.module('engine.list').component('engineDocumentList', {
 "use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep(step+1)\">Next Step:</button>\n<button class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep(step+1)\">{{step+2}}. {{steps[step+1].name}}</button>\n<button type=\"submit\" ng-repeat=\"action in actions\" ng-if=\"!steps || step == steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action.id, document)\">{{action.label}}</button>");
+  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep(step+1)\">Next Step:</button>\n<button class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep(step+1)\">{{step+2}}. {{steps[step+1].name}}</button>\n<button type=\"submit\" ng-repeat=\"action in actions\" ng-if=\"!steps || step == steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action)\">{{action.label}}</button>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\">Anuluj</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n        <engine-document-actions ng-if=\"!$ctrl.options.subdocument\" step=\"step\" step-change=\"onChangeStep(step)\" actions=\"actions\" class=\"btn-group\"></engine-document-actions>\n    </formly-form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n        <engine-document-actions ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" step=\"step\" step-change=\"onChangeStep(step)\" actions=\"actions\" class=\"btn-group\"></engine-document-actions>\n    </formly-form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document ng-model=\"document\" step=\"step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"step\" steps=\"options.document.steps\" options=\"options\" ng-change=\"changeStep(step)\" class=\"col-md-4\"></engine-steps>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"step\" steps=\"options.document.steps\" options=\"options\" ng-change=\"changeStep(step)\" class=\"col-md-4\"></engine-steps>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/fields/datepicker.tpl.html", "<p class=\"input-group\">\n    <input  type=\"text\"\n            id=\"{{::id}}\"\n            name=\"{{::id}}\"\n            ng-model=\"model[options.key]\"\n            class=\"form-control\"\n            ng-click=\"datepicker.open($event)\"\n            uib-datepicker-popup=\"{{to.datepickerOptions.format}}\"\n            is-open=\"datepicker.opened\"\n            datepicker-options=\"to.datepickerOptions\" />\n    <span class=\"input-group-btn\">\n            <button type=\"button\" class=\"btn btn-default\" ng-click=\"datepicker.open($event)\" ng-disabled=\"to.disabled\"><i class=\"glyphicon glyphicon-calendar\"></i></button>\n        </span>\n</p>");

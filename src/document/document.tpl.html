@@ -1,6 +1,6 @@
 <div>
     <formly-form model="document" fields="documentFields" class="horizontal">
 
-        <engine-document-actions ng-if="!$ctrl.options.subdocument" step="step" step-change="onChangeStep(step)" actions="actions" class="btn-group"></engine-document-actions>
+        <engine-document-actions ng-if="!$ctrl.options.subdocument" document="document" document-scope="documentScope" step="step" step-change="onChangeStep(step)" actions="actions" class="btn-group"></engine-document-actions>
     </formly-form>
 </div>

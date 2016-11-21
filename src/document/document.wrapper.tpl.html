@@ -1,5 +1,5 @@
 <div>
     <h1>CREATE {{ options.name }}: <span class="bold">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>
-    <engine-document ng-model="document" step="step" options="options" class="col-md-8"></engine-document>
+    <engine-document document-id="{{::documentId}}" ng-model="document" step="step" options="options" class="col-md-8"></engine-document>
     <engine-steps ng-model="document" step="step" steps="options.document.steps" options="options" ng-change="changeStep(step)" class="col-md-4"></engine-steps>
 </div>

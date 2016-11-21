@@ -6,7 +6,8 @@ angular.module('engine.document')
         ngModel: '=',
         options: '=',
         steps: '=',
-        step: '='
+        step: '=',
+        documentId: '@'
     }
 })
 .controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
@@ -14,26 +15,37 @@ angular.module('engine.document')
     $scope.steps = $route.current.$$route.options.document.steps || null;
     $scope.step = parseInt($routeParams.step) || 0;
     $scope.document = {};
+    $scope.documentId = $routeParams.id;
 
     $scope.changeStep = function (step) {
-        $location.search({step: step})
+        $scope.$broadcast('engine.common.step.before', step);
     }
 })
-.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location) {
+.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction) {
     var self = this;
     console.log($scope);
-
+    $scope.documentScope = $scope;
+    $scope.document = {};
     $scope.steps = this.options.document.steps;
 
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null || (angular.isArray($scope.steps) && $scope.steps.length == 0) ? [] : $scope.steps[$scope.step].categories || [];
 
-    if($scope.documentId && $scope.documentId != 'new') {
-        $scope.document = engineDocument.get($scope.documentId);
+    if(self.documentId && self.documentId != 'new') {
+        $scope.document = angular.copy(self.options.documentJSON);
+        engineDocument.get(self.documentId, function (data) {
+            // $scope.document = data.document;
+            $scope.actions = engineActionsAvailable($scope.document);
+        });
     }
     else {
-        engineActionsAvailable(self.options.documentJSON);
+        $scope.document = angular.copy(self.options.documentJSON);
+        $scope.actions = engineActionsAvailable($scope.document);
     }
+
+    this.onChange = function () {
+
+    };
 
     $scope.isLastStep = function (step) {
         if($scope.steps == null || parseInt(step) == $scope.steps.length)
@@ -85,6 +97,7 @@ angular.module('engine.document')
             // console.log(metric)
             if($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
                 var field = {
+                    model: $scope.document.metrics,
                     key: metric.id,
                     type: 'input',
                     className: metric.visualClass.join(' '),
@@ -111,7 +124,7 @@ angular.module('engine.document')
                     field.type = 'checkbox';
                 }
                 else if(metric.inputType == 'NUMBER') {
-
+                    field.type = 'input';
                 }
                 else if(metric.inputType == 'TEXTAREA') {
                     field.type = "textarea";
@@ -124,20 +137,19 @@ angular.module('engine.document')
                         "cols": 15
                     }
                 }
-                else if(metric.inputType == 'COMPONENT') {
-                    field = {template: '<'+metric.componentType+' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="'+metric.visualClass+'">'+'</'+metric.componentType+'>',
+                else if(metric.inputType == 'EXTERNAL') {
+                    field = {template: '<'+metric.externalType+' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'">'+'</'+metric.externalType+'>',
                              templateOptions: {ngModel: $scope.document, options: self.options}}
                 }
                 else if(metric.inputType == 'QUERIED_LIST') {
                     field.type = undefined;
-                    field = {template: '<engine-document-list form-widget="true" options="options.templateOptions.options"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
+                    field.model = undefined;
+                    field = {template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
                 }
 
                 if(categories[metric.categoryId] == undefined)
-                    categories[metric.categoryId] = {templateOptions: {wrapperClass: categoryClass, label: metric.categoryId}, fieldGroup: [],
-                        wrapper: 'category'};
-                if(metric.label == 'labFinancialSupport')
-                    console.log(metric);
+                    categories[metric.categoryId] = {templateOptions: {wrapperClass: categoryClass, label: metric.categoryId}, fieldGroup: [], wrapper: 'category'};
+
                 categories[metric.categoryId].fieldGroup.push(field);
 
             }
@@ -151,10 +163,80 @@ angular.module('engine.document')
 
     });
 
-    $scope.onChangeStep = function (newStep) {
-        $routeParams.step = newStep;
-        $location.search({step: newStep})
+    $scope.saveDocument = function(onSuccess, onError){
+
+
+        var saveAction = engineActionUtils.getCreateUpdateAction($scope.actions);
+
+
+        self.engineAction(saveAction, $scope.document, function (data) {
+            if(onSuccess)
+                onSuccess(data);
+
+            $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
+
+        }, onError);
     };
 
-    $scope.document = {};
+    $scope.onChangeStep = function (newStep) {
+        $scope.saveDocument(function () {
+            $routeParams.step = newStep;
+            $location.search({step: newStep})
+        });
+    };
+
+
+
+    this.engineAction = function (action, document, callback, errorCallback) {
+
+        var actionId = action.id;
+
+        var eventBeforeAction = $scope.$broadcast('engine.common.action.before', new DocumentEventCtx(document, action));
+
+        if(eventBeforeAction.defaultPrevented)
+            return;
+
+        if(engineActionUtils.isSaveAction(action)){
+            var eventBeforeSave = $scope.$broadcast('engine.common.save.before', new DocumentEventCtx(document, action));
+
+            if(eventBeforeSave.defaultPrevented)
+                return;
+        }
+
+        engineAction(actionId, document, function (data) {
+            $scope.$broadcast('engine.common.action.after', new DocumentEventCtx(document, action));
+
+            if(engineActionUtils.isSaveAction(action))
+                $scope.$broadcast('engine.common.save.after', new DocumentEventCtx(document, action));
+
+            if(callback)
+                callback(data);
+
+        }, function (response) {
+            $scope.$broadcast('engine.common.action.error', new DocumentEventCtx(document, response));
+
+            if(engineActionUtils.isSaveAction(action))
+                $scope.$broadcast('engine.common.save.error', new DocumentEventCtx(document, action));
+
+            if(errorCallback)
+                errorCallback(response);
+        });
+    };
+
+
+    this.changeStep = function (newStep) {
+        self.engineAction(self.getCreateUpdateAction(), self.document, function () {
+            self.step = newStep;
+            $timeout(self.stepChange);
+        });
+    };
+
+    $scope.$on('engine.common.step.before', function (event, newStep) {
+        $scope.onChangeStep(newStep);
+    });
+
+    $scope.$on('engine.common.action.invoke', function (event, action, document) {
+
+    });
+
 });

@@ -41,7 +41,9 @@ angular.module('engine')
 
         options.documentModelType = documentModelType;
         options.listUrl = listUrl;
+        options.list.url = listUrl;
         options.documentUrl = documentUrl;
+        options.document.url = documentUrl;
         options.query = query;
         options.subdocument = false;
 
@@ -107,6 +109,15 @@ angular.module('engine')
 
                 return documents_d[documentModelId] || {}
             };
+
+            this.pathToDocument = function(options, documentId) {
+                _apiCheck([_apiCheck.object, _apiCheck.string.optional], arguments);
+
+                if(!document) {
+                    return options.document.documentUrl.replace(':id', 'new');
+                }
+                return options.document.url.replace(':id', documentId);
+            }
         };
     };
 

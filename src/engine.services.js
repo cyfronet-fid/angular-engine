@@ -29,7 +29,7 @@ angular.module('engine')
     return function (document, callback, errorCallback) {
         $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-        return _action.post({}, document, callback, errorCallback);
+        return _action.post({documentId: document.id}, document, callback, errorCallback);
     }
 })
 .service('engineAction', function ($engine, $resource, EngineInterceptor) {
@@ -44,9 +44,9 @@ angular.module('engine')
     }
 })
 .service('engineDocument', function ($engine, $resource, EngineInterceptor) {
-    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId', {documentId: '@documentId'},
+    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', {documentId: '@documentId'},
         {
-            get: {method: 'GET', transformResponse: EngineInterceptor.response}
+            get: {method: 'POST', transformResponse: EngineInterceptor.response},
         });
 
     return {get: function (documentId, callback, errorCallback) {
