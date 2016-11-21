@@ -562,7 +562,7 @@ angular.module('engine.list').component('engineDocumentList', {
 }).controller('engineListWrapperCtrl', function ($scope, $route) {
     $scope.options = $route.current.$$route.options;
     $scope.query = $route.current.$$route.options.query;
-}).controller('engineListCtrl', function ($scope, $route, engineMetric, $engine, engineQuery, engineAction, DocumentModal) {
+}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, DocumentModal) {
     var self = this;
 
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -607,7 +607,7 @@ angular.module('engine.list').component('engineDocumentList', {
         return '/src/list/cell/text.tpl.html';
     };
     $scope.genDocumentLink = function (document) {
-        return '#' + $scope.options.documentUrl.replace(':id', document);
+        return $scope.options.documentUrl.replace(':id', document);
     };
     $scope.onCreateDocument = function () {
         if ($scope.options.subdocument == true) DocumentModal($scope.options);else $location.path($scope.genDocumentLink('new'));
@@ -661,7 +661,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{document_entry.document[column.name] | date}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"{{genDocumentLink(document_route, document_entry.document.id)}}\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
+  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"#{{genDocumentLink(document_route, document_entry.document.id)}}\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{document_entry.document[column.name]}}");
