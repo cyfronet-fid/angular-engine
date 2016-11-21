@@ -178,7 +178,8 @@ angular.module('engine.document').component('engineDocument', {
                         "cols": 15
                     };
                 } else if (metric.inputType == 'COMPONENT') {
-                    field = { template: '<' + metric.componentType + '>' + '</' + metric.componentType + '>', templateOptions: { ngModel: $scope.document } };
+                    field = { template: '<' + metric.componentType + ' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="' + metric.visualClass + '">' + '</' + metric.componentType + '>',
+                        templateOptions: { ngModel: $scope.document, options: self.options } };
                 } else if (metric.inputType == 'QUERIED_LIST') {
                     field.type = undefined;
                     field = { template: '<engine-document-list form-widget="true" options="options.templateOptions.options"></engine-document-list>', templateOptions: { options: $engine.getOptions(metric.modelId) } };
