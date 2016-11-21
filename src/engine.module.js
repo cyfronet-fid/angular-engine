@@ -4,6 +4,7 @@ angular.module('engine',
     'formly',
     'engine.formly',
     'ui.bootstrap',
+    'engine.common',
     'engine.list',
     'engine.steps',
     'engine.document'])

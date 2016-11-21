@@ -9,7 +9,7 @@ angular.module('engine.document')
         step: '='
     }
 })
-.controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, engineAction) {
+.controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
     $scope.options = $route.current.$$route.options;
     $scope.steps = $route.current.$$route.options.document.steps || null;
     $scope.step = parseInt($routeParams.step) || 0;
@@ -19,7 +19,7 @@ angular.module('engine.document')
         $location.search({step: step})
     }
 })
-.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineAction, engineDocument, $location) {
+.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location) {
     var self = this;
     console.log($scope);
 
@@ -31,10 +31,9 @@ angular.module('engine.document')
     if($scope.documentId && $scope.documentId != 'new') {
         $scope.document = engineDocument.get($scope.documentId);
     }
-
-    $scope.engineAction = function (actionId, document) {
-        engineAction(actionId, document);
-    };
+    else {
+        engineActionsAvailable(self.options.documentJSON);
+    }
 
     $scope.isLastStep = function (step) {
         if($scope.steps == null || parseInt(step) == $scope.steps.length)
@@ -90,8 +89,9 @@ angular.module('engine.document')
                     type: 'input',
                     className: metric.visualClass.join(' '),
                      templateOptions: {
-                         type: 'text',
+                        type: 'text',
                         label: metric.label,
+                        description: metric.description,
                         placeholder: 'Enter '+metric.label
                      }
                 };
@@ -151,11 +151,10 @@ angular.module('engine.document')
 
     });
 
-    $scope.document = {};
-
-
-    $scope.changeStep = function (newStep) {
+    $scope.onChangeStep = function (newStep) {
         $routeParams.step = newStep;
         $location.search({step: newStep})
-    }
+    };
+
+    $scope.document = {};
 });

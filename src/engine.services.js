@@ -21,15 +21,26 @@ angular.module('engine')
         return _query.post(documentJSON, callback, errorCallback);
     }
 })
+.service('engineActionsAvailable', function ($engine, $resource, EngineInterceptor) {
+    var _action = $resource($engine.baseUrl+'/action/available?documentId=:documentId', {documentId: '@id'}, {
+        post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
+    });
+
+    return function (document, callback, errorCallback) {
+        $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+
+        return _action.post({}, document, callback, errorCallback);
+    }
+})
 .service('engineAction', function ($engine, $resource, EngineInterceptor) {
     var _action = $resource($engine.baseUrl+'/action/invoke?documentId=:documentId&actionId=:actionId', {actionId: '@actionId', documentId: '@documentId'}, {
         post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: false}
     });
-    
-    return function (actionId, document, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
 
-        return _action.post({actionId: actionId, documentId: document.id, statesAndmetrics: {metrics: document.metrics}}, callback);
+    return function (actionId, document, callback, errorCallback) {
+        $engine.apiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+
+        return _action.post({actionId: actionId, documentId: document.id}, document, callback, errorCallback);
     }
 })
 .service('engineDocument', function ($engine, $resource, EngineInterceptor) {

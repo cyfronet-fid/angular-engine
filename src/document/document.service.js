@@ -11,7 +11,7 @@ angular.module('engine.document')
                         $uibModalInstance.close()
                     };
                 },
-                size: 'md',
+                size: 'lg',
                 resolve: {
                     documentOptions: function () {
                         return documentOptions;
