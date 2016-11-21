@@ -84,8 +84,4 @@ angular.module('engine',
             return chr ? chr.toLowerCase() : '';
         });
     }
-
-
-
-
 });

@@ -19,14 +19,14 @@ angular.module('engine.document')
         $location.search({step: step})
     }
 })
-.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, engineAction, engineDocument, $location) {
+.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineAction, engineDocument, $location) {
     var self = this;
     console.log($scope);
 
     $scope.steps = this.options.document.steps;
 
     $scope.step = this.step;
-    $scope.currentCategories = $scope.steps == null ? [] : $scope.steps[$scope.step].categories || [];
+    $scope.currentCategories = $scope.steps == null || (angular.isArray($scope.steps) && $scope.steps.length == 0) ? [] : $scope.steps[$scope.step].categories || [];
 
     if($scope.documentId && $scope.documentId != 'new') {
         $scope.document = engineDocument.get($scope.documentId);
@@ -96,15 +96,15 @@ angular.module('engine.document')
                      }
                 };
 
-                if(metric.visualClass.indexOf('select') != -1) {
+                if(_.contains(metric.visualClass, 'select')) {
                     field.type = 'select';
                     field.templateOptions.options = engineOptionsToFormly(metric.options);
                 }
-                else if(metric.visualClass.indexOf('radioGroup') != -1) {
+                else if(_.contains(metric.visualClass, 'radioGroup')) {
                     field.type = 'radio';
                     field.templateOptions.options = engineOptionsToFormly(metric.options);
                 }
-                else if(metric.visualClass.indexOf('date') != -1 && metric.inputType == 'DATE') {
+                else if(_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
                     field.type = 'datepicker';
                 }
                 else if(_.contains(metric.visualClass, 'checkbox')) {
@@ -129,7 +129,7 @@ angular.module('engine.document')
                 }
                 else if(metric.inputType == 'QUERIED_LIST') {
                     field.type = undefined;
-                    field = {template: '<engine-document-list query="'+metric.queryId+'" options="options"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
+                    field = {template: '<engine-document-list form-widget="true" options="options.templateOptions.options"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
                 }
 
                 if(categories[metric.categoryId] == undefined)

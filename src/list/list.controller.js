@@ -4,17 +4,22 @@ angular.module('engine.list')
     controller: 'engineListCtrl',
     bindings: {
         options: '=',
-        query: '='
+        query: '=',
+        formWidget: '@'
     }
 })
 .controller('engineListWrapperCtrl', function ($scope, $route) {
     $scope.options = $route.current.$$route.options;
     $scope.query = $route.current.$$route.options.query;
 })
-.controller('engineListCtrl', function ($scope, $route, engineMetric, $engine, engineQuery, engineAction) {
+.controller('engineListCtrl', function ($scope, $route, engineMetric, $engine, engineQuery, engineAction, DocumentModal) {
     var self = this;
 
+    //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
+    this.formWidget = this.formWidget === 'true';
+
     $scope.options = this.options;
+    $scope.columns = $scope.options.list.columns;
 
     $scope.documents = engineQuery($scope.options.query);
 
@@ -57,6 +62,13 @@ angular.module('engine.list')
     };
     $scope.genDocumentLink = function(document) {
         return '#' + $scope.options.documentUrl.replace(':id', document);
+    };
+    $scope.onCreateDocument = function() {
+        if($scope.options.subdocument == true)
+            DocumentModal($scope.options);
+        else
+            $location.path($scope.genDocumentLink('new'));
+
     };
 
 });

@@ -31,7 +31,7 @@ angular.module('engine')
             },
             document: {
                 templateUrl: '/src/document/document.wrapper.tpl.html',
-                steps: []
+                steps: null
             }
         };
 
