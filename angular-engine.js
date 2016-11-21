@@ -132,6 +132,7 @@ angular.module('engine.common').component('engineDocumentActions', {
         options: '=',
         actions: '=',
         step: '=',
+        steps: '=',
         stepChange: '&'
     }
 });
@@ -167,15 +168,112 @@ angular.module('engine.document').component('engineDocument', {
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null || angular.isArray($scope.steps) && $scope.steps.length == 0 ? [] : $scope.steps[$scope.step].categories || [];
 
+    this.loadMetrics = function () {
+        $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
+            if ($scope.step == 0) {
+                var generalGroup = { templateOptions: { wrapperClass: categoryClass, label: null }, fieldGroup: [], wrapper: 'category' };
+                generalGroup.fieldGroup.push({
+                    key: 'name',
+                    type: 'input',
+                    templateOptions: {
+                        type: 'text',
+                        label: 'Name',
+                        placeholder: 'Enter name'
+                    }
+                });
+                generalGroup.fieldGroup.push({
+                    key: 'id',
+                    type: 'input',
+                    templateOptions: {
+                        type: 'text',
+                        label: 'id',
+                        disabled: true
+                    }
+                });
+                $scope.documentFields.push(generalGroup);
+            }
+
+            // console.log(data);
+
+            function engineOptionsToFormly(engineOptions) {
+                var r = [];
+                angular.forEach(engineOptions, function (option) {
+                    r.push({ name: option.value, value: option.value });
+                });
+                return r;
+            }
+            var categories = {};
+            angular.forEach(data, function (metric) {
+                // console.log(metric)
+                if ($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
+                    var field = {
+                        model: $scope.document.metrics,
+                        key: metric.id,
+                        type: 'input',
+                        className: metric.visualClass.join(' '),
+                        templateOptions: {
+                            type: 'text',
+                            label: metric.label,
+                            description: metric.description,
+                            placeholder: 'Enter ' + metric.label
+                        }
+                    };
+
+                    if (_.contains(metric.visualClass, 'select')) {
+                        field.type = 'select';
+                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                    } else if (_.contains(metric.visualClass, 'radioGroup')) {
+                        field.type = 'radio';
+                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                    } else if (_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
+                        field.type = 'datepicker';
+                    } else if (_.contains(metric.visualClass, 'checkbox')) {
+                        field.type = 'checkbox';
+                    } else if (metric.inputType == 'NUMBER') {
+                        field.type = 'input';
+                    } else if (metric.inputType == 'TEXTAREA') {
+                        field.type = "textarea";
+                        field.templateOptions = {
+                            "placeholder": "",
+                            "label": "",
+
+                            //these needs to be specified somewhere?
+                            "rows": 4,
+                            "cols": 15
+                        };
+                    } else if (metric.inputType == 'EXTERNAL') {
+                        field = { template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '">' + '</' + metric.externalType + '>',
+                            templateOptions: { ngModel: $scope.document, options: self.options } };
+                    } else if (metric.inputType == 'QUERIED_LIST') {
+                        field.type = undefined;
+                        field.model = undefined;
+                        field = { template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '"></engine-document-list>', templateOptions: { options: $engine.getOptions(metric.modelId) } };
+                    }
+
+                    if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: metric.categoryId }, fieldGroup: [], wrapper: 'category' };
+
+                    categories[metric.categoryId].fieldGroup.push(field);
+                }
+            });
+            // console.log('categories');
+            // console.log(categories);
+
+            angular.forEach(categories, function (category) {
+                $scope.documentFields.push(category);
+            });
+        });
+    };
+
     if (self.documentId && self.documentId != 'new') {
-        $scope.document = angular.copy(self.options.documentJSON);
         engineDocument.get(self.documentId, function (data) {
-            // $scope.document = data.document;
+            $scope.document = data.document;
             $scope.actions = engineActionsAvailable($scope.document);
+            self.loadMetrics();
         });
     } else {
         $scope.document = angular.copy(self.options.documentJSON);
         $scope.actions = engineActionsAvailable($scope.document);
+        self.loadMetrics();
     }
 
     this.onChange = function () {};
@@ -187,101 +285,7 @@ angular.module('engine.document').component('engineDocument', {
     $scope.documentFields = [];
 
     // var categoryClass = options.document.categoryClass || 'text-box';
-    var categoryClass = 'text-box';
-
-    $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
-        if ($scope.step == 0) {
-            var generalGroup = { templateOptions: { wrapperClass: categoryClass, label: null }, fieldGroup: [], wrapper: 'category' };
-            generalGroup.fieldGroup.push({
-                key: 'name',
-                type: 'input',
-                templateOptions: {
-                    type: 'text',
-                    label: 'Name',
-                    placeholder: 'Enter name'
-                }
-            });
-            generalGroup.fieldGroup.push({
-                key: 'id',
-                type: 'input',
-                templateOptions: {
-                    type: 'text',
-                    label: 'id',
-                    disabled: true
-                }
-            });
-            $scope.documentFields.push(generalGroup);
-        }
-
-        // console.log(data);
-
-        function engineOptionsToFormly(engineOptions) {
-            var r = [];
-            angular.forEach(engineOptions, function (option) {
-                r.push({ name: option.value, value: option.value });
-            });
-            return r;
-        }
-        var categories = {};
-        angular.forEach(data, function (metric) {
-            // console.log(metric)
-            if ($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
-                var field = {
-                    model: $scope.document.metrics,
-                    key: metric.id,
-                    type: 'input',
-                    className: metric.visualClass.join(' '),
-                    templateOptions: {
-                        type: 'text',
-                        label: metric.label,
-                        description: metric.description,
-                        placeholder: 'Enter ' + metric.label
-                    }
-                };
-
-                if (_.contains(metric.visualClass, 'select')) {
-                    field.type = 'select';
-                    field.templateOptions.options = engineOptionsToFormly(metric.options);
-                } else if (_.contains(metric.visualClass, 'radioGroup')) {
-                    field.type = 'radio';
-                    field.templateOptions.options = engineOptionsToFormly(metric.options);
-                } else if (_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
-                    field.type = 'datepicker';
-                } else if (_.contains(metric.visualClass, 'checkbox')) {
-                    field.type = 'checkbox';
-                } else if (metric.inputType == 'NUMBER') {
-                    field.type = 'input';
-                } else if (metric.inputType == 'TEXTAREA') {
-                    field.type = "textarea";
-                    field.templateOptions = {
-                        "placeholder": "",
-                        "label": "",
-
-                        //these needs to be specified somewhere?
-                        "rows": 4,
-                        "cols": 15
-                    };
-                } else if (metric.inputType == 'EXTERNAL') {
-                    field = { template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '">' + '</' + metric.externalType + '>',
-                        templateOptions: { ngModel: $scope.document, options: self.options } };
-                } else if (metric.inputType == 'QUERIED_LIST') {
-                    field.type = undefined;
-                    field.model = undefined;
-                    field = { template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '"></engine-document-list>', templateOptions: { options: $engine.getOptions(metric.modelId) } };
-                }
-
-                if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: metric.categoryId }, fieldGroup: [], wrapper: 'category' };
-
-                categories[metric.categoryId].fieldGroup.push(field);
-            }
-        });
-        // console.log('categories');
-        // console.log(categories);
-
-        angular.forEach(categories, function (category) {
-            $scope.documentFields.push(category);
-        });
-    });
+    var categoryClass = 'text-box';;
 
     $scope.saveDocument = function (onSuccess, onError) {
 
@@ -290,7 +294,7 @@ angular.module('engine.document').component('engineDocument', {
         self.engineAction(saveAction, $scope.document, function (data) {
             if (onSuccess) onSuccess(data);
 
-            $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
+            if (data.type == 'REDIRECT') $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
         }, onError);
     };
 
@@ -321,6 +325,8 @@ angular.module('engine.document').component('engineDocument', {
             if (engineActionUtils.isSaveAction(action)) $scope.$broadcast('engine.common.save.after', new DocumentEventCtx(document, action));
 
             if (callback) callback(data);
+
+            if (data.type == 'REDIRECT') $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
         }, function (response) {
             $scope.$broadcast('engine.common.action.error', new DocumentEventCtx(document, response));
 
@@ -341,7 +347,13 @@ angular.module('engine.document').component('engineDocument', {
         $scope.onChangeStep(newStep);
     });
 
-    $scope.$on('engine.common.action.invoke', function (event, action, document) {});
+    $scope.$on('engine.common.step.change', function (event, newStep) {
+        $scope.onChangeStep(newStep);
+    });
+
+    $scope.$on('engine.common.action.invoke', function (event, action) {
+        self.engineAction(action, $scope.document);
+    });
 });
 'use strict';
 
@@ -774,13 +786,13 @@ angular.module('engine.list').component('engineDocumentList', {
 "use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep(step+1)\">Next Step:</button>\n<button class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep(step+1)\">{{step+2}}. {{steps[step+1].name}}</button>\n<button type=\"submit\" ng-repeat=\"action in actions\" ng-if=\"!steps || step == steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action)\">{{action.label}}</button>");
+  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">{{$ctrl.step+2}}. {{$ctrl.steps[$ctrl.step+1].name}}</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actions\" ng-if=\"!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action)\">{{action.label}}</button>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\">Anuluj</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n        <engine-document-actions ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" step=\"step\" step-change=\"onChangeStep(step)\" actions=\"actions\" class=\"btn-group\"></engine-document-actions>\n    </formly-form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n        <engine-document-actions ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" steps=\"$ctrl.options.document.steps\" step=\"step\" step-change=\"onChangeStep(step)\" actions=\"actions\" class=\"btn-group\"></engine-document-actions>\n    </formly-form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"step\" steps=\"options.document.steps\" options=\"options\" ng-change=\"changeStep(step)\" class=\"col-md-4\"></engine-steps>\n</div>");

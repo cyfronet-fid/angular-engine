@@ -31,16 +31,123 @@ angular.module('engine.document')
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null || (angular.isArray($scope.steps) && $scope.steps.length == 0) ? [] : $scope.steps[$scope.step].categories || [];
 
+    this.loadMetrics = function () {
+        $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
+            if($scope.step == 0) {
+                var generalGroup = {templateOptions: {wrapperClass: categoryClass, label: null}, fieldGroup: [],  wrapper: 'category'};
+                generalGroup.fieldGroup.push({
+                    key: 'name',
+                    type: 'input',
+                    templateOptions: {
+                        type: 'text',
+                        label: 'Name',
+                        placeholder: 'Enter name'
+                    }
+                });
+                generalGroup.fieldGroup.push({
+                    key: 'id',
+                    type: 'input',
+                    templateOptions: {
+                        type: 'text',
+                        label: 'id',
+                        disabled: true
+                    }
+                });
+                $scope.documentFields.push(generalGroup);
+            }
+
+            // console.log(data);
+
+            function engineOptionsToFormly(engineOptions) {
+                var r = [];
+                angular.forEach(engineOptions, function (option) {
+                    r.push({name: option.value, value: option.value})
+                });
+                return r;
+            }
+            var categories = {};
+            angular.forEach(data, function (metric) {
+                // console.log(metric)
+                if($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
+                    var field = {
+                        model: $scope.document.metrics,
+                        key: metric.id,
+                        type: 'input',
+                        className: metric.visualClass.join(' '),
+                        templateOptions: {
+                            type: 'text',
+                            label: metric.label,
+                            description: metric.description,
+                            placeholder: 'Enter '+metric.label
+                        }
+                    };
+
+                    if(_.contains(metric.visualClass, 'select')) {
+                        field.type = 'select';
+                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                    }
+                    else if(_.contains(metric.visualClass, 'radioGroup')) {
+                        field.type = 'radio';
+                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                    }
+                    else if(_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
+                        field.type = 'datepicker';
+                    }
+                    else if(_.contains(metric.visualClass, 'checkbox')) {
+                        field.type = 'checkbox';
+                    }
+                    else if(metric.inputType == 'NUMBER') {
+                        field.type = 'input';
+                    }
+                    else if(metric.inputType == 'TEXTAREA') {
+                        field.type = "textarea";
+                        field.templateOptions = {
+                            "placeholder": "",
+                            "label": "",
+
+                            //these needs to be specified somewhere?
+                            "rows": 4,
+                            "cols": 15
+                        }
+                    }
+                    else if(metric.inputType == 'EXTERNAL') {
+                        field = {template: '<'+metric.externalType+' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'">'+'</'+metric.externalType+'>',
+                            templateOptions: {ngModel: $scope.document, options: self.options}}
+                    }
+                    else if(metric.inputType == 'QUERIED_LIST') {
+                        field.type = undefined;
+                        field.model = undefined;
+                        field = {template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
+                    }
+
+                    if(categories[metric.categoryId] == undefined)
+                        categories[metric.categoryId] = {templateOptions: {wrapperClass: categoryClass, label: metric.categoryId}, fieldGroup: [], wrapper: 'category'};
+
+                    categories[metric.categoryId].fieldGroup.push(field);
+
+                }
+            });
+            // console.log('categories');
+            // console.log(categories);
+
+            angular.forEach(categories, function (category) {
+                $scope.documentFields.push(category);
+            });
+
+        });
+    }
+
     if(self.documentId && self.documentId != 'new') {
-        $scope.document = angular.copy(self.options.documentJSON);
         engineDocument.get(self.documentId, function (data) {
-            // $scope.document = data.document;
+            $scope.document = data.document;
             $scope.actions = engineActionsAvailable($scope.document);
+            self.loadMetrics();
         });
     }
     else {
         $scope.document = angular.copy(self.options.documentJSON);
         $scope.actions = engineActionsAvailable($scope.document);
+        self.loadMetrics();
     }
 
     this.onChange = function () {
@@ -57,111 +164,8 @@ angular.module('engine.document')
     ];
 
     // var categoryClass = options.document.categoryClass || 'text-box';
-    var categoryClass = 'text-box';
+    var categoryClass = 'text-box';;
 
-    $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
-        if($scope.step == 0) {
-            var generalGroup = {templateOptions: {wrapperClass: categoryClass, label: null}, fieldGroup: [],  wrapper: 'category'};
-            generalGroup.fieldGroup.push({
-                key: 'name',
-                type: 'input',
-                templateOptions: {
-                    type: 'text',
-                    label: 'Name',
-                    placeholder: 'Enter name'
-                }
-            });
-            generalGroup.fieldGroup.push({
-                key: 'id',
-                type: 'input',
-                templateOptions: {
-                    type: 'text',
-                    label: 'id',
-                    disabled: true
-                }
-            });
-            $scope.documentFields.push(generalGroup);
-        }
-
-        // console.log(data);
-
-        function engineOptionsToFormly(engineOptions) {
-            var r = [];
-            angular.forEach(engineOptions, function (option) {
-                r.push({name: option.value, value: option.value})
-            });
-            return r;
-        }
-        var categories = {};
-        angular.forEach(data, function (metric) {
-            // console.log(metric)
-            if($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
-                var field = {
-                    model: $scope.document.metrics,
-                    key: metric.id,
-                    type: 'input',
-                    className: metric.visualClass.join(' '),
-                     templateOptions: {
-                        type: 'text',
-                        label: metric.label,
-                        description: metric.description,
-                        placeholder: 'Enter '+metric.label
-                     }
-                };
-
-                if(_.contains(metric.visualClass, 'select')) {
-                    field.type = 'select';
-                    field.templateOptions.options = engineOptionsToFormly(metric.options);
-                }
-                else if(_.contains(metric.visualClass, 'radioGroup')) {
-                    field.type = 'radio';
-                    field.templateOptions.options = engineOptionsToFormly(metric.options);
-                }
-                else if(_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
-                    field.type = 'datepicker';
-                }
-                else if(_.contains(metric.visualClass, 'checkbox')) {
-                    field.type = 'checkbox';
-                }
-                else if(metric.inputType == 'NUMBER') {
-                    field.type = 'input';
-                }
-                else if(metric.inputType == 'TEXTAREA') {
-                    field.type = "textarea";
-                    field.templateOptions = {
-                        "placeholder": "",
-                        "label": "",
-
-                        //these needs to be specified somewhere?
-                        "rows": 4,
-                        "cols": 15
-                    }
-                }
-                else if(metric.inputType == 'EXTERNAL') {
-                    field = {template: '<'+metric.externalType+' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'">'+'</'+metric.externalType+'>',
-                             templateOptions: {ngModel: $scope.document, options: self.options}}
-                }
-                else if(metric.inputType == 'QUERIED_LIST') {
-                    field.type = undefined;
-                    field.model = undefined;
-                    field = {template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
-                }
-
-                if(categories[metric.categoryId] == undefined)
-                    categories[metric.categoryId] = {templateOptions: {wrapperClass: categoryClass, label: metric.categoryId}, fieldGroup: [], wrapper: 'category'};
-
-                categories[metric.categoryId].fieldGroup.push(field);
-
-            }
-        });
-        // console.log('categories');
-        // console.log(categories);
-
-        angular.forEach(categories, function (category) {
-            $scope.documentFields.push(category);
-        });
-
-    });
 
     $scope.saveDocument = function(onSuccess, onError){
 
@@ -173,7 +177,8 @@ angular.module('engine.document')
             if(onSuccess)
                 onSuccess(data);
 
-            $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
+            if(data.type == 'REDIRECT')
+                $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
 
         }, onError);
     };
@@ -212,6 +217,9 @@ angular.module('engine.document')
             if(callback)
                 callback(data);
 
+            if(data.type == 'REDIRECT')
+                $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
+
         }, function (response) {
             $scope.$broadcast('engine.common.action.error', new DocumentEventCtx(document, response));
 
@@ -235,8 +243,12 @@ angular.module('engine.document')
         $scope.onChangeStep(newStep);
     });
 
-    $scope.$on('engine.common.action.invoke', function (event, action, document) {
+    $scope.$on('engine.common.step.change', function (event, newStep) {
+        $scope.onChangeStep(newStep);
+    });
 
+    $scope.$on('engine.common.action.invoke', function (event, action) {
+        self.engineAction(action, $scope.document);
     });
 
 });

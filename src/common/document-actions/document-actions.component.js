@@ -29,6 +29,7 @@ angular.module('engine.common')
         options: '=',
         actions: '=',
         step: '=',
+        steps: '=',
         stepChange: '&'
     }
 });
