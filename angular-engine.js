@@ -247,7 +247,11 @@ angular.module('engine.document').component('engineDocument', {
                     } else if (metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;
                         field.model = undefined;
-                        field = { template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '"></engine-document-list>', templateOptions: { options: $engine.getOptions(metric.modelId) } };
+                        field = { template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '"></engine-document-list>',
+                            templateOptions: { options: $engine.getOptions(metric.modelId),
+                                document: $scope.document
+                            }
+                        };
                     }
 
                     if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: metric.categoryId }, fieldGroup: [], wrapper: 'category' };
@@ -521,13 +525,13 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
 
 angular.module('engine').service('engineQuery', function ($engine, $resource, EngineInterceptor) {
 
-    var _query = $resource($engine.baseUrl + '/query/documents-with-extra-data?queryId=:query', { query_id: '@query' }, {
+    var _query = $resource($engine.baseUrl + '/query/documents-with-extra-data?queryId=:query?documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
         get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
     });
 
-    return function (query, callback, errorCallback) {
+    return function (query, parentDocumentId, callback, errorCallback) {
         $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
-        return _query.get({ query: query }, callback, errorCallback);
+        return _query.get({ query: query, documentId: parentDocumentId }, callback, errorCallback);
     };
 }).service('engineMetric', function ($engine, $resource, EngineInterceptor) {
     var _query = $resource($engine.baseUrl + '/metrics', {}, {
@@ -727,7 +731,8 @@ angular.module('engine.list').component('engineDocumentList', {
     bindings: {
         options: '=',
         query: '=',
-        formWidget: '@'
+        formWidget: '@',
+        parentDocument: '='
     }
 }).controller('engineListWrapperCtrl', function ($scope, $route) {
     $scope.options = $route.current.$$route.options;
@@ -741,7 +746,7 @@ angular.module('engine.list').component('engineDocumentList', {
     $scope.options = this.options;
     $scope.columns = $scope.options.list.columns;
 
-    $scope.documents = engineQuery($scope.options.query);
+    $scope.documents = engineQuery($scope.options.query, this.parentDocument);
 
     $scope.engineAction = function (actionId, document) {
         engineAction(actionId, document).$promise.then(function (data) {

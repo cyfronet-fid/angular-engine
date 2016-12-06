@@ -1,13 +1,14 @@
 angular.module('engine')
 .service('engineQuery', function ($engine, $resource, EngineInterceptor) {
 
-    var _query = $resource($engine.baseUrl+'/query/documents-with-extra-data?queryId=:query', {query_id: '@query'}, {
+    var _query = $resource($engine.baseUrl+'/query/documents-with-extra-data?queryId=:query?documentId=:documentId',
+        {query_id: '@query', documentId: '@documentId'}, {
         get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
     });
 
-    return function (query, callback, errorCallback) {
+    return function (query, parentDocumentId, callback, errorCallback) {
         $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
-        return _query.get({query: query}, callback, errorCallback);
+        return _query.get({query: query, documentId: parentDocumentId}, callback, errorCallback);
     }
 })
 .service('engineMetric', function ($engine, $resource, EngineInterceptor) {

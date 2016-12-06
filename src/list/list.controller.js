@@ -5,7 +5,8 @@ angular.module('engine.list')
     bindings: {
         options: '=',
         query: '=',
-        formWidget: '@'
+        formWidget: '@',
+        parentDocument: '='
     }
 })
 .controller('engineListWrapperCtrl', function ($scope, $route) {
@@ -21,7 +22,7 @@ angular.module('engine.list')
     $scope.options = this.options;
     $scope.columns = $scope.options.list.columns;
 
-    $scope.documents = engineQuery($scope.options.query);
+    $scope.documents = engineQuery($scope.options.query, this.parentDocument);
 
     $scope.engineAction = function (actionId, document) {
         engineAction(actionId, document).$promise.then(function (data) {

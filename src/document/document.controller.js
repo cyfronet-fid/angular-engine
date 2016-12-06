@@ -117,7 +117,11 @@ angular.module('engine.document')
                     else if(metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;
                         field.model = undefined;
-                        field = {template: '<engine-document-list form-widget="true" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'"></engine-document-list>', templateOptions: {options: $engine.getOptions(metric.modelId)}}
+                        field = {template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'"></engine-document-list>',
+                            templateOptions: {options: $engine.getOptions(metric.modelId),
+                                              document: $scope.document
+                        },
+                        }
                     }
 
                     if(categories[metric.categoryId] == undefined)
