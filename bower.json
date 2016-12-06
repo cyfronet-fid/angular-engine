@@ -5,7 +5,7 @@
     "Michał Szostak <szostak.m.f@gmail.com>"
   ],
   "description": "Front-end library for engine backend",
-  "main": "",
+  "main": ["./angular-engine.js", "./angular-engine.css"],
   "moduleType": [
     "amd"
   ],
