@@ -24,7 +24,24 @@ angular.module('engine')
         })
     });
 
+    /**
+     * Register document in angular-engine, angular URLs will be generated, and document will become available for
+     * inclusion in other documents via ```queried_list``` metric
+     *
+     * **NOTE** The only difference between this method and $engineProvider.subdocument(...) is the fact, that ngRoutes are
+     * generated for each registered document.
+     *
+     * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
+     * @param {string} listUrl url to list, which will be added to ngRoute
+     * example: ```/simple-document/:id```
+     * @param {string} documentUrl url to document, which will be added to ngRoute, has to contain ```:id``` part
+     * example: ```/simple-document/:id```
+     * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
+     * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
+     * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
+     */
     this.document = function (documentModelType, listUrl, documentUrl, query, options) {
+
         var _options = {
             list: {
                 templateUrl: '/src/list/list.wrapper.tpl.html'
@@ -60,6 +77,18 @@ angular.module('engine')
         documents_d[documentModelType] = options;
     };
 
+    /**
+     * Register subdocument in angular-engine, subdocument will become available for
+     * inclusion in other documents via ```queried_list``` metric
+     *
+     * **NOTE** The only difference between this method and $engineProvider.document(...) is the fact, that ngRoutes are
+     * **not** generated for each registered subdocument.
+     *
+     * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
+     * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
+     * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
+     * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
+     */
     this.subdocument = function (documentModelType, query, options) {
         _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, query, options]);
 
@@ -104,6 +133,12 @@ angular.module('engine')
             this.documents_d = documents_d;
             this.visibleDocumentFields = _visibleDocumentFields;
 
+            /**
+             * Returns document options defined via ```document()``` method
+             *
+             * @param {string} documentModelId Document model ID (same as the one registered with ```.document``` and ```.subdocument``` methods)
+             * @returns {object} options associated with specified dicumentModelId
+             */
             this.getOptions = function (documentModelId) {
                 _apiCheck.string(documentModelId);
 

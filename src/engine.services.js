@@ -1,7 +1,7 @@
 angular.module('engine')
 .service('engineQuery', function ($engine, $resource, EngineInterceptor) {
 
-    var _query = $resource($engine.baseUrl+'/query/documents-with-extra-data?queryId=:query?documentId=:documentId',
+    var _query = $resource($engine.baseUrl+'/query/documents-with-extra-data?queryId=:query&documentId=:documentId',
         {query_id: '@query', documentId: '@documentId'}, {
         get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
     });
@@ -47,13 +47,14 @@ angular.module('engine')
 .service('engineDocument', function ($engine, $resource, EngineInterceptor) {
     var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', {documentId: '@documentId'},
         {
-            get: {method: 'POST', transformResponse: EngineInterceptor.response},
+            getDocument: {method: 'POST', transformResponse: EngineInterceptor.response},
         });
 
     return {get: function (documentId, callback, errorCallback) {
         $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
 
-        return _document.get({documentId: documentId}, callback, errorCallback);
+        //null is passed explicitly to POST data, to ensure engine compatibility
+        return _document.getDocument({documentId: documentId}, null, callback, errorCallback);
     }}
 }).service('EngineInterceptor', function () {
 

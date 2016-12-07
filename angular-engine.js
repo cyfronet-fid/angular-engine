@@ -429,7 +429,24 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
         })
     });
 
+    /**
+     * Register document in angular-engine, angular URLs will be generated, and document will become available for
+     * inclusion in other documents via ```queried_list``` metric
+     *
+     * **NOTE** The only difference between this method and $engineProvider.subdocument(...) is the fact, that ngRoutes are
+     * generated for each registered document.
+     *
+     * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
+     * @param {string} listUrl url to list, which will be added to ngRoute
+     * example: ```/simple-document/:id```
+     * @param {string} documentUrl url to document, which will be added to ngRoute, has to contain ```:id``` part
+     * example: ```/simple-document/:id```
+     * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
+     * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
+     * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
+     */
     this.document = function (documentModelType, listUrl, documentUrl, query, options) {
+
         var _options = {
             list: {
                 templateUrl: '/src/list/list.wrapper.tpl.html'
@@ -465,6 +482,18 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
         documents_d[documentModelType] = options;
     };
 
+    /**
+     * Register subdocument in angular-engine, subdocument will become available for
+     * inclusion in other documents via ```queried_list``` metric
+     *
+     * **NOTE** The only difference between this method and $engineProvider.document(...) is the fact, that ngRoutes are
+     * **not** generated for each registered subdocument.
+     *
+     * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
+     * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
+     * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
+     * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
+     */
     this.subdocument = function (documentModelType, query, options) {
         _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, query, options]);
 
@@ -504,6 +533,12 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
             this.documents_d = documents_d;
             this.visibleDocumentFields = _visibleDocumentFields;
 
+            /**
+             * Returns document options defined via ```document()``` method
+             *
+             * @param {string} documentModelId Document model ID (same as the one registered with ```.document``` and ```.subdocument``` methods)
+             * @returns {object} options associated with specified dicumentModelId
+             */
             this.getOptions = function (documentModelId) {
                 _apiCheck.string(documentModelId);
 
@@ -525,7 +560,7 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
 
 angular.module('engine').service('engineQuery', function ($engine, $resource, EngineInterceptor) {
 
-    var _query = $resource($engine.baseUrl + '/query/documents-with-extra-data?queryId=:query?documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
+    var _query = $resource($engine.baseUrl + '/query/documents-with-extra-data?queryId=:query&documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
         get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
     });
 
@@ -565,13 +600,14 @@ angular.module('engine').service('engineQuery', function ($engine, $resource, En
     };
 }).service('engineDocument', function ($engine, $resource, EngineInterceptor) {
     var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', { documentId: '@documentId' }, {
-        get: { method: 'POST', transformResponse: EngineInterceptor.response }
+        getDocument: { method: 'POST', transformResponse: EngineInterceptor.response }
     });
 
     return { get: function get(documentId, callback, errorCallback) {
             $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
 
-            return _document.get({ documentId: documentId }, callback, errorCallback);
+            //null is passed explicitly to POST data, to ensure engine compatibility
+            return _document.getDocument({ documentId: documentId }, null, callback, errorCallback);
         } };
 }).service('EngineInterceptor', function () {
 
