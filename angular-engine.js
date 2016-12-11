@@ -947,7 +947,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{document_entry.document[column.name] | date}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"#{{genDocumentLink(document_route, document_entry.document.id)}}\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
+  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"#{{ genDocumentLink(document_entry.document.id) }}\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{document_entry.document[column.name]}}");
