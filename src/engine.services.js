@@ -27,11 +27,14 @@ angular.module('engine')
         post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
     });
 
-    return function (document, callback, errorCallback) {
+    return {forDocument: function (document, callback, errorCallback) {
         $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-        return _action.post({documentId: document.id}, document, callback, errorCallback);
-    }
+        return _action.post({documentId: document.id}, document, callback, errorCallback)
+    },
+    forType: function (documentJson, callback, errorCallback) {
+        return _action.post({}, documentJson, callback, errorCallback);
+    }};
 })
 .service('engineAction', function ($engine, $resource, EngineInterceptor) {
     var _action = $resource($engine.baseUrl+'/action/invoke?documentId=:documentId&actionId=:actionId', {actionId: '@actionId', documentId: '@documentId'}, {

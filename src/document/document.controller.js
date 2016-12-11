@@ -156,7 +156,7 @@ angular.module('engine.document')
     if(self.documentId && self.documentId != 'new') {
         engineDocument.get(self.documentId, function (data) {
             $scope.document = data.document;
-            $scope.actions = engineActionsAvailable($scope.document);
+            $scope.actions = engineActionsAvailable.forDocument($scope.document);
             self.loadMetrics();
         });
     }

@@ -13,7 +13,8 @@ angular.module('engine.list')
     $scope.options = $route.current.$$route.options;
     $scope.query = $route.current.$$route.options.query;
 })
-.controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, DocumentModal) {
+.controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
+                                        engineActionsAvailable, engineActionUtils, DocumentModal) {
     var self = this;
 
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -23,6 +24,8 @@ angular.module('engine.list')
     $scope.columns = $scope.options.list.columns;
 
     $scope.documents = engineQuery($scope.options.query, this.parentDocument);
+
+    $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON);
 
     $scope.engineAction = function (actionId, document) {
         engineAction(actionId, document).$promise.then(function (data) {
@@ -70,6 +73,9 @@ angular.module('engine.list')
         else
             $location.path($scope.genDocumentLink('new'));
 
+    };
+    $scope.canCreateDocument = function () {
+        return engineActionUtils.getCreateUpdateAction($scope.actions) != null;
     };
 
 });

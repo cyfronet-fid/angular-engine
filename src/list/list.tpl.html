@@ -31,4 +31,4 @@
 
     </div>
 </div>
-<a href="" ng-click="onCreateDocument()" class="btn btn-primary">create {{options.name}}</a>
+<a href="" ng-if="canCreateDocument()" ng-click="onCreateDocument()" class="btn btn-primary">create {{options.name}}</a>
