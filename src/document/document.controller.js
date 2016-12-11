@@ -129,8 +129,8 @@ angular.module('engine.document')
                     else if(metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;
                         field.model = undefined;
-                        field = {template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'" ' +
-                                           ' query="\''+metric.queryId+'\'"></engine-document-list>',
+                        field = {template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'" ' +
+                                           ' query="\''+metric.queryId+'\'" show-create-button="'+metric.showCreateButton+'"></engine-document-list>',
                             templateOptions: {options: $engine.getOptions(metric.modelId),
                                               document: $scope.document
                         }, expressionProperties: {'templateOptions.disabled': self.isDisabled}

@@ -53,7 +53,7 @@ angular.module('engine.list')
     $scope.query = self.query || $scope.options.query;
     //
     // if(angular.isArray($scope.options.query))
-    $scope.documents = engineQuery($scope.query, this.parentDocument);
+    $scope.documents = engineQuery($scope.query, this.parentDocument.id);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON);
 
