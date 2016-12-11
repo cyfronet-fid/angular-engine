@@ -145,8 +145,17 @@ angular.module('engine')
                 return documents_d[documentModelId] || {}
             };
 
+            /**
+             * Returns path to the document with given ```documentId``` and type included in
+             * ```options.document.documentUrl```
+             *
+             * @param options Options of the document (options with which document has been registrated using
+             * ```$engineProvider.document(...)```
+             * @param {object|string} documentId id of the document to which path should be generated
+             * @returns {string} angular URL to given document form
+             */
             this.pathToDocument = function(options, documentId) {
-                _apiCheck([_apiCheck.object, _apiCheck.string.optional], arguments);
+                _apiCheck([_apiCheck.documentOptions, _apiCheck.string.optional], arguments);
 
                 if(!document) {
                     return options.document.documentUrl.replace(':id', 'new');

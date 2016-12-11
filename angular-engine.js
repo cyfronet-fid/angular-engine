@@ -168,6 +168,8 @@ angular.module('engine.document').component('engineDocument', {
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null || angular.isArray($scope.steps) && $scope.steps.length == 0 ? [] : $scope.steps[$scope.step].categories || [];
 
+    this.isEditable = function () {};
+
     this.loadMetrics = function () {
         $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
             if ($scope.step == 0) {
@@ -291,6 +293,15 @@ angular.module('engine.document').component('engineDocument', {
     // var categoryClass = options.document.categoryClass || 'text-box';
     var categoryClass = 'text-box';;
 
+    this._handleActionResonse = function (actionResponse) {
+        if (actionResponse.type == 'REDIRECT') {
+            //before redirecting, load document from engine to ascertain it's document type
+            engineDocument.get(actionResponse.redirectToDocument, function (_data) {
+                $location.path($engine.pathToDocument($engine.getOptions(_data.document.states.documentType), actionResponse.redirectToDocument));
+            });
+        }
+    };
+
     $scope.saveDocument = function (onSuccess, onError) {
 
         var saveAction = engineActionUtils.getCreateUpdateAction($scope.actions);
@@ -298,7 +309,7 @@ angular.module('engine.document').component('engineDocument', {
         self.engineAction(saveAction, $scope.document, function (data) {
             if (onSuccess) onSuccess(data);
 
-            if (data.type == 'REDIRECT') $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
+            self._handleActionResonse(data);
         }, onError);
     };
 
@@ -309,6 +320,14 @@ angular.module('engine.document').component('engineDocument', {
         });
     };
 
+    /**
+     * Invokes engine action on the document, also broadcasts events to subcomponents
+     *
+     * @param {string} action
+     * @param {object} document
+     * @param {Function} callback
+     * @param {Function} errorCallback
+     */
     this.engineAction = function (action, document, callback, errorCallback) {
 
         var actionId = action.id;
@@ -323,6 +342,7 @@ angular.module('engine.document').component('engineDocument', {
             if (eventBeforeSave.defaultPrevented) return;
         }
 
+        //calls engineAction Service
         engineAction(actionId, document, function (data) {
             $scope.$broadcast('engine.common.action.after', new DocumentEventCtx(document, action));
 
@@ -330,7 +350,7 @@ angular.module('engine.document').component('engineDocument', {
 
             if (callback) callback(data);
 
-            if (data.type == 'REDIRECT') $location.path($engine.pathToDocument(self.options, data.redirectToDocument));
+            self._handleActionResonse(data);
         }, function (response) {
             $scope.$broadcast('engine.common.action.error', new DocumentEventCtx(document, response));
 
@@ -545,8 +565,17 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
                 return documents_d[documentModelId] || {};
             };
 
+            /**
+             * Returns path to the document with given ```documentId``` and type included in
+             * ```options.document.documentUrl```
+             *
+             * @param options Options of the document (options with which document has been registrated using
+             * ```$engineProvider.document(...)```
+             * @param {object|string} documentId id of the document to which path should be generated
+             * @returns {string} angular URL to given document form
+             */
             this.pathToDocument = function (options, documentId) {
-                _apiCheck([_apiCheck.object, _apiCheck.string.optional], arguments);
+                _apiCheck([_apiCheck.documentOptions, _apiCheck.string.optional], arguments);
 
                 if (!document) {
                     return options.document.documentUrl.replace(':id', 'new');
