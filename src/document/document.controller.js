@@ -187,8 +187,13 @@ angular.module('engine.document')
         if(actionResponse.type == 'REDIRECT') {
             //before redirecting, load document from engine to ascertain it's document type
             engineDocument.get(actionResponse.redirectToDocument, function (_data) {
+
                 $location.path($engine.pathToDocument($engine.getOptions(_data.document.states.documentType),
-                    actionResponse.redirectToDocument));
+                               actionResponse.redirectToDocument));
+
+                //if redirecting to new document, clear steps
+                if($scope.document.id != actionResponse.redirectToDocument)
+                    $location.search({step: 0});
             });
         }
     };
@@ -209,10 +214,15 @@ angular.module('engine.document')
     };
 
     $scope.onChangeStep = function (newStep) {
-        $scope.saveDocument(function () {
+        if(self.isEditable())
+            $scope.saveDocument(function () {
+                $routeParams.step = newStep;
+                $location.search({step: newStep})
+            });
+        else {
             $routeParams.step = newStep;
             $location.search({step: newStep})
-        });
+        }
     };
 
 
@@ -264,15 +274,15 @@ angular.module('engine.document')
     };
 
 
-    this.changeStep = function (newStep) {
-        var _createUpdateAction = self.getCreateUpdateAction();
-
-        if(_createUpdateAction)
-            self.engineAction(_createUpdateAction, self.document, function () {
-                self.step = newStep;
-                $timeout(self.stepChange);
-            });
-    };
+    // this.changeStep = function (newStep) {
+    //     var _createUpdateAction = self.getCreateUpdateAction();
+    //
+    //     if(_createUpdateAction)
+    //         self.engineAction(_createUpdateAction, self.document, function () {
+    //             self.step = newStep;
+    //             $timeout(self.stepChange);
+    //         });
+    // };
 
     $scope.$on('engine.common.step.before', function (event, newStep) {
         $scope.onChangeStep(newStep);
