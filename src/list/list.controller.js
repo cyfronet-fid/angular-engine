@@ -6,12 +6,24 @@ angular.module('engine.list')
         options: '=',
         query: '=',
         formWidget: '@',
-        parentDocument: '='
+        parentDocument: '=',
+        showCreateButton: '='
     }
 })
-.controller('engineListWrapperCtrl', function ($scope, $route) {
+.controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard) {
     $scope.options = $route.current.$$route.options;
-    $scope.query = $route.current.$$route.options.query;
+    var query = $route.current.$$route.options.query;
+
+    if(angular.isArray(query))
+        $scope.queries = query;
+    else { //dashboard
+        engineDashboard.fromCategory(query, function (data) {
+            $scope.queries = [];
+            angular.forEach(data, function (query) {
+                $scope.queries.push(query.id);
+            })
+        });
+    }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
                                         engineActionsAvailable, engineActionUtils, DocumentModal) {
@@ -20,10 +32,23 @@ angular.module('engine.list')
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
     this.formWidget = this.formWidget === 'true';
 
+    $scope.$watch('$ctrl.showCreateButton', function (oldVal, newVal) {
+        if (self.showCreateButton == undefined)
+            self._showCreateButton = true;
+        else
+            self._showCreateButton = newVal;
+    });
+
+
+
     $scope.options = this.options;
     $scope.columns = $scope.options.list.columns;
 
-    $scope.documents = engineQuery($scope.options.query, this.parentDocument);
+
+    $scope.query = self.query || $scope.options.query;
+    //
+    // if(angular.isArray($scope.options.query))
+    $scope.documents = engineQuery($scope.query, this.parentDocument);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON);
 

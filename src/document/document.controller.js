@@ -129,7 +129,8 @@ angular.module('engine.document')
                     else if(metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;
                         field.model = undefined;
-                        field = {template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'"></engine-document-list>',
+                        field = {template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'" ' +
+                                           ' query="\''+metric.queryId+'\'"></engine-document-list>',
                             templateOptions: {options: $engine.getOptions(metric.modelId),
                                               document: $scope.document
                         }, expressionProperties: {'templateOptions.disabled': self.isDisabled}
@@ -162,7 +163,7 @@ angular.module('engine.document')
     }
     else {
         $scope.document = angular.copy(self.options.documentJSON);
-        $scope.actions = engineActionsAvailable($scope.document);
+        $scope.actions = engineActionsAvailable.forDocument($scope.document);
         self.loadMetrics();
     }
 
@@ -192,7 +193,7 @@ angular.module('engine.document')
                                actionResponse.redirectToDocument));
 
                 //if redirecting to new document, clear steps
-                if($scope.document.id != actionResponse.redirectToDocument)
+                if($scope.document.id != null && $scope.document.id != actionResponse.redirectToDocument)
                     $location.search({step: 0});
             });
         }
@@ -272,17 +273,6 @@ angular.module('engine.document')
                 errorCallback(response);
         });
     };
-
-
-    // this.changeStep = function (newStep) {
-    //     var _createUpdateAction = self.getCreateUpdateAction();
-    //
-    //     if(_createUpdateAction)
-    //         self.engineAction(_createUpdateAction, self.document, function () {
-    //             self.step = newStep;
-    //             $timeout(self.stepChange);
-    //         });
-    // };
 
     $scope.$on('engine.common.step.before', function (event, newStep) {
         $scope.onChangeStep(newStep);

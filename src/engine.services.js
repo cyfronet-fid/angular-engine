@@ -11,6 +11,24 @@ angular.module('engine')
         return _query.get({query: query, documentId: parentDocumentId}, callback, errorCallback);
     }
 })
+.service('engineDashboard', function ($engine, $resource, EngineInterceptor, engineQuery) {
+
+    var _queryCategory = $resource($engine.baseUrl+'/query?queryCategoryId=:queryCategoryId', {queryCategoryId: '@queryCategoryId'},
+        {get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}});
+
+    return {
+        fromList: function (queryIds) {
+            $engine.apiCheck([apiCheck.arrayOf(apiCheck.string)], arguments)
+
+
+        },
+        fromCategory: function (queryCategoryId, callback, errorCallback) {
+            $engine.apiCheck([apiCheck.string], arguments);
+
+            return _queryCategory.get({'queryCategoryId': queryCategoryId}, callback, errorCallback);
+        }
+    }
+})
 .service('engineMetric', function ($engine, $resource, EngineInterceptor) {
     var _query = $resource($engine.baseUrl+'/metrics', {}, {
         post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}

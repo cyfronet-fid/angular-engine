@@ -260,7 +260,7 @@ angular.module('engine.document').component('engineDocument', {
                     } else if (metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;
                         field.model = undefined;
-                        field = { template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '"></engine-document-list>',
+                        field = { template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'"></engine-document-list>',
                             templateOptions: { options: $engine.getOptions(metric.modelId),
                                 document: $scope.document
                             }, expressionProperties: { 'templateOptions.disabled': self.isDisabled }
@@ -289,7 +289,7 @@ angular.module('engine.document').component('engineDocument', {
         });
     } else {
         $scope.document = angular.copy(self.options.documentJSON);
-        $scope.actions = engineActionsAvailable($scope.document);
+        $scope.actions = engineActionsAvailable.forDocument($scope.document);
         self.loadMetrics();
     }
 
@@ -312,7 +312,7 @@ angular.module('engine.document').component('engineDocument', {
                 $location.path($engine.pathToDocument($engine.getOptions(_data.document.states.documentType), actionResponse.redirectToDocument));
 
                 //if redirecting to new document, clear steps
-                if ($scope.document.id != actionResponse.redirectToDocument) $location.search({ step: 0 });
+                if ($scope.document.id != null && $scope.document.id != actionResponse.redirectToDocument) $location.search({ step: 0 });
             });
         }
     };
@@ -377,16 +377,6 @@ angular.module('engine.document').component('engineDocument', {
             if (errorCallback) errorCallback(response);
         });
     };
-
-    // this.changeStep = function (newStep) {
-    //     var _createUpdateAction = self.getCreateUpdateAction();
-    //
-    //     if(_createUpdateAction)
-    //         self.engineAction(_createUpdateAction, self.document, function () {
-    //             self.step = newStep;
-    //             $timeout(self.stepChange);
-    //         });
-    // };
 
     $scope.$on('engine.common.step.before', function (event, newStep) {
         $scope.onChangeStep(newStep);
@@ -500,7 +490,7 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
 
         options = angular.merge(_options, options);
 
-        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
+        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
 
         options.documentModelType = documentModelType;
         options.listUrl = listUrl;
@@ -639,6 +629,20 @@ angular.module('engine').service('engineQuery', function ($engine, $resource, En
     return function (query, parentDocumentId, callback, errorCallback) {
         $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
         return _query.get({ query: query, documentId: parentDocumentId }, callback, errorCallback);
+    };
+}).service('engineDashboard', function ($engine, $resource, EngineInterceptor, engineQuery) {
+
+    var _queryCategory = $resource($engine.baseUrl + '/query?queryCategoryId=:queryCategoryId', { queryCategoryId: '@queryCategoryId' }, { get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true } });
+
+    return {
+        fromList: function fromList(queryIds) {
+            $engine.apiCheck([apiCheck.arrayOf(apiCheck.string)], arguments);
+        },
+        fromCategory: function fromCategory(queryCategoryId, callback, errorCallback) {
+            $engine.apiCheck([apiCheck.string], arguments);
+
+            return _queryCategory.get({ 'queryCategoryId': queryCategoryId }, callback, errorCallback);
+        }
     };
 }).service('engineMetric', function ($engine, $resource, EngineInterceptor) {
     var _query = $resource($engine.baseUrl + '/metrics', {}, {
@@ -843,21 +847,39 @@ angular.module('engine.list').component('engineDocumentList', {
         options: '=',
         query: '=',
         formWidget: '@',
-        parentDocument: '='
+        parentDocument: '=',
+        showCreateButton: '='
     }
-}).controller('engineListWrapperCtrl', function ($scope, $route) {
+}).controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard) {
     $scope.options = $route.current.$$route.options;
-    $scope.query = $route.current.$$route.options.query;
+    var query = $route.current.$$route.options.query;
+
+    if (angular.isArray(query)) $scope.queries = query;else {
+        //dashboard
+        engineDashboard.fromCategory(query, function (data) {
+            $scope.queries = [];
+            angular.forEach(data, function (query) {
+                $scope.queries.push(query.id);
+            });
+        });
+    }
 }).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, DocumentModal) {
     var self = this;
 
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
     this.formWidget = this.formWidget === 'true';
 
+    $scope.$watch('$ctrl.showCreateButton', function (oldVal, newVal) {
+        if (self.showCreateButton == undefined) self._showCreateButton = true;else self._showCreateButton = newVal;
+    });
+
     $scope.options = this.options;
     $scope.columns = $scope.options.list.columns;
 
-    $scope.documents = engineQuery($scope.options.query, this.parentDocument);
+    $scope.query = self.query || $scope.options.query;
+    //
+    // if(angular.isArray($scope.options.query))
+    $scope.documents = engineQuery($scope.query, this.parentDocument);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON);
 
@@ -961,10 +983,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{document_entry.document[column.name]}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <!--<a href=\"\" ng-click=\"$ctrl.destroy(document_entry.document)\" class=\"table-options\">-->\n                        <!--<i class=\"fa fa-trash-o\" aria-hidden=\"true\"></i>-->\n                    <!--</a>-->\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action.id, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <!--<td><a ng-href=\"#/proposals/{{proposal.id}}\" class=\"proposal-title\">{{ proposal.title }}</a></td>-->\n        <!--<td class=\"text-center\">{{ proposal.beamline }}</td>-->\n        <!--<td class=\"text-center table-status\">{{ proposal.status }}</td>-->\n        <!--<td class=\"text-center\">{{ proposal.createdAt | date }}</td>-->\n        <!--<td class=\"text-center\"><a href=\"\" class=\"blue-button\"></a></td>-->\n\n    </div>\n</div>\n<a href=\"\" ng-if=\"canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">create {{options.name}}</a>\n");
+  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <!--<a href=\"\" ng-click=\"$ctrl.destroy(document_entry.document)\" class=\"table-options\">-->\n                        <!--<i class=\"fa fa-trash-o\" aria-hidden=\"true\"></i>-->\n                    <!--</a>-->\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action.id, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <!--<td><a ng-href=\"#/proposals/{{proposal.id}}\" class=\"proposal-title\">{{ proposal.title }}</a></td>-->\n        <!--<td class=\"text-center\">{{ proposal.beamline }}</td>-->\n        <!--<td class=\"text-center table-status\">{{ proposal.status }}</td>-->\n        <!--<td class=\"text-center\">{{ proposal.createdAt | date }}</td>-->\n        <!--<td class=\"text-center\"><a href=\"\" class=\"blue-button\"></a></td>-->\n\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">create {{options.name}}</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.wrapper.tpl.html", "<engine-document-list query=\"query\" options=\"options\"></engine-document-list>");
+  $templateCache.put("/src/list/list.wrapper.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"$last\" query=\"query\" options=\"options\"></engine-document-list>");
 }]);
 
 //# sourceMappingURL=templates.js.map

@@ -54,7 +54,8 @@ angular.module('engine')
 
         options = angular.merge(_options, options);
 
-        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
+        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string),
+                   _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
 
         options.documentModelType = documentModelType;
         options.listUrl = listUrl;
