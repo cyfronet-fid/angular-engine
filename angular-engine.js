@@ -85,6 +85,7 @@ angular.module('engine.common').factory('DocumentEventCtx', function () {
 }).factory('engineActionUtils', function ($rootScope, ErrorEventCtx, ENGINE_SAVE_ACTIONS) {
     var isSaveAction = function isSaveAction(action) {
         if (_.contains(ENGINE_SAVE_ACTIONS, action.type)) return true;
+        return false;
     };
 
     var getCreateUpdateAction = function getCreateUpdateAction(actions) {
@@ -95,6 +96,7 @@ angular.module('engine.common').factory('DocumentEventCtx', function () {
             }
         }
         $rootScope.$broadcast('engine.common.error', new ErrorEventCtx('noCreateUpdateAction', 'Document has no available create / update action, angular-engine framework requires that at least one update and one create action is specified'));
+        return null;
     };
 
     return {
@@ -164,11 +166,17 @@ angular.module('engine.document').component('engineDocument', {
     $scope.documentScope = $scope;
     $scope.document = {};
     $scope.steps = this.options.document.steps;
-
+    $scope.actions = [];
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null || angular.isArray($scope.steps) && $scope.steps.length == 0 ? [] : $scope.steps[$scope.step].categories || [];
 
-    this.isEditable = function () {};
+    this.isEditable = function () {
+        if (engineActionUtils.getCreateUpdateAction($scope.actions) != null) return true;
+        return false;
+    };
+    this.isDisabled = function () {
+        return !self.isEditable();
+    };
 
     this.loadMetrics = function () {
         $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
@@ -218,6 +226,9 @@ angular.module('engine.document').component('engineDocument', {
                             label: metric.label,
                             description: metric.description,
                             placeholder: 'Enter ' + metric.label
+                        },
+                        expressionProperties: {
+                            'templateOptions.disabled': self.isDisabled
                         }
                     };
 
@@ -245,14 +256,14 @@ angular.module('engine.document').component('engineDocument', {
                         };
                     } else if (metric.inputType == 'EXTERNAL') {
                         field = { template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '">' + '</' + metric.externalType + '>',
-                            templateOptions: { ngModel: $scope.document, options: self.options } };
+                            templateOptions: { ngModel: $scope.document, options: self.options }, expressionProperties: { 'templateOptions.disabled': self.isDisabled } };
                     } else if (metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;
                         field.model = undefined;
                         field = { template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '"></engine-document-list>',
                             templateOptions: { options: $engine.getOptions(metric.modelId),
                                 document: $scope.document
-                            }
+                            }, expressionProperties: { 'templateOptions.disabled': self.isDisabled }
                         };
                     }
 
@@ -306,7 +317,7 @@ angular.module('engine.document').component('engineDocument', {
 
         var saveAction = engineActionUtils.getCreateUpdateAction($scope.actions);
 
-        self.engineAction(saveAction, $scope.document, function (data) {
+        if (saveAction) self.engineAction(saveAction, $scope.document, function (data) {
             if (onSuccess) onSuccess(data);
 
             self._handleActionResonse(data);
@@ -361,7 +372,9 @@ angular.module('engine.document').component('engineDocument', {
     };
 
     this.changeStep = function (newStep) {
-        self.engineAction(self.getCreateUpdateAction(), self.document, function () {
+        var _createUpdateAction = self.getCreateUpdateAction();
+
+        if (_createUpdateAction) self.engineAction(_createUpdateAction, self.document, function () {
             self.step = newStep;
             $timeout(self.stepChange);
         });
@@ -543,9 +556,20 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
         });else _visibleDocumentFields.push(document_fields);
     };
 
-    this.$get = function ($engineFormly) {
+    this._debug = false;
 
-        return new function () {
+    this.enableDebug = function () {
+        self._debug = true;
+    };
+    this.disableDebug = function () {
+        self._debug = false;
+    };
+
+    this.$get = function ($engineFormly) {
+        var _engineProvider = self;
+
+        return new function ($rootScope, $log) {
+            var self = this;
             this.apiCheck = _apiCheck;
             this.formly = $engineFormly;
             this.baseUrl = _baseUrl;
@@ -563,6 +587,17 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
                 _apiCheck.string(documentModelId);
 
                 return documents_d[documentModelId] || {};
+            };
+
+            this.enableDebug = function () {
+                _engineProvider._debug = true;
+                $rootScope.$on('engine.common.error', function (event, errorEvent) {
+                    if (_engineProvider._debug) $log.error(errorEvent);
+                });
+            };
+
+            this.disableDebug = function () {
+                _engineProvider._debug = false;
             };
 
             /**

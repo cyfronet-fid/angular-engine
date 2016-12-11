@@ -122,10 +122,20 @@ angular.module('engine')
     };
 
 
+    this._debug = false;
+
+    this.enableDebug = function () {
+        self._debug = true;
+    };
+    this.disableDebug = function () {
+        self._debug = false;
+    };
+
     this.$get = function ($engineFormly) {
+        var _engineProvider = self;
 
-
-        return new function() {
+        return new function($rootScope, $log) {
+            var self = this;
             this.apiCheck = _apiCheck;
             this.formly = $engineFormly;
             this.baseUrl = _baseUrl;
@@ -143,6 +153,19 @@ angular.module('engine')
                 _apiCheck.string(documentModelId);
 
                 return documents_d[documentModelId] || {}
+            };
+
+            this.enableDebug = function () {
+                _engineProvider._debug = true;
+                $rootScope.$on('engine.common.error', function (event, errorEvent) {
+                    if(_engineProvider._debug)
+                        $log.error(errorEvent);
+                })
+
+            };
+
+            this.disableDebug = function () {
+                _engineProvider._debug = false;
             };
 
             /**

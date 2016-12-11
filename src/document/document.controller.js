@@ -27,12 +27,17 @@ angular.module('engine.document')
     $scope.documentScope = $scope;
     $scope.document = {};
     $scope.steps = this.options.document.steps;
-
+    $scope.actions = [];
     $scope.step = this.step;
     $scope.currentCategories = $scope.steps == null || (angular.isArray($scope.steps) && $scope.steps.length == 0) ? [] : $scope.steps[$scope.step].categories || [];
 
     this.isEditable = function () {
-
+        if(engineActionUtils.getCreateUpdateAction($scope.actions) != null)
+            return true;
+        return false;
+    };
+    this.isDisabled = function () {
+        return !self.isEditable();
     };
 
     this.loadMetrics = function () {
@@ -83,6 +88,9 @@ angular.module('engine.document')
                             label: metric.label,
                             description: metric.description,
                             placeholder: 'Enter '+metric.label
+                        },
+                        expressionProperties: {
+                            'templateOptions.disabled': self.isDisabled
                         }
                     };
 
@@ -116,7 +124,7 @@ angular.module('engine.document')
                     }
                     else if(metric.inputType == 'EXTERNAL') {
                         field = {template: '<'+metric.externalType+' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'">'+'</'+metric.externalType+'>',
-                            templateOptions: {ngModel: $scope.document, options: self.options}}
+                            templateOptions: {ngModel: $scope.document, options: self.options}, expressionProperties: {'templateOptions.disabled': self.isDisabled}}
                     }
                     else if(metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;
@@ -124,7 +132,7 @@ angular.module('engine.document')
                         field = {template: '<engine-document-list form-widget="true" parent-document="document" options="options.templateOptions.options" class="'+metric.visualClass.join(' ')+'"></engine-document-list>',
                             templateOptions: {options: $engine.getOptions(metric.modelId),
                                               document: $scope.document
-                        }
+                        }, expressionProperties: {'templateOptions.disabled': self.isDisabled}
                         }
                     }
 
@@ -190,14 +198,14 @@ angular.module('engine.document')
 
         var saveAction = engineActionUtils.getCreateUpdateAction($scope.actions);
 
+        if(saveAction)
+            self.engineAction(saveAction, $scope.document, function (data) {
+                if(onSuccess)
+                    onSuccess(data);
 
-        self.engineAction(saveAction, $scope.document, function (data) {
-            if(onSuccess)
-                onSuccess(data);
+                self._handleActionResonse(data);
 
-            self._handleActionResonse(data);
-
-        }, onError);
+            }, onError);
     };
 
     $scope.onChangeStep = function (newStep) {
@@ -257,10 +265,13 @@ angular.module('engine.document')
 
 
     this.changeStep = function (newStep) {
-        self.engineAction(self.getCreateUpdateAction(), self.document, function () {
-            self.step = newStep;
-            $timeout(self.stepChange);
-        });
+        var _createUpdateAction = self.getCreateUpdateAction();
+
+        if(_createUpdateAction)
+            self.engineAction(_createUpdateAction, self.document, function () {
+                self.step = newStep;
+                $timeout(self.stepChange);
+            });
     };
 
     $scope.$on('engine.common.step.before', function (event, newStep) {
