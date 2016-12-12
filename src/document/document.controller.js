@@ -21,7 +21,9 @@ angular.module('engine.document')
         $scope.$broadcast('engine.common.step.before', step);
     }
 })
-.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction) {
+.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
+                                            engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
+                                            engineAction, engineMetricCategories) {
     var self = this;
     console.log($scope);
     $scope.documentScope = $scope;
@@ -29,7 +31,38 @@ angular.module('engine.document')
     $scope.steps = this.options.document.steps;
     $scope.actions = [];
     $scope.step = this.step;
+    //if categoryGroup (string) will be overriten in this.init()
     $scope.currentCategories = $scope.steps == null || (angular.isArray($scope.steps) && $scope.steps.length == 0) ? [] : $scope.steps[$scope.step].categories || [];
+
+    this.init = function () {
+        return engineMetricCategories.then(function (data) {
+            if (angular.isArray(self.options.document.steps)) {
+                angular.forEach(self.options.document.steps, function (step) {
+                    if (!angular.isArray(step.categories)) {
+                        var _categoryGroup = step.categories;
+                        step.categories = [];
+                        angular.forEach(data.metrics[_categoryGroup].children, function (category) {
+                            step.categories.push(category.id);
+                        });
+                        $scope.currentCategories = step.categories;
+                    }
+                })
+            }
+
+            if(self.documentId && self.documentId != 'new') {
+                engineDocument.get(self.documentId, function (data) {
+                    $scope.document = data.document;
+                    $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                    self.loadMetrics();
+                });
+            }
+            else {
+                $scope.document = angular.copy(self.options.documentJSON);
+                $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                self.loadMetrics();
+            }
+        });
+    };
 
     this.isEditable = function () {
         if(engineActionUtils.getCreateUpdateAction($scope.actions) != null)
@@ -40,41 +73,19 @@ angular.module('engine.document')
         return !self.isEditable();
     };
 
+    function _engineOptionsToFormly(engineOptions) {
+        var r = [];
+        angular.forEach(engineOptions, function (option) {
+            r.push({name: option.value, value: option.value})
+        });
+        return r;
+    }
+
     this.loadMetrics = function () {
         $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
-            if($scope.step == 0) {
-                var generalGroup = {templateOptions: {wrapperClass: categoryClass, label: null}, fieldGroup: [],  wrapper: 'category'};
-                generalGroup.fieldGroup.push({
-                    key: 'name',
-                    type: 'input',
-                    templateOptions: {
-                        type: 'text',
-                        label: 'Name',
-                        placeholder: 'Enter name'
-                    }
-                });
-                generalGroup.fieldGroup.push({
-                    key: 'id',
-                    type: 'input',
-                    templateOptions: {
-                        type: 'text',
-                        label: 'id',
-                        disabled: true
-                    }
-                });
-                $scope.documentFields.push(generalGroup);
-            }
 
-            // console.log(data);
-
-            function engineOptionsToFormly(engineOptions) {
-                var r = [];
-                angular.forEach(engineOptions, function (option) {
-                    r.push({name: option.value, value: option.value})
-                });
-                return r;
-            }
             var categories = {};
+
             angular.forEach(data, function (metric) {
                 // console.log(metric)
                 if($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
@@ -96,11 +107,11 @@ angular.module('engine.document')
 
                     if(_.contains(metric.visualClass, 'select')) {
                         field.type = 'select';
-                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                        field.templateOptions.options = _engineOptionsToFormly(metric.options);
                     }
                     else if(_.contains(metric.visualClass, 'radioGroup')) {
                         field.type = 'radio';
-                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                        field.templateOptions.options = _engineOptionsToFormly(metric.options);
                     }
                     else if(_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
                         field.type = 'datepicker';
@@ -153,19 +164,6 @@ angular.module('engine.document')
 
         });
     };
-
-    if(self.documentId && self.documentId != 'new') {
-        engineDocument.get(self.documentId, function (data) {
-            $scope.document = data.document;
-            $scope.actions = engineActionsAvailable.forDocument($scope.document);
-            self.loadMetrics();
-        });
-    }
-    else {
-        $scope.document = angular.copy(self.options.documentJSON);
-        $scope.actions = engineActionsAvailable.forDocument($scope.document);
-        self.loadMetrics();
-    }
 
     this.onChange = function () {
 
@@ -286,4 +284,5 @@ angular.module('engine.document')
         self.engineAction(action, $scope.document);
     });
 
+    this.init();
 });

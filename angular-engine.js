@@ -160,7 +160,7 @@ angular.module('engine.document').component('engineDocument', {
     $scope.changeStep = function (step) {
         $scope.$broadcast('engine.common.step.before', step);
     };
-}).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction) {
+}).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction, engineMetricCategories) {
     var self = this;
     console.log($scope);
     $scope.documentScope = $scope;
@@ -168,7 +168,37 @@ angular.module('engine.document').component('engineDocument', {
     $scope.steps = this.options.document.steps;
     $scope.actions = [];
     $scope.step = this.step;
+    //if categoryGroup (string) will be overriten in this.init()
     $scope.currentCategories = $scope.steps == null || angular.isArray($scope.steps) && $scope.steps.length == 0 ? [] : $scope.steps[$scope.step].categories || [];
+
+    this.init = function () {
+        return engineMetricCategories.then(function (data) {
+            if (angular.isArray(self.options.document.steps)) {
+                angular.forEach(self.options.document.steps, function (step) {
+                    if (!angular.isArray(step.categories)) {
+                        var _categoryGroup = step.categories;
+                        step.categories = [];
+                        angular.forEach(data.metrics[_categoryGroup].children, function (category) {
+                            step.categories.push(category.id);
+                        });
+                        $scope.currentCategories = step.categories;
+                    }
+                });
+            }
+
+            if (self.documentId && self.documentId != 'new') {
+                engineDocument.get(self.documentId, function (data) {
+                    $scope.document = data.document;
+                    $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                    self.loadMetrics();
+                });
+            } else {
+                $scope.document = angular.copy(self.options.documentJSON);
+                $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                self.loadMetrics();
+            }
+        });
+    };
 
     this.isEditable = function () {
         if (engineActionUtils.getCreateUpdateAction($scope.actions) != null) return true;
@@ -178,41 +208,19 @@ angular.module('engine.document').component('engineDocument', {
         return !self.isEditable();
     };
 
+    function _engineOptionsToFormly(engineOptions) {
+        var r = [];
+        angular.forEach(engineOptions, function (option) {
+            r.push({ name: option.value, value: option.value });
+        });
+        return r;
+    }
+
     this.loadMetrics = function () {
         $scope.metrics = engineMetric(self.options.documentJSON, function (data) {
-            if ($scope.step == 0) {
-                var generalGroup = { templateOptions: { wrapperClass: categoryClass, label: null }, fieldGroup: [], wrapper: 'category' };
-                generalGroup.fieldGroup.push({
-                    key: 'name',
-                    type: 'input',
-                    templateOptions: {
-                        type: 'text',
-                        label: 'Name',
-                        placeholder: 'Enter name'
-                    }
-                });
-                generalGroup.fieldGroup.push({
-                    key: 'id',
-                    type: 'input',
-                    templateOptions: {
-                        type: 'text',
-                        label: 'id',
-                        disabled: true
-                    }
-                });
-                $scope.documentFields.push(generalGroup);
-            }
 
-            // console.log(data);
-
-            function engineOptionsToFormly(engineOptions) {
-                var r = [];
-                angular.forEach(engineOptions, function (option) {
-                    r.push({ name: option.value, value: option.value });
-                });
-                return r;
-            }
             var categories = {};
+
             angular.forEach(data, function (metric) {
                 // console.log(metric)
                 if ($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
@@ -234,10 +242,10 @@ angular.module('engine.document').component('engineDocument', {
 
                     if (_.contains(metric.visualClass, 'select')) {
                         field.type = 'select';
-                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                        field.templateOptions.options = _engineOptionsToFormly(metric.options);
                     } else if (_.contains(metric.visualClass, 'radioGroup')) {
                         field.type = 'radio';
-                        field.templateOptions.options = engineOptionsToFormly(metric.options);
+                        field.templateOptions.options = _engineOptionsToFormly(metric.options);
                     } else if (_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
                         field.type = 'datepicker';
                     } else if (_.contains(metric.visualClass, 'checkbox')) {
@@ -280,18 +288,6 @@ angular.module('engine.document').component('engineDocument', {
             });
         });
     };
-
-    if (self.documentId && self.documentId != 'new') {
-        engineDocument.get(self.documentId, function (data) {
-            $scope.document = data.document;
-            $scope.actions = engineActionsAvailable.forDocument($scope.document);
-            self.loadMetrics();
-        });
-    } else {
-        $scope.document = angular.copy(self.options.documentJSON);
-        $scope.actions = engineActionsAvailable.forDocument($scope.document);
-        self.loadMetrics();
-    }
 
     this.onChange = function () {};
 
@@ -389,6 +385,8 @@ angular.module('engine.document').component('engineDocument', {
     $scope.$on('engine.common.action.invoke', function (event, action) {
         self.engineAction(action, $scope.document);
     });
+
+    this.init();
 });
 'use strict';
 
@@ -437,15 +435,61 @@ angular.module('engine.steps').component('engineSteps', {
 });
 'use strict';
 
-angular.module('engine').provider('$engine', function ($routeProvider, $engineFormlyProvider) {
+angular.module('engine').controller('engineMainCtrl', function ($rootScope, engineResourceLoader) {
+    $rootScope.resourcesLoaded = false;
+
+    if (engineResourceLoader.resources == 0) $rootScope.resourcesLoaded = true;else $rootScope.$on('engine.common.resourcesLoaded', function () {
+        $rootScope.resourcesLoaded = true;
+    });
+});
+'use strict';
+
+angular.module('engine').provider('$engineConfig', function () {
+    var self = this;
+    var _baseUrl = '';
+
+    this.setBaseUrl = function (url) {
+        _baseUrl = url;
+    };
+
+    this.$get = function () {
+        return {
+            baseUrl: _baseUrl,
+            setBaseUrl: self.setBaseUrl
+        };
+    };
+}).provider('$engineApiCheck', function () {
+
+    this.apiCheck = apiCheck({});
+
+    var _apiCheck = this.apiCheck;
+
+    this.apiCheck = _apiCheck;
+
+    this.$get = function () {
+        return _apiCheck;
+    };
+}).service('engineResourceLoader', function ($rootScope, $log) {
+    var _resourcesCount = 0;
+
+    return {
+        register: function register(promise) {
+            $log.debug('registered resource', promise);
+            ++_resourcesCount;
+            promise.then(function () {
+                --_resourcesCount;
+                if (_resourcesCount == 0) $rootScope.$broadcast('engine.common.resourcesLoaded');
+            });
+        },
+        resources: _resourcesCount
+    };
+}).provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider) {
     var self = this;
 
     var documents = [];
     var documents_d = {};
 
-    this.apiCheck = apiCheck({});
-
-    var _apiCheck = this.apiCheck;
+    var _apiCheck = $engineApiCheckProvider.apiCheck;
 
     _apiCheck.documentOptions = _apiCheck.shape({
         documentJSON: _apiCheck.object,
@@ -456,7 +500,10 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
         }),
         document: _apiCheck.shape({
             templateUrl: _apiCheck.string,
-            steps: _apiCheck.arrayOf(_apiCheck.shape({ name: _apiCheck.string, categories: _apiCheck.arrayOf(_apiCheck.string) }))
+            steps: _apiCheck.arrayOf(_apiCheck.shape({
+                name: _apiCheck.string,
+                categories: _apiCheck.arrayOf(_apiCheck.string)
+            }))
         })
     });
 
@@ -502,11 +549,13 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
 
         documents.push({ list_route: listUrl, document_route: documentUrl });
 
-        $routeProvider.when(listUrl, { templateUrl: options.list.templateUrl, controller: 'engineListWrapperCtrl',
+        $routeProvider.when(listUrl, {
+            templateUrl: options.list.templateUrl, controller: 'engineListWrapperCtrl',
             options: options
         });
 
-        $routeProvider.when(documentUrl, { templateUrl: options.document.templateUrl, controller: 'engineDocumentWrapperCtrl',
+        $routeProvider.when(documentUrl, {
+            templateUrl: options.document.templateUrl, controller: 'engineDocumentWrapperCtrl',
             options: options
         });
 
@@ -563,7 +612,7 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
         self._debug = false;
     };
 
-    this.$get = function ($engineFormly) {
+    this.$get = function ($engineFormly, engineMetricCategories) {
         var _engineProvider = self;
 
         return new function ($rootScope, $log) {
@@ -620,74 +669,118 @@ angular.module('engine').provider('$engine', function ($routeProvider, $engineFo
 });
 ;'use strict';
 
-angular.module('engine').service('engineQuery', function ($engine, $resource, EngineInterceptor) {
+angular.module('engine').service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
-    var _query = $resource($engine.baseUrl + '/query/documents-with-extra-data?queryId=:query&documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
+    var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
         get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
     });
 
     return function (query, parentDocumentId, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
+        $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
         return _query.get({ query: query, documentId: parentDocumentId }, callback, errorCallback);
     };
-}).service('engineDashboard', function ($engine, $resource, EngineInterceptor, engineQuery) {
+}).service('engineDashboard', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineQuery) {
 
-    var _queryCategory = $resource($engine.baseUrl + '/query?queryCategoryId=:queryCategoryId', { queryCategoryId: '@queryCategoryId' }, { get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true } });
+    var _queryCategory = $resource($engineConfig.baseUrl + '/query?queryCategoryId=:queryCategoryId', { queryCategoryId: '@queryCategoryId' }, { get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true } });
 
     return {
         fromList: function fromList(queryIds) {
-            $engine.apiCheck([apiCheck.arrayOf(apiCheck.string)], arguments);
+            $engineApiCheck([apiCheck.arrayOf(apiCheck.string)], arguments);
         },
         fromCategory: function fromCategory(queryCategoryId, callback, errorCallback) {
-            $engine.apiCheck([apiCheck.string], arguments);
+            $engineApiCheck([apiCheck.string], arguments);
 
             return _queryCategory.get({ 'queryCategoryId': queryCategoryId }, callback, errorCallback);
         }
     };
-}).service('engineMetric', function ($engine, $resource, EngineInterceptor) {
-    var _query = $resource($engine.baseUrl + '/metrics', {}, {
+}).service('engineMetric', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    var _query = $resource($engineConfig.baseUrl + '/metrics', {}, {
         post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: true }
     });
 
     return function (documentJSON, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+        $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
         return _query.post(documentJSON, callback, errorCallback);
     };
-}).service('engineActionsAvailable', function ($engine, $resource, EngineInterceptor) {
-    var _action = $resource($engine.baseUrl + '/action/available?documentId=:documentId', { documentId: '@id' }, {
+}).service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineResourceLoader) {
+    var _query = $resource($engineConfig.baseUrl + '/metric-categories', {}, {
+        get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
+    });
+
+    var _metricCategories = {};
+    var _names = {};
+
+    function collectMetrics(metrics) {
+        function writeMetric(_metric) {
+            _names[_metric.id] = { label: _metric.label, position: _metric.position, visualClass: _metric.visualClass };
+        }
+        function collectChildren(metric) {
+            angular.forEach(metric.children, function (_metric) {
+                writeMetric(_metric);
+                collectChildren(_metric);
+            });
+        }
+
+        angular.forEach(metrics, function (_metric) {
+            writeMetric(_metric);
+            collectChildren(_metric);
+        });
+    }
+
+    var _promise = _query.get().$promise.then(function (data) {
+        angular.forEach(data, function (metricCategory) {
+            //top level metric categories are aggregates
+
+            _metricCategories[metricCategory.id] = metricCategory;
+        });
+        collectMetrics(data);
+        console.debug(_metricCategories);
+        return { metrics: _metricCategories, names: _names };
+    });
+
+    return _promise;
+}).service('engineActionsAvailable', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    var _action = $resource($engineConfig.baseUrl + '/action/available?documentId=:documentId', { documentId: '@id' }, {
         post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: true }
     });
 
-    return { forDocument: function forDocument(document, callback, errorCallback) {
-            $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+    return {
+        forDocument: function forDocument(document, callback, errorCallback) {
+            $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
             return _action.post({ documentId: document.id }, document, callback, errorCallback);
         },
         forType: function forType(documentJson, callback, errorCallback) {
             return _action.post({}, documentJson, callback, errorCallback);
-        } };
-}).service('engineAction', function ($engine, $resource, EngineInterceptor) {
-    var _action = $resource($engine.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', { actionId: '@actionId', documentId: '@documentId' }, {
+        }
+    };
+}).service('engineAction', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    var _action = $resource($engineConfig.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', {
+        actionId: '@actionId',
+        documentId: '@documentId'
+    }, {
         post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: false }
     });
 
     return function (actionId, document, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+        $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
         return _action.post({ actionId: actionId, documentId: document.id }, document, callback, errorCallback);
     };
-}).service('engineDocument', function ($engine, $resource, EngineInterceptor) {
-    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', { documentId: '@documentId' }, {
+}).service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    var _document = $resource($engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', { documentId: '@documentId' }, {
         getDocument: { method: 'POST', transformResponse: EngineInterceptor.response }
     });
 
-    return { get: function get(documentId, callback, errorCallback) {
-            $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
+    return {
+        get: function get(documentId, callback, errorCallback) {
+            $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
 
             //null is passed explicitly to POST data, to ensure engine compatibility
             return _document.getDocument({ documentId: documentId }, null, callback, errorCallback);
-        } };
+        }
+    };
 }).service('EngineInterceptor', function () {
 
     function processData(data) {

@@ -1,90 +1,135 @@
 angular.module('engine')
-.service('engineQuery', function ($engine, $resource, EngineInterceptor) {
+    .service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
-    var _query = $resource($engine.baseUrl+'/query/documents-with-extra-data?queryId=:query&documentId=:documentId',
-        {query_id: '@query', documentId: '@documentId'}, {
-        get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
-    });
+        var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&documentId=:documentId',
+            {query_id: '@query', documentId: '@documentId'}, {
+                get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
+            });
 
-    return function (query, parentDocumentId, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
-        return _query.get({query: query, documentId: parentDocumentId}, callback, errorCallback);
-    }
-})
-.service('engineDashboard', function ($engine, $resource, EngineInterceptor, engineQuery) {
-
-    var _queryCategory = $resource($engine.baseUrl+'/query?queryCategoryId=:queryCategoryId', {queryCategoryId: '@queryCategoryId'},
-        {get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}});
-
-    return {
-        fromList: function (queryIds) {
-            $engine.apiCheck([apiCheck.arrayOf(apiCheck.string)], arguments)
-
-
-        },
-        fromCategory: function (queryCategoryId, callback, errorCallback) {
-            $engine.apiCheck([apiCheck.string], arguments);
-
-            return _queryCategory.get({'queryCategoryId': queryCategoryId}, callback, errorCallback);
+        return function (query, parentDocumentId, callback, errorCallback) {
+            $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
+            return _query.get({query: query, documentId: parentDocumentId}, callback, errorCallback);
         }
-    }
-})
-.service('engineMetric', function ($engine, $resource, EngineInterceptor) {
-    var _query = $resource($engine.baseUrl+'/metrics', {}, {
-        post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
-    });
+    })
+    .service('engineDashboard', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineQuery) {
 
-    return function (documentJSON, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+        var _queryCategory = $resource($engineConfig.baseUrl + '/query?queryCategoryId=:queryCategoryId', {queryCategoryId: '@queryCategoryId'},
+            {get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}});
 
-        return _query.post(documentJSON, callback, errorCallback);
-    }
-})
-.service('engineActionsAvailable', function ($engine, $resource, EngineInterceptor) {
-    var _action = $resource($engine.baseUrl+'/action/available?documentId=:documentId', {documentId: '@id'}, {
-        post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
-    });
+        return {
+            fromList: function (queryIds) {
+                $engineApiCheck([apiCheck.arrayOf(apiCheck.string)], arguments)
 
-    return {forDocument: function (document, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-        return _action.post({documentId: document.id}, document, callback, errorCallback)
-    },
-    forType: function (documentJson, callback, errorCallback) {
-        return _action.post({}, documentJson, callback, errorCallback);
-    }};
-})
-.service('engineAction', function ($engine, $resource, EngineInterceptor) {
-    var _action = $resource($engine.baseUrl+'/action/invoke?documentId=:documentId&actionId=:actionId', {actionId: '@actionId', documentId: '@documentId'}, {
-        post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: false}
-    });
+            },
+            fromCategory: function (queryCategoryId, callback, errorCallback) {
+                $engineApiCheck([apiCheck.string], arguments);
 
-    return function (actionId, document, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
-
-        return _action.post({actionId: actionId, documentId: document.id}, document, callback, errorCallback);
-    }
-})
-.service('engineDocument', function ($engine, $resource, EngineInterceptor) {
-    var _document = $resource($engine.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', {documentId: '@documentId'},
-        {
-            getDocument: {method: 'POST', transformResponse: EngineInterceptor.response},
+                return _queryCategory.get({'queryCategoryId': queryCategoryId}, callback, errorCallback);
+            }
+        }
+    })
+    .service('engineMetric', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+        var _query = $resource($engineConfig.baseUrl + '/metrics', {}, {
+            post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
         });
 
-    return {get: function (documentId, callback, errorCallback) {
-        $engine.apiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
+        return function (documentJSON, callback, errorCallback) {
+            $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-        //null is passed explicitly to POST data, to ensure engine compatibility
-        return _document.getDocument({documentId: documentId}, null, callback, errorCallback);
-    }}
-}).service('EngineInterceptor', function () {
+            return _query.post(documentJSON, callback, errorCallback);
+        }
+    })
+    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineResourceLoader) {
+        var _query = $resource($engineConfig.baseUrl + '/metric-categories', {}, {
+            get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
+        });
+
+        var _metricCategories = {};
+        var _names = {};
+
+        function collectMetrics(metrics) {
+            function writeMetric(_metric) {
+                _names[_metric.id] = {label: _metric.label, position: _metric.position, visualClass: _metric.visualClass};
+            }
+            function collectChildren(metric) {
+                angular.forEach(metric.children, function (_metric) {
+                    writeMetric(_metric);
+                    collectChildren(_metric);
+                });
+            }
+
+            angular.forEach(metrics, function (_metric) {
+                writeMetric(_metric);
+                collectChildren(_metric);
+            });
+        }
+
+        var _promise = _query.get().$promise.then(function (data) {
+            angular.forEach(data, function (metricCategory) {
+                //top level metric categories are aggregates
+
+                _metricCategories[metricCategory.id] = metricCategory;
+            });
+            collectMetrics(data);
+            console.debug(_metricCategories);
+            return {metrics: _metricCategories, names: _names};
+        });
+
+        return _promise
+    })
+    .service('engineActionsAvailable', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+        var _action = $resource($engineConfig.baseUrl + '/action/available?documentId=:documentId', {documentId: '@id'}, {
+            post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
+        });
+
+        return {
+            forDocument: function (document, callback, errorCallback) {
+                $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+
+                return _action.post({documentId: document.id}, document, callback, errorCallback)
+            },
+            forType: function (documentJson, callback, errorCallback) {
+                return _action.post({}, documentJson, callback, errorCallback);
+            }
+        };
+    })
+    .service('engineAction', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+        var _action = $resource($engineConfig.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', {
+            actionId: '@actionId',
+            documentId: '@documentId'
+        }, {
+            post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: false}
+        });
+
+        return function (actionId, document, callback, errorCallback) {
+            $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+
+            return _action.post({actionId: actionId, documentId: document.id}, document, callback, errorCallback);
+        }
+    })
+    .service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+        var _document = $resource($engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', {documentId: '@documentId'},
+            {
+                getDocument: {method: 'POST', transformResponse: EngineInterceptor.response},
+            });
+
+        return {
+            get: function (documentId, callback, errorCallback) {
+                $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
+
+                //null is passed explicitly to POST data, to ensure engine compatibility
+                return _document.getDocument({documentId: documentId}, null, callback, errorCallback);
+            }
+        }
+    }).service('EngineInterceptor', function () {
 
     function processData(data) {
-        if(data == null)
+        if (data == null)
             return;
-        if(data.document !== undefined)
+        if (data.document !== undefined)
             data = data.document;
-        if(data.metrics !== null && data.metrics !== undefined) {
+        if (data.metrics !== null && data.metrics !== undefined) {
             for (var metric in data.metrics) {
                 data[metric] = data.metrics[metric];
             }
@@ -93,15 +138,15 @@ angular.module('engine')
 
     return {
         response: function (data, headersGetter, status) {
-            if(angular.isString(data)) {
-                if(data == "")
+            if (angular.isString(data)) {
+                if (data == "")
                     return {};
                 else
                     data = angular.fromJson(data);
             }
 
             data = data.data;
-            if(data instanceof Array) {
+            if (data instanceof Array) {
                 angular.forEach(data, processData);
             }
             else
@@ -112,7 +157,7 @@ angular.module('engine')
         request: function (data, headersGetter) {
             var site = data.site;
             console.log('parsing request');
-            if(site && site.id) {
+            if (site && site.id) {
                 data.site = site.id;
                 data.siteName = site.value.provider_id;
             }
