@@ -8,7 +8,8 @@ angular.module('engine.list')
         formWidget: '@',
         parentDocument: '=',
         showCreateButton: '=',
-        listCaption: '='
+        listCaption: '=',
+        columns: '='
     }
 })
 .controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard) {
@@ -47,7 +48,7 @@ angular.module('engine.list')
 
 
     $scope.options = this.options;
-    $scope.columns = $scope.options.list.columns;
+    $scope.columns = this.columns || $scope.options.list.columns;
 
 
     $scope.query = self.query || $scope.options.query;

@@ -89,6 +89,7 @@ angular.module('engine')
                     queryId: _apiCheck.string,
                     label: _apiCheck.string,
                     documentModelId: _apiCheck.string,
+                    columns: _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, label: _apiCheck.string})).optional,
                     showCreateButton: _apiCheck.bool.optional
                 }),
                 _apiCheck.shape({templateUrl: _apiCheck.string}))], [url, queries, options]);

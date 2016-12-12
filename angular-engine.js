@@ -540,6 +540,7 @@ angular.module('engine').provider('$engineConfig', function () {
             queryId: _apiCheck.string,
             label: _apiCheck.string,
             documentModelId: _apiCheck.string,
+            columns: _apiCheck.arrayOf(_apiCheck.shape({ name: _apiCheck.string, label: _apiCheck.string })).optional,
             showCreateButton: _apiCheck.bool.optional
         }), _apiCheck.shape({ templateUrl: _apiCheck.string }))], [url, queries, options]);
 
@@ -996,7 +997,8 @@ angular.module('engine.list').component('engineDocumentList', {
         formWidget: '@',
         parentDocument: '=',
         showCreateButton: '=',
-        listCaption: '='
+        listCaption: '=',
+        columns: '='
     }
 }).controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard) {
     $scope.options = $route.current.$$route.options;
@@ -1027,7 +1029,7 @@ angular.module('engine.list').component('engineDocumentList', {
     });
 
     $scope.options = this.options;
-    $scope.columns = $scope.options.list.columns;
+    $scope.columns = this.columns || $scope.options.list.columns;
 
     $scope.query = self.query || $scope.options.query;
 
@@ -1085,7 +1087,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">{{$ctrl.step+2}}. {{$ctrl.steps[$ctrl.step+1].name}}</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actions\" ng-if=\"!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action)\">{{action.label}}</button>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
+  $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\">Anuluj</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n</div>");
