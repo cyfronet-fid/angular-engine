@@ -65,7 +65,8 @@ angular.module('engine')
                 steps: _apiCheck.arrayOf(_apiCheck.shape({
                     name: _apiCheck.string,
                     categories: _apiCheck.arrayOf(_apiCheck.string)
-                }))
+                })),
+                showValidateButton: _apiCheck.bool.optional
             })
         });
 
@@ -128,7 +129,8 @@ angular.module('engine')
                 },
                 document: {
                     templateUrl: '/src/document/document.wrapper.tpl.html',
-                    steps: null
+                    steps: null,
+                    showValidationButton: false
                 }
             };
 
@@ -154,7 +156,8 @@ angular.module('engine')
 
             $routeProvider.when(documentUrl, {
                 templateUrl: options.document.templateUrl, controller: 'engineDocumentWrapperCtrl',
-                options: options
+                options: options,
+                reloadOnSearch: false
             });
 
             documents_d[documentModelType] = options;

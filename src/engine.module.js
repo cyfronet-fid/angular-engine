@@ -8,6 +8,7 @@ angular.module('engine',
     'engine.list',
     'engine.dashboard',
     'engine.steps',
+    'ngMessages',
     'pascalprecht.translate',
     'engine.document'])
 

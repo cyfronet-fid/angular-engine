@@ -7,6 +7,7 @@ angular.module('engine.document')
         options: '=',
         steps: '=',
         step: '=',
+        showValidationButton: '=',
         documentId: '@'
     }
 })
@@ -31,6 +32,13 @@ angular.module('engine.document')
     $scope.steps = this.options.document.steps;
     $scope.actions = [];
     $scope.step = this.step;
+
+    this.form = {
+        form: {},
+        options: {},
+        backendValidation: {}
+    };
+
     //if categoryGroup (string) will be overriten in this.init()
     $scope.currentCategories = $scope.steps == null || (angular.isArray($scope.steps) && $scope.steps.length == 0) ? [] : $scope.steps[$scope.step].categories || [];
 
@@ -101,10 +109,31 @@ angular.module('engine.document')
                             type: 'text',
                             label: metric.label,
                             description: metric.description,
-                            placeholder: 'Enter '+metric.label
+                            placeholder: 'Enter '+metric.label,
+                            required: metric.required
                         },
                         expressionProperties: {
                             'templateOptions.disabled': self.isDisabled
+                        },
+                        validators: {
+                            engineValid: {
+                                expression: function($viewValue, $modelValue, scope) {
+                                    //no backend validation yet
+                                    if(_.isEmpty(self.form.backendValidation))
+                                        return true;
+
+                                    if(self.form.backendValidation.valid)
+                                        return true;
+
+                                    return false;
+                                },
+                                message: '"THIS IS WRONG!"'
+                            }
+                        },
+                        validation: {
+                            messages: {
+                                required: 'to.label+"_required"'
+                            }
                         }
                     };
 
@@ -151,6 +180,10 @@ angular.module('engine.document')
                                               document: $scope.document
                         }, expressionProperties: {'templateOptions.disabled': self.isDisabled}
                         }
+                    }
+
+                    if(metric.reloadOnChange) {
+                        //make reload listener
                     }
 
                     if(categories[metric.categoryId] == undefined){
@@ -219,11 +252,20 @@ angular.module('engine.document')
     };
 
     $scope.onChangeStep = function (newStep) {
-        if(self.isEditable())
+        if(self.isEditable()) {
+            engineDocument.validate($scope.document, function (data) {
+                console.log(data);
+                self.form.backendValidation = data;
+                self.form.backendValidation.valid = false;
+
+                self.form.form.$setValidity('proposalName', false. self.form.form);
+            });
+
             $scope.saveDocument(function () {
                 $routeParams.step = newStep;
                 $location.search({step: newStep})
             });
+        }
         else {
             $routeParams.step = newStep;
             $location.search({step: newStep})

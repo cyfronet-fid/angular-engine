@@ -12,7 +12,7 @@ angular.module('engine.document', ['ngRoute']);
 angular.module('engine.steps', ['ngRoute']);
 'use strict';
 
-angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'pascalprecht.translate', 'engine.document']).run(function (formlyConfig) {
+angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']).run(function (formlyConfig) {
     var attributes = ['date-disabled', 'custom-class', 'show-weeks', 'starting-day', 'init-date', 'min-mode', 'max-mode', 'format-day', 'format-month', 'format-year', 'format-day-header', 'format-day-title', 'format-month-title', 'year-range', 'shortcut-propagation', 'datepicker-popup', 'show-button-bar', 'current-text', 'clear-text', 'close-text', 'close-on-date-selection', 'datepicker-append-to-body'];
 
     var bindings = ['datepicker-mode', 'min-date', 'max-date'];
@@ -111,7 +111,7 @@ angular.module('engine.common').factory('DocumentEventCtx', function () {
 
 angular.module('engine.common').component('engineDocumentActions', {
     templateUrl: '/src/common/document-actions/document-actions.tpl.html',
-    controller: function controller($timeout, $rootScope, engineAction, $scope, DocumentEventCtx, ErrorEventCtx, ENGINE_SAVE_ACTIONS, $log) {
+    controller: function controller($timeout, $rootScope, engineAction, $scope, DocumentEventCtx, ErrorEventCtx, engineDocument, ENGINE_SAVE_ACTIONS, $log) {
         var self = this;
 
         if (!this.documentScope) {
@@ -123,12 +123,14 @@ angular.module('engine.common').component('engineDocumentActions', {
             $scope.$emit('engine.common.action.invoke', action, self.document);
         };
 
+        this.validate = function () {
+            engineDocument.validate(self.document, function (data) {
+                console.log(data);
+            });
+        };
+
         this.changeStep = function (newStep) {
             $scope.$emit('engine.common.step.change', newStep, self.document);
-            // self.engineAction(self.getCreateUpdateAction(), self.document, function () {
-            //     self.step = newStep;
-            // $timeout(self.stepChange);
-            // });
         };
     },
     bindings: {
@@ -138,7 +140,8 @@ angular.module('engine.common').component('engineDocumentActions', {
         actions: '=',
         step: '=',
         steps: '=',
-        stepChange: '&'
+        stepChange: '&',
+        showValidationButton: '='
     }
 });
 'use strict';
@@ -158,6 +161,7 @@ angular.module('engine.document').component('engineDocument', {
         options: '=',
         steps: '=',
         step: '=',
+        showValidationButton: '=',
         documentId: '@'
     }
 }).controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
@@ -178,6 +182,13 @@ angular.module('engine.document').component('engineDocument', {
     $scope.steps = this.options.document.steps;
     $scope.actions = [];
     $scope.step = this.step;
+
+    this.form = {
+        form: {},
+        options: {},
+        backendValidation: {}
+    };
+
     //if categoryGroup (string) will be overriten in this.init()
     $scope.currentCategories = $scope.steps == null || angular.isArray($scope.steps) && $scope.steps.length == 0 ? [] : $scope.steps[$scope.step].categories || [];
 
@@ -247,10 +258,29 @@ angular.module('engine.document').component('engineDocument', {
                             type: 'text',
                             label: metric.label,
                             description: metric.description,
-                            placeholder: 'Enter ' + metric.label
+                            placeholder: 'Enter ' + metric.label,
+                            required: metric.required
                         },
                         expressionProperties: {
                             'templateOptions.disabled': self.isDisabled
+                        },
+                        validators: {
+                            engineValid: {
+                                expression: function expression($viewValue, $modelValue, scope) {
+                                    //no backend validation yet
+                                    if (_.isEmpty(self.form.backendValidation)) return true;
+
+                                    if (self.form.backendValidation.valid) return true;
+
+                                    return false;
+                                },
+                                message: '"THIS IS WRONG!"'
+                            }
+                        },
+                        validation: {
+                            messages: {
+                                required: 'to.label+"_required"'
+                            }
                         }
                     };
 
@@ -287,6 +317,10 @@ angular.module('engine.document').component('engineDocument', {
                                 document: $scope.document
                             }, expressionProperties: { 'templateOptions.disabled': self.isDisabled }
                         };
+                    }
+
+                    if (metric.reloadOnChange) {
+                        //make reload listener
                     }
 
                     if (categories[metric.categoryId] == undefined) {
@@ -341,10 +375,20 @@ angular.module('engine.document').component('engineDocument', {
     };
 
     $scope.onChangeStep = function (newStep) {
-        if (self.isEditable()) $scope.saveDocument(function () {
-            $routeParams.step = newStep;
-            $location.search({ step: newStep });
-        });else {
+        if (self.isEditable()) {
+            engineDocument.validate($scope.document, function (data) {
+                console.log(data);
+                self.form.backendValidation = data;
+                self.form.backendValidation.valid = false;
+
+                self.form.form.$setValidity('proposalName', false.self.form.form);
+            });
+
+            $scope.saveDocument(function () {
+                $routeParams.step = newStep;
+                $location.search({ step: newStep });
+            });
+        } else {
             $routeParams.step = newStep;
             $location.search({ step: newStep });
         }
@@ -521,7 +565,8 @@ angular.module('engine').provider('$engineConfig', function () {
             steps: _apiCheck.arrayOf(_apiCheck.shape({
                 name: _apiCheck.string,
                 categories: _apiCheck.arrayOf(_apiCheck.string)
-            }))
+            })),
+            showValidateButton: _apiCheck.bool.optional
         })
     });
 
@@ -582,7 +627,8 @@ angular.module('engine').provider('$engineConfig', function () {
             },
             document: {
                 templateUrl: '/src/document/document.wrapper.tpl.html',
-                steps: null
+                steps: null,
+                showValidationButton: false
             }
         };
 
@@ -607,7 +653,8 @@ angular.module('engine').provider('$engineConfig', function () {
 
         $routeProvider.when(documentUrl, {
             templateUrl: options.document.templateUrl, controller: 'engineDocumentWrapperCtrl',
-            options: options
+            options: options,
+            reloadOnSearch: false
         });
 
         documents_d[documentModelType] = options;
@@ -831,16 +878,36 @@ angular.module('engine').factory('engineResolve', function () {
         return _action.post({ actionId: actionId, documentId: document.id }, document, callback, errorCallback);
     };
 }).service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
-    var _document = $resource($engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', { documentId: '@documentId' }, {
-        getDocument: { method: 'POST', transformResponse: EngineInterceptor.response }
+    var _document = $resource('', { documentId: '@documentId' }, {
+        getDocument: { url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
+            method: 'POST', transformResponse: EngineInterceptor.response },
+        validate: { url: $engineConfig.baseUrl + '/validate-metric-values',
+            method: 'POST', transformResponse: EngineInterceptor.response }
     });
 
     return {
         get: function get(documentId, callback, errorCallback) {
-            $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
+            $engineApiCheck([$engineApiCheck.string, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments, errorCallback);
 
             //null is passed explicitly to POST data, to ensure engine compatibility
             return _document.getDocument({ documentId: documentId }, null, callback, errorCallback);
+        },
+        /**
+         * Validates given document, sending it to agreemount.engine backend
+         *
+         * @param document
+         * @param callback
+         * @param errorCallback
+         * @returns {*|{url, method, transformResponse}}
+         */
+        validate: function validate(document, callback, errorCallback) {
+            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
+
+            return _document.validate({}, document, function (data) {
+                document.$valid = data.valid;
+
+                if (callback) callback(data);
+            }, errorCallback);
         }
     };
 }).service('EngineInterceptor', function () {
@@ -1091,7 +1158,7 @@ angular.module('engine.list').component('engineDocumentList', {
 "use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">{{$ctrl.step+2}}. {{$ctrl.steps[$ctrl.step+1].name}}</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actions\" ng-if=\"!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action)\">{{action.label}}</button>");
+  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">{{$ctrl.step+2}}. {{$ctrl.steps[$ctrl.step+1].name | translate}}</button>\n\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && (!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actions\" ng-if=\"!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action)\" translate>{{action.label}}</button>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
@@ -1100,10 +1167,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\">Anuluj</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\">\n\n        <engine-document-actions ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" steps=\"$ctrl.options.document.steps\" step=\"step\" step-change=\"onChangeStep(step)\" actions=\"actions\" class=\"btn-group\"></engine-document-actions>\n    </formly-form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.form.form\">\n        <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\" options=\"$ctrl.form.options\" form=\"$ctrl.form.form\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" steps=\"$ctrl.options.document.steps\" step=\"step\" step-change=\"onChangeStep(step)\" actions=\"actions\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"step\" steps=\"options.document.steps\" options=\"options\" ng-change=\"changeStep(step)\" class=\"col-md-4\"></engine-steps>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\">{{steps[step].name}} {{step + 1}}/{{steps.length}}</span></h1>\n    <engine-document show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"step\" steps=\"options.document.steps\" options=\"options\" ng-change=\"changeStep(step)\" class=\"col-md-4\"></engine-steps>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/fields/datepicker.tpl.html", "<p class=\"input-group\">\n    <input  type=\"text\"\n            id=\"{{::id}}\"\n            name=\"{{::id}}\"\n            ng-model=\"model[options.key]\"\n            class=\"form-control\"\n            ng-click=\"datepicker.open($event)\"\n            uib-datepicker-popup=\"{{to.datepickerOptions.format}}\"\n            is-open=\"datepicker.opened\"\n            datepicker-options=\"to.datepickerOptions\" />\n    <span class=\"input-group-btn\">\n            <button type=\"button\" class=\"btn btn-default\" ng-click=\"datepicker.open($event)\" ng-disabled=\"to.disabled\"><i class=\"glyphicon glyphicon-calendar\"></i></button>\n        </span>\n</p>");
@@ -1118,7 +1185,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/has-error.tpl.html", "<div class=\"form-group\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n</div>\n");
+  $templateCache.put("/src/formly/has-error.tpl.html", "<div class=\"form-group\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n  <div ng-messages=\"fc.$error\" ng-if=\"form.$submitted || options.formControl.$touched\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/input.tpl.html", "<input class=\"form-control\" ng-model=\"model[options.key]\">");

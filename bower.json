@@ -48,9 +48,13 @@
     "angular-formly": "^8.4.0",
     "api-check": "^7.5.5",
     "underscore": "^1.8.3",
-    "angular-translate": "^2.13.1"
+    "angular-translate": "^2.13.1",
+    "angular-messages": "1.5.8"
   },
   "devDependencies": {
     "angular-mocks": "^1.5.8"
+  },
+  "resolutions": {
+    "angular": "1.5.8"
   }
 }

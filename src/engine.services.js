@@ -120,17 +120,40 @@ angular.module('engine')
         }
     })
     .service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
-        var _document = $resource($engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true', {documentId: '@documentId'},
+        var _document = $resource('', {documentId: '@documentId'},
             {
-                getDocument: {method: 'POST', transformResponse: EngineInterceptor.response},
+                getDocument: {url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
+                              method: 'POST', transformResponse: EngineInterceptor.response},
+                validate:    {url: $engineConfig.baseUrl + '/validate-metric-values',
+                              method: 'POST', transformResponse: EngineInterceptor.response}
             });
 
         return {
             get: function (documentId, callback, errorCallback) {
-                $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments, errorCallback);
+                $engineApiCheck([$engineApiCheck.string, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments, errorCallback);
 
                 //null is passed explicitly to POST data, to ensure engine compatibility
                 return _document.getDocument({documentId: documentId}, null, callback, errorCallback);
+            },
+            /**
+             * Validates given document, sending it to agreemount.engine backend
+             *
+             * @param document
+             * @param callback
+             * @param errorCallback
+             * @returns {*|{url, method, transformResponse}}
+             */
+            validate: function (document, callback, errorCallback) {
+                $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional],
+                                 arguments);
+
+                return _document.validate({}, document, function (data) {
+                    document.$valid = data.valid;
+
+
+                    if(callback)
+                        callback(data);
+                }, errorCallback);
             }
         }
     }).service('EngineInterceptor', function () {

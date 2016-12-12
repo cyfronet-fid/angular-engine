@@ -1,7 +1,8 @@
 angular.module('engine.common')
 .component('engineDocumentActions', {
     templateUrl: '/src/common/document-actions/document-actions.tpl.html',
-    controller: function ($timeout, $rootScope, engineAction, $scope, DocumentEventCtx, ErrorEventCtx, ENGINE_SAVE_ACTIONS, $log) {
+    controller: function ($timeout, $rootScope, engineAction, $scope, DocumentEventCtx, ErrorEventCtx,
+                          engineDocument, ENGINE_SAVE_ACTIONS, $log) {
         var self = this;
 
         if(!this.documentScope){
@@ -15,12 +16,14 @@ angular.module('engine.common')
             $scope.$emit('engine.common.action.invoke', action, self.document);
         };
 
+        this.validate = function () {
+            engineDocument.validate(self.document, function (data) {
+                console.log(data);
+            })
+        };
+
         this.changeStep = function (newStep) {
             $scope.$emit('engine.common.step.change', newStep, self.document);
-            // self.engineAction(self.getCreateUpdateAction(), self.document, function () {
-            //     self.step = newStep;
-                // $timeout(self.stepChange);
-            // });
         }
     },
     bindings: {
@@ -30,6 +33,7 @@ angular.module('engine.common')
         actions: '=',
         step: '=',
         steps: '=',
-        stepChange: '&'
+        stepChange: '&',
+        showValidationButton: '='
     }
 });
