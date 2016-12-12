@@ -46,6 +46,7 @@ angular.module('engine')
     .provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider) {
         var self = this;
 
+        var dashboards = [];
         var documents = [];
         var documents_d = {};
 
@@ -67,6 +68,40 @@ angular.module('engine')
                 }))
             })
         });
+
+        /**
+         * Register dashboard in angular-engine, angular URL will be generated queries to declared documents
+         * will be displayed using column definitions in those declarations.
+         *
+         * @param {string} url Angular url to created dashboard
+         * @param {Array} queries list of query objects
+         * @param {Object} options
+         */
+        this.dashboard = function (url, queries, options) {
+            var _options = {
+                templateUrl: '/src/dashboard/dashboard.tpl.html'
+            };
+
+            options = angular.merge(_options, options);
+
+            _apiCheck([_apiCheck.string,
+                _apiCheck.arrayOf(_apiCheck.shape({
+                    queryId: _apiCheck.string,
+                    label: _apiCheck.string,
+                    documentModelId: _apiCheck.string,
+                    showCreateButton: _apiCheck.bool.optional
+                }),
+                _apiCheck.shape({templateUrl: _apiCheck.string}))], [url, queries, options]);
+
+            options.queries = queries;
+
+            $routeProvider.when(url, {
+                templateUrl: options.templateUrl, controller: 'engineDashboardCtrl',
+                options: options
+            });
+
+            dashboards.push({'url': url, 'queries': queries, 'options': options});
+        };
 
         /**
          * Register document in angular-engine, angular URLs will be generated, and document will become available for

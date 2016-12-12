@@ -1,0 +1,1 @@
+angular.module('engine.dashboard', ['ngRoute', 'engine.list']);

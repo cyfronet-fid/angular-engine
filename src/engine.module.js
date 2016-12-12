@@ -6,6 +6,7 @@ angular.module('engine',
     'ui.bootstrap',
     'engine.common',
     'engine.list',
+    'engine.dashboard',
     'engine.steps',
     'pascalprecht.translate',
     'engine.document'])

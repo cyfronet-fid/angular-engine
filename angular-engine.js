@@ -3,13 +3,16 @@
 angular.module('engine.common', []);
 'use strict';
 
+angular.module('engine.dashboard', ['ngRoute', 'engine.list']);
+'use strict';
+
 angular.module('engine.document', ['ngRoute']);
 'use strict';
 
 angular.module('engine.steps', ['ngRoute']);
 'use strict';
 
-angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.steps', 'pascalprecht.translate', 'engine.document']).run(function (formlyConfig) {
+angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'pascalprecht.translate', 'engine.document']).run(function (formlyConfig) {
     var attributes = ['date-disabled', 'custom-class', 'show-weeks', 'starting-day', 'init-date', 'min-mode', 'max-mode', 'format-day', 'format-month', 'format-year', 'format-day-header', 'format-day-title', 'format-month-title', 'year-range', 'shortcut-propagation', 'datepicker-popup', 'show-button-bar', 'current-text', 'clear-text', 'close-text', 'close-on-date-selection', 'datepicker-append-to-body'];
 
     var bindings = ['datepicker-mode', 'min-date', 'max-date'];
@@ -137,6 +140,13 @@ angular.module('engine.common').component('engineDocumentActions', {
         steps: '=',
         stepChange: '&'
     }
+});
+'use strict';
+
+angular.module('engine.dashboard').controller('engineDashboardCtrl', function ($scope, $route, $engine) {
+    $scope.$engine = $engine;
+    $scope.options = $route.current.$$route.options;
+    $scope.queries = $scope.options.queries;
 });
 'use strict';
 
@@ -488,6 +498,7 @@ angular.module('engine').provider('$engineConfig', function () {
 }).provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider) {
     var self = this;
 
+    var dashboards = [];
     var documents = [];
     var documents_d = {};
 
@@ -509,6 +520,38 @@ angular.module('engine').provider('$engineConfig', function () {
             }))
         })
     });
+
+    /**
+     * Register dashboard in angular-engine, angular URL will be generated queries to declared documents
+     * will be displayed using column definitions in those declarations.
+     *
+     * @param {string} url Angular url to created dashboard
+     * @param {Array} queries list of query objects
+     * @param {Object} options
+     */
+    this.dashboard = function (url, queries, options) {
+        var _options = {
+            templateUrl: '/src/dashboard/dashboard.tpl.html'
+        };
+
+        options = angular.merge(_options, options);
+
+        _apiCheck([_apiCheck.string, _apiCheck.arrayOf(_apiCheck.shape({
+            queryId: _apiCheck.string,
+            label: _apiCheck.string,
+            documentModelId: _apiCheck.string,
+            showCreateButton: _apiCheck.bool.optional
+        }), _apiCheck.shape({ templateUrl: _apiCheck.string }))], [url, queries, options]);
+
+        options.queries = queries;
+
+        $routeProvider.when(url, {
+            templateUrl: options.templateUrl, controller: 'engineDashboardCtrl',
+            options: options
+        });
+
+        dashboards.push({ 'url': url, 'queries': queries, 'options': options });
+    };
 
     /**
      * Register document in angular-engine, angular URLs will be generated, and document will become available for
@@ -1040,6 +1083,9 @@ angular.module('engine.list').component('engineDocumentList', {
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">{{$ctrl.step+2}}. {{$ctrl.steps[$ctrl.step+1].name}}</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actions\" ng-if=\"!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.engineAction(action)\">{{action.label}}</button>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\">Anuluj</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n</div>");
