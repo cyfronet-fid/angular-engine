@@ -58,8 +58,9 @@ angular.module('engine.document')
                     self.loadMetrics();
                 });
             }
-            else {
+            else { //this is new document
                 $scope.document = angular.copy(self.options.documentJSON);
+                $scope.document.name = (self.options.name || 'Document') + ' initiated on ' + (new Date());
                 $scope.actions = engineActionsAvailable.forDocument($scope.document);
                 self.loadMetrics();
             }
@@ -152,9 +153,10 @@ angular.module('engine.document')
                         }
                     }
 
-                    if(categories[metric.categoryId] == undefined)
-                        categories[metric.categoryId] = {templateOptions: {wrapperClass: categoryClass, label: engineMetricCategories.names[metric.categoryId].label}, fieldGroup: [], wrapper: 'category'};
-
+                    if(categories[metric.categoryId] == undefined){
+                        console.log(metric.categoryId);
+                        categories[metric.categoryId] = {templateOptions: {wrapperClass: categoryClass, label: engineMetricCategories.getNames(metric.categoryId).label}, fieldGroup: [], wrapper: 'category'};
+                    }
                     categories[metric.categoryId].fieldGroup.push(field);
 
                 }

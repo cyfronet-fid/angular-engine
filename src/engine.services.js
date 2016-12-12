@@ -47,7 +47,7 @@ angular.module('engine')
             return _query.post(documentJSON, callback, errorCallback);
         }
     })
-    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineResourceLoader) {
+    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log, engineResourceLoader) {
         var _query = $resource($engineConfig.baseUrl + '/metric-categories', {}, {
             get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
         });
@@ -80,7 +80,11 @@ angular.module('engine')
             });
             collectMetrics(data);
             console.debug(_metricCategories);
-            return {metrics: _metricCategories, names: _names};
+            return {metrics: _metricCategories, getNames: function (metricId) {
+                if(!(metricId in _names))
+                    $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: '+metricId);
+                return _names[metricId]
+            }};
         });
 
         return _promise

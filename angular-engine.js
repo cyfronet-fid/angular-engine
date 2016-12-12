@@ -205,7 +205,9 @@ angular.module('engine.document').component('engineDocument', {
                     self.loadMetrics();
                 });
             } else {
+                //this is new document
                 $scope.document = angular.copy(self.options.documentJSON);
+                $scope.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
                 $scope.actions = engineActionsAvailable.forDocument($scope.document);
                 self.loadMetrics();
             }
@@ -287,8 +289,10 @@ angular.module('engine.document').component('engineDocument', {
                         };
                     }
 
-                    if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: engineMetricCategories.names[metric.categoryId].label }, fieldGroup: [], wrapper: 'category' };
-
+                    if (categories[metric.categoryId] == undefined) {
+                        console.log(metric.categoryId);
+                        categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: engineMetricCategories.getNames(metric.categoryId).label }, fieldGroup: [], wrapper: 'category' };
+                    }
                     categories[metric.categoryId].fieldGroup.push(field);
                 }
             });
@@ -758,7 +762,7 @@ angular.module('engine').factory('engineResolve', function () {
 
         return _query.post(documentJSON, callback, errorCallback);
     };
-}).service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineResourceLoader) {
+}).service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log, engineResourceLoader) {
     var _query = $resource($engineConfig.baseUrl + '/metric-categories', {}, {
         get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
     });
@@ -791,7 +795,10 @@ angular.module('engine').factory('engineResolve', function () {
         });
         collectMetrics(data);
         console.debug(_metricCategories);
-        return { metrics: _metricCategories, names: _names };
+        return { metrics: _metricCategories, getNames: function getNames(metricId) {
+                if (!(metricId in _names)) $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricId);
+                return _names[metricId];
+            } };
     });
 
     return _promise;
