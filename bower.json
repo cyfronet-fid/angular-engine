@@ -1,6 +1,6 @@
 {
   "name": "angular-engine",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "authors": [
     "Michał Szostak <szostak.m.f@gmail.com>"
   ],
@@ -32,7 +32,8 @@
     "brunch-config.js",
     ".bower.json",
     "package.json",
-    "README.md"
+    "README.md",
+    "doc.conf.json"
   ],
   "dependencies": {
     "angular": "^1.5.8",
