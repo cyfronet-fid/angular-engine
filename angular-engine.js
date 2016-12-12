@@ -173,6 +173,8 @@ angular.module('engine.document').component('engineDocument', {
 
     this.init = function () {
         return engineMetricCategories.then(function (data) {
+            engineMetricCategories = data;
+
             if (angular.isArray(self.options.document.steps)) {
                 angular.forEach(self.options.document.steps, function (step) {
                     if (!angular.isArray(step.categories)) {
@@ -275,7 +277,7 @@ angular.module('engine.document').component('engineDocument', {
                         };
                     }
 
-                    if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: metric.categoryId }, fieldGroup: [], wrapper: 'category' };
+                    if (categories[metric.categoryId] == undefined) categories[metric.categoryId] = { templateOptions: { wrapperClass: categoryClass, label: engineMetricCategories.names[metric.categoryId].label }, fieldGroup: [], wrapper: 'category' };
 
                     categories[metric.categoryId].fieldGroup.push(field);
                 }
