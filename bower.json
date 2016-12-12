@@ -1,6 +1,6 @@
 {
   "name": "angular-engine",
-  "version": "0.0.0",
+  "version": "0.3.0",
   "authors": [
     "Michał Szostak <szostak.m.f@gmail.com>"
   ],
@@ -14,7 +14,7 @@
   ],
   "license": "MIT",
   "homepage": "",
-  "private": true,
+  "private": false,
   "ignore": [
     "**/.*",
     "node_modules",
