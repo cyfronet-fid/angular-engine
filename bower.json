@@ -1,11 +1,14 @@
 {
   "name": "angular-engine",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "authors": [
     "Michał Szostak <szostak.m.f@gmail.com>"
   ],
   "description": "Front-end library for engine backend",
-  "main": ["./angular-engine.js", "./angular-engine.css"],
+  "main": [
+    "./angular-engine.js",
+    "./angular-engine.css"
+  ],
   "moduleType": [
     "amd"
   ],
@@ -44,7 +47,8 @@
     "angular-animate": "^1.5.8",
     "angular-formly": "^8.4.0",
     "api-check": "^7.5.5",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "angular-translate": "^2.13.1"
   },
   "devDependencies": {
     "angular-mocks": "^1.5.8"

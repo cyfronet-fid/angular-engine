@@ -56,7 +56,8 @@ angular.module('engine')
             name: _apiCheck.string,
             list: _apiCheck.shape({
                 caption: _apiCheck.string,
-                templateUrl: _apiCheck.string
+                templateUrl: _apiCheck.string,
+                createButtonLabel: _apiCheck.string
             }),
             document: _apiCheck.shape({
                 templateUrl: _apiCheck.string,

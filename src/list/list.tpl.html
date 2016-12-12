@@ -31,4 +31,7 @@
 
     </div>
 </div>
-<a href="" ng-if="$ctrl._showCreateButton && canCreateDocument()" ng-click="onCreateDocument()" class="btn btn-primary">create {{options.name}}</a>
+<a href="" ng-if="$ctrl._showCreateButton && canCreateDocument()" ng-click="onCreateDocument()" class="btn btn-primary">
+    <span ng-if="!$ctrl.options.list.createButtonLabel">create {{options.name}}</span>
+    <span ng-if="$ctrl.options.list.createButtonLabel">{{$ctrl.options.list.createButtonLabel | translate}}</span>
+</a>

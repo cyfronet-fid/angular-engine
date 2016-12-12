@@ -1,4 +1,11 @@
 angular.module('engine')
+    .factory('engineResolve', function () {
+        function index(obj,i) {return obj[i]}
+
+        return function (baseObject, str) {
+            return str.split('.').reduce(index, baseObject);
+        };
+    })
     .service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
         var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&attachAvailableActions=true&documentId=:documentId',

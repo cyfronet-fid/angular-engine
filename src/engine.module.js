@@ -7,7 +7,9 @@ angular.module('engine',
     'engine.common',
     'engine.list',
     'engine.steps',
+    'pascalprecht.translate',
     'engine.document'])
+
 .run(function(formlyConfig) {
     var attributes = [
         'date-disabled',

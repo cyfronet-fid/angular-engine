@@ -31,9 +31,9 @@ angular.module('engine.list')
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
-                                        engineActionsAvailable, engineActionUtils, DocumentModal) {
+                                        engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal) {
     var self = this;
-
+    self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
     this.formWidget = this.formWidget === 'true';
 
@@ -75,7 +75,7 @@ angular.module('engine.list')
         engineMetric($scope.options.documentJSON, function (data) {
             angular.forEach(data, function (metric) {
                 $scope.columns.push({name: metric.id, caption: metric.label});
-            })
+            });
         });
     }
 
