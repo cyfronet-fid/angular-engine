@@ -52,9 +52,10 @@ angular.module('engine.list')
 
     $scope.query = self.query || $scope.options.query;
 
-    $scope.documents = engineQuery($scope.query, this.parentDocument ? this.parentDocument.id : undefined);
+    var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
+    $scope.documents = engineQuery($scope.query, _parentDocumentId);
 
-    $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON);
+    $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
     $scope.engineAction = function (actionId, document) {
         engineAction(actionId, document).$promise.then(function (data) {

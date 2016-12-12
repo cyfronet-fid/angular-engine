@@ -96,8 +96,8 @@ angular.module('engine')
 
                 return _action.post({documentId: document.id}, document, callback, errorCallback)
             },
-            forType: function (documentJson, callback, errorCallback) {
-                return _action.post({}, documentJson, callback, errorCallback);
+            forType: function (documentJson, parentDocumentId, callback, errorCallback) {
+                return _action.post({documentId: parentDocumentId}, documentJson, callback, errorCallback);
             }
         };
     })
