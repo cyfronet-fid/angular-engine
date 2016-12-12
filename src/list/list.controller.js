@@ -51,9 +51,8 @@ angular.module('engine.list')
 
 
     $scope.query = self.query || $scope.options.query;
-    //
-    // if(angular.isArray($scope.options.query))
-    $scope.documents = engineQuery($scope.query, this.parentDocument.id);
+
+    $scope.documents = engineQuery($scope.query, this.parentDocument ? this.parentDocument.id : undefined);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON);
 

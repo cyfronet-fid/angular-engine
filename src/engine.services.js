@@ -1,7 +1,7 @@
 angular.module('engine')
     .service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
-        var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&documentId=:documentId',
+        var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&attachAvailableActions=true&documentId=:documentId',
             {query_id: '@query', documentId: '@documentId'}, {
                 get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
             });

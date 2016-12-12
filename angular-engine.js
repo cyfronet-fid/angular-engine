@@ -673,7 +673,7 @@ angular.module('engine').provider('$engineConfig', function () {
 
 angular.module('engine').service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
-    var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
+    var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&attachAvailableActions=true&documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
         get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
     });
 
@@ -978,9 +978,8 @@ angular.module('engine.list').component('engineDocumentList', {
     $scope.columns = $scope.options.list.columns;
 
     $scope.query = self.query || $scope.options.query;
-    //
-    // if(angular.isArray($scope.options.query))
-    $scope.documents = engineQuery($scope.query, this.parentDocument.id);
+
+    $scope.documents = engineQuery($scope.query, this.parentDocument ? this.parentDocument.id : undefined);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON);
 
