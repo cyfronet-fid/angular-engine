@@ -265,7 +265,7 @@ angular.module('engine.document').component('engineDocument', {
                             "cols": 15
                         };
                     } else if (metric.inputType == 'EXTERNAL') {
-                        field = { template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '">' + '</' + metric.externalType + '>',
+                        field = { template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
                             templateOptions: { ngModel: $scope.document, options: self.options }, expressionProperties: { 'templateOptions.disabled': self.isDisabled } };
                     } else if (metric.inputType == 'QUERIED_LIST') {
                         field.type = undefined;

@@ -25,7 +25,7 @@ module.exports = {
                     'src/**.module.js'
                 ]
             }
-        },
+        }
     },
     conventions: {
         ignored: ['node_modules/**', 'bower_components/**']
