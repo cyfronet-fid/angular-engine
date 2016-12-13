@@ -207,6 +207,10 @@ angular.module('engine.document').component('engineDocument', {
     this.documentForm = new DocumentForm();
 
     /**
+     * **NOTE** this function should be called only after all required promises are fulfilled:
+     * * this.stepList.$ready
+     * * this.documentForm.$ready
+     *
      * Initializes document (loads document data, loads available actions, loads metrics for forms)
      * everything is accomplished by chaining promises, method returns promise itself, which should be
      * consumed in order to make sure that all asynchronous operations have been compleated
@@ -236,7 +240,7 @@ angular.module('engine.document').component('engineDocument', {
         }).then(function (actions) {
             self.actions = actions;
         }).then(function () {
-            self.documentForm.init($scope.document, self.options);
+            self.documentForm.init($scope.document, self.options, self.stepList);
             //load metrics to form
             return self.documentForm.loadMetrics();
         }).then(function () {
@@ -522,18 +526,21 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
         var self = this;
 
         this.$ready = engineMetricCategories.then(function (metricCategories) {
-            if (!_.isEmpty(self.documentSteps)) _.forEach(self.documentSteps, function (step, index) {
+            assert(_.isArray(self.documentSteps) && !_.isEmpty(self.documentSteps), 'documentSteps were not defined');
 
-                if (_.isArray(step.categories)) self.steps.push(new Step(step.categories));else {
-                    //is string
-                    self.steps.push(new Step(engineMetricCategories.metrics[step.categories].children));
+            _.forEach(self.documentSteps, function (step, index) {
+                if (_.isArray(step.categories)) {
+                    var _categories = [];
+                    _.forEach(step.categories, function (categoryId) {
+                        _categories.push(metricCategories.getNames(categoryId));
+                    });
+
+                    self.steps.push(new Step(_categories));
+                } else {
+                    //is string (metricCategory) so we have to retrieve its children
+                    self.steps.push(new Step(metricCategories.metrics[step.categories].children));
                 }
-            });else {
-                //this means it will be populated later
-                self.singleStep = true;
-            }
-
-            return self;
+            });
         });
     };
 
@@ -561,15 +568,20 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
 }).factory('Step', function () {
 
     function Step(metricCategories, visible) {
+        this.defaultState = 'blank';
+
         this.metricCategories = metricCategories;
         this.fields = [];
         this.visible = visible != null;
+        this.state = this.defaultState;
+        this.$valid = false;
     }
 
     Step.prototype.validate = function validate() {};
 
     return Step;
-}).factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory) {
+}).factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $engineApiCheck, $log) {
+    var _apiCheck = $engineApiCheck;
 
     function DocumentForm() {
         this.fieldList = [];
@@ -578,9 +590,11 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
         this.metricCategories = {};
         this.document = null;
         this.documentOptions = null;
+        this.steps = null;
         this.disabled = true;
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
+        this.formStructure = [];
 
         this.$ready = this.loadMetricCategories();
     }
@@ -598,9 +612,15 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
     DocumentForm.prototype.setOptions = function setOptions(documentOptions) {
         this.documentOptions = documentOptions;
     };
-    DocumentForm.prototype.init = function init(document, options) {
+    DocumentForm.prototype.setSteps = function setSteps(steps) {
+        this.steps = steps;
+    };
+    DocumentForm.prototype.init = function init(document, options, steps) {
+        _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);
+
         this.setDocument(document);
         this.setOptions(options);
+        this.setSteps(steps);
     };
 
     DocumentForm.prototype.setEditable = function setEditable(editable) {
@@ -608,8 +628,11 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
     };
 
     DocumentForm.prototype.assertInit = function assertInit() {
-        assert(this.document != null, 'DocumentForm.document is null! make sure to call DocumentForm.init(document, options) before calling other methods');
-        assert(this.documentOptions != null, 'DocumentForm.documentOptions is null! make sure to call DocumentForm.init(document, options) before calling other methods');
+        var message = ' is null! make sure to call DocumentForm.init(document, options, steps) before calling other methods';
+
+        assert(this.document != null, 'DocumentForm.document' + message);
+        assert(this.documentOptions != null, 'DocumentForm.documentOptions' + message);
+        assert(this.steps != null, 'DocumentForm.steps' + message);
     };
 
     DocumentForm.prototype.makeForm = function makeForm() {
@@ -621,24 +644,48 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
         assert(this.metricList.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetrics');
         assert(this.metricCategories.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetricCategories');
 
-        var _formStructure = parseMetricCategories(self.metricCategories.metrics);
-        console.debug('DocumentForm form structure', _formStructure);
+        var _metricDict = {};
 
-        return _formStructure;
+        _.forEach(this.steps.getSteps(), function (step) {
+            self.formStructure.push(parseMetricCategories(step.metricCategories));
+        });
+
+        connectFields();
+
+        console.debug('DocumentForm form structure', self.formStructure);
+
+        return self.formStructure;
 
         function parseMetricCategories(metricCategories) {
             var formCategories = [];
 
             _.forEach(metricCategories, function (metricCategory) {
-                formCategories.push({
+                var formMetricCategory = {
+                    id: metricCategory.id,
                     templateOptions: {
                         wrapperClass: self.categoryWrapperCSS,
-                        label: metricCategory.label
+                        label: metricCategory.label,
+                        visualClass: metricCategory.visualClass
                     }, fieldGroup: parseMetricCategories(metricCategory.children), wrapper: self.categoryWrapper
-                });
+                };
+
+                _metricDict[metricCategory.id] = formMetricCategory;
+
+                formCategories.push(formMetricCategory);
             });
 
             return formCategories;
+        }
+
+        function connectFields() {
+            _.forEach(self.fieldList, function (field) {
+                if (_metricDict[field.categoryId] === undefined) {
+                    $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!', 'field', field, 'categoryId', field.categoryId);
+                    return;
+                }
+
+                _metricDict[field.categoryId].fieldGroup.push(field);
+            });
         }
     };
 
@@ -661,6 +708,23 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
     };
 
     return DocumentForm;
+}).factory('DocumentCategoryFactory', function (DocumentCategory, $engine) {}).factory('DocumentCategory', function () {
+    function DocumentCategory(fieldCondition, fieldBuilder) {
+        this.fieldCondition = fieldCondition;
+        this.fieldCustomizer = fieldBuilder;
+    }
+
+    DocumentCategory.prototype.matches = function matches(metricCategory) {
+        return this.fieldCondition(metricCategory);
+    };
+
+    DocumentCategory.prototype.makeCategory = function makeCategory(metricCategory, ctx) {
+        var formlyFieldCategory = {};
+
+        return this.fieldCustomizer(formlyFieldCategory, ctx);
+    };
+
+    return DocumentCategory;
 }).factory('DocumentFieldFactory', function (DocumentField, $engine) {
     function DocumentFieldFactory(metrics) {
         this._fieldList = [];
@@ -767,15 +831,17 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
 
         this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
             return {
+                id: metric.id,
+                categoryId: metric.categoryId,
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
                 templateOptions: { ngModel: ctx.document, options: ctx.options }
             };
         }));
 
         this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
-            field.type = undefined;
-            field.model = undefined;
             field = {
+                id: metric.id,
+                categoryId: metric.categoryId,
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
@@ -811,6 +877,8 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
     DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
         var formlyField = {
             model: metricList,
+            categoryId: metric.categoryId,
+            id: metric.id, //this is required for DocumentForm
             key: metric.id,
             type: 'input',
             className: metric.visualClass.join(' '),
@@ -1195,7 +1263,7 @@ angular.module('engine').factory('engineResolve', function () {
 
     function collectMetrics(metrics) {
         function writeMetric(_metric) {
-            _names[_metric.id] = { label: _metric.label, position: _metric.position, visualClass: _metric.visualClass };
+            _names[_metric.id] = _metric; //{label: _metric.label, position: _metric.position, visualClass: _metric.visualClass};
         }
         function collectChildren(metric) {
             angular.forEach(metric.children, function (_metric) {

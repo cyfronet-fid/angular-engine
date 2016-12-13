@@ -57,7 +57,7 @@ angular.module('engine')
 
         function collectMetrics(metrics) {
             function writeMetric(_metric) {
-                _names[_metric.id] = {label: _metric.label, position: _metric.position, visualClass: _metric.visualClass};
+                _names[_metric.id] = _metric; //{label: _metric.label, position: _metric.position, visualClass: _metric.visualClass};
             }
             function collectChildren(metric) {
                 angular.forEach(metric.children, function (_metric) {
