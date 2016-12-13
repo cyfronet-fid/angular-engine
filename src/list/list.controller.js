@@ -100,7 +100,7 @@ angular.module('engine.list')
     };
     $scope.onCreateDocument = function() {
         if($scope.options.subdocument == true)
-            DocumentModal($scope.options, _parentDocumentId).then(function () {
+            DocumentModal($scope.options, _parentDocumentId, function () {
                 $scope.documents = engineQuery($scope.query, _parentDocumentId);
             });
         else

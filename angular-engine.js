@@ -1296,7 +1296,7 @@ angular.module('engine.list').component('engineDocumentList', {
         return $scope.options.documentUrl.replace(':id', document);
     };
     $scope.onCreateDocument = function () {
-        if ($scope.options.subdocument == true) DocumentModal($scope.options, _parentDocumentId).then(function () {
+        if ($scope.options.subdocument == true) DocumentModal($scope.options, _parentDocumentId, function () {
             $scope.documents = engineQuery($scope.query, _parentDocumentId);
         });else $location.path($scope.genDocumentLink('new'));
     };
