@@ -4,10 +4,10 @@
 </div>
 <div class="modal-body">
     <div class="container-fluid">
-        <engine-document ng-model="document" options="documentOptions"></engine-document>
+        <engine-document parent-document-id="{{::parentDocumentId}}" validatedSteps="validatedSteps" actions="actions" ng-model="document" options="documentOptions"></engine-document>
     </div>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="closeModal()">Anuluj</button>
-    <button type="submit" ng-repeat="action in actions" style="margin-left: 5px" class="btn btn-default" ng-click="engineAction(action.id, document)">{{action.label}}</button>
+    <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="closeModal()" translate>Cancel</button>
+    <button type="submit" ng-repeat="action in actions" style="margin-left: 5px" class="btn btn-default" ng-click="engineAction(action)" translate>{{action.label}}</button>
 </div>

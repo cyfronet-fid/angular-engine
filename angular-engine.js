@@ -161,7 +161,9 @@ angular.module('engine.document').component('engineDocument', {
         step: '=',
         validatedSteps: '=',
         showValidationButton: '=',
-        documentId: '@'
+        documentId: '@',
+        actions: '=',
+        parentDocumentId: '@'
     }
 }).controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
     $scope.validatedSteps = [];
@@ -190,7 +192,7 @@ angular.module('engine.document').component('engineDocument', {
     $scope.documentScope = $scope;
     $scope.document = {};
     $scope.steps = this.options.document.steps;
-    $scope.actions = [];
+    self.actions = [];
     $scope.metrics = {};
     this.allMetrics_d = {};
     this.showErrors = false;
@@ -224,21 +226,21 @@ angular.module('engine.document').component('engineDocument', {
             if (self.documentId && self.documentId != 'new') {
                 engineDocument.get(self.documentId, function (data) {
                     $scope.document = data.document;
-                    $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                    self.actions = engineActionsAvailable.forDocument($scope.document);
                     self.loadMetrics();
                 });
             } else {
                 //this is new document
                 $scope.document = angular.copy(self.options.documentJSON);
                 $scope.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
-                $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                self.actions = engineActionsAvailable.forDocument($scope.document);
                 self.loadMetrics();
             }
         });
     };
 
     this.isEditable = function () {
-        if (engineActionUtils.getCreateUpdateAction($scope.actions) != null) return true;
+        if (engineActionUtils.getCreateUpdateAction(self.actions) != null) return true;
         return false;
     };
     this.isDisabled = function () {
@@ -415,13 +417,13 @@ angular.module('engine.document').component('engineDocument', {
 
     $scope.saveDocument = function (onSuccess, onError) {
 
-        var saveAction = engineActionUtils.getCreateUpdateAction($scope.actions);
+        var saveAction = engineActionUtils.getCreateUpdateAction(self.actions);
 
         if (saveAction) self.engineAction(saveAction, $scope.document, function (data) {
             if (onSuccess) onSuccess(data);
 
             self._handleActionResonse(data);
-        }, onError);
+        }, onError, undefined);
     };
 
     $scope.onChangeStep = function (newStep, oldStep) {
@@ -504,12 +506,12 @@ angular.module('engine.document').component('engineDocument', {
             if (engineActionUtils.isSaveAction(action)) $scope.$broadcast('engine.common.save.error', new DocumentEventCtx(document, action));
 
             if (errorCallback) errorCallback(response);
-        });
+        }, self.parentDocumentId);
     };
 
     self.validateAll = function (event, dontShowErrors) {
 
-        for (var i = 0; i < self.validatedSteps.length; ++i) {
+        if (self.validatedSteps) for (var i = 0; i < self.validatedSteps.length; ++i) {
             self.validatedSteps[i] = 'loading';
         }engineDocument.validate($scope.document, function (data) {
             console.log(data);
@@ -539,20 +541,22 @@ angular.module('engine.document').component('engineDocument', {
                 });
             });
 
-            var _firstFailedStep = null;
+            if (self.validatedSteps) {
+                var _firstFailedStep = null;
 
-            for (var i = 0; i < self.validatedSteps.length; ++i) {
-                if (self.validatedSteps[i] == 'loading') {
-                    self.validatedSteps[i] = 'valid';
-                } else if (_firstFailedStep === null) _firstFailedStep = i;
-            }
+                for (var i = 0; i < self.validatedSteps.length; ++i) {
+                    if (self.validatedSteps[i] == 'loading') {
+                        self.validatedSteps[i] = 'valid';
+                    } else if (_firstFailedStep === null) _firstFailedStep = i;
+                }
 
-            if (!dontShowErrors && _firstFailedStep !== null) {
-                self.step = _firstFailedStep;
-                self.showErrors = true;
+                if (!dontShowErrors && _firstFailedStep !== null) {
+                    self.step = _firstFailedStep;
+                    self.showErrors = true;
+                }
             }
         }, function (response) {
-            for (var i = 0; i < self.validatedSteps.length; ++i) {
+            if (self.validatedSteps) for (var i = 0; i < self.validatedSteps.length; ++i) {
                 self.validatedSteps[i] = 'invalid';
             }
         });
@@ -567,8 +571,8 @@ angular.module('engine.document').component('engineDocument', {
     // });
     $scope.$on('engine.common.document.validate', self.validateAll);
 
-    $scope.$on('engine.common.action.invoke', function (event, action) {
-        self.engineAction(action, $scope.document);
+    $scope.$on('engine.common.action.invoke', function (event, action, callback) {
+        self.engineAction(action, $scope.document, callback);
     });
 
     this.init();
@@ -576,11 +580,17 @@ angular.module('engine.document').component('engineDocument', {
 'use strict';
 
 angular.module('engine.document').factory('DocumentModal', function ($resource, $uibModal) {
-    return function (_documentOptions, documentId, callback) {
+    return function (_documentOptions, parentDocumentId, callback) {
         var modalInstance = $uibModal.open({
             templateUrl: '/src/document/document-modal.tpl.html',
-            controller: function controller($scope, documentOptions, $uibModalInstance) {
+            controller: function controller($scope, documentOptions, engineActionsAvailable, $uibModalInstance) {
                 $scope.documentOptions = documentOptions;
+                $scope.parentDocumentId = parentDocumentId;
+                $scope.validatedSteps = [];
+
+                $scope.engineAction = function (action) {
+                    $scope.$broadcast('engine.common.action.invoke', action, $scope.closeModal);
+                };
 
                 $scope.closeModal = function () {
                     $uibModalInstance.close();
@@ -998,10 +1008,10 @@ angular.module('engine').factory('engineResolve', function () {
         post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: false }
     });
 
-    return function (actionId, document, callback, errorCallback) {
+    return function (actionId, document, callback, errorCallback, parentDocumentId) {
         $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-        return _action.post({ actionId: actionId, documentId: document.id }, document, callback, errorCallback);
+        return _action.post({ actionId: actionId, documentId: parentDocumentId || document.id }, document, callback, errorCallback);
     };
 }).service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
     var _document = $resource('', { documentId: '@documentId' }, {
@@ -1286,7 +1296,9 @@ angular.module('engine.list').component('engineDocumentList', {
         return $scope.options.documentUrl.replace(':id', document);
     };
     $scope.onCreateDocument = function () {
-        if ($scope.options.subdocument == true) DocumentModal($scope.options);else $location.path($scope.genDocumentLink('new'));
+        if ($scope.options.subdocument == true) DocumentModal($scope.options, _parentDocumentId).then(function () {
+            $scope.documents = engineQuery($scope.query, _parentDocumentId);
+        });else $location.path($scope.genDocumentLink('new'));
     };
     $scope.canCreateDocument = function () {
         return engineActionUtils.getCreateUpdateAction($scope.actions) != null;
@@ -1301,13 +1313,13 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\">Anuluj</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action.id, document)\">{{action.label}}</button>\n</div>");
+  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" validatedSteps=\"validatedSteps\" actions=\"actions\" ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action)\" translate>{{action.label}}</button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.form.form\" novalidate>\n        <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\" options=\"$ctrl.form.options\" form=\"$ctrl.form.form\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" steps=\"$ctrl.options.document.steps\" step=\"$ctrl.step\" step-change=\"onChangeStep(step)\" actions=\"actions\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.form.form\" novalidate>\n        <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\" options=\"$ctrl.form.options\" form=\"$ctrl.form.form\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" steps=\"$ctrl.options.document.steps\" step=\"$ctrl.step\" step-change=\"onChangeStep(step)\" actions=\"$ctrl.actions\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document validated-steps=\"validatedSteps\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" validated-steps=\"validatedSteps\" step=\"$routeParams.step\" steps=\"options.document.steps\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document actions=\"actions\" validated-steps=\"validatedSteps\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" validated-steps=\"validatedSteps\" step=\"$routeParams.step\" steps=\"options.document.steps\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/fields/datepicker.tpl.html", "<p class=\"input-group\">\n    <input  type=\"text\"\n            id=\"{{::id}}\"\n            name=\"{{::id}}\"\n            ng-model=\"model[options.key]\"\n            class=\"form-control\"\n            ng-click=\"datepicker.open($event)\"\n            uib-datepicker-popup=\"{{to.datepickerOptions.format}}\"\n            is-open=\"datepicker.opened\"\n            datepicker-options=\"to.datepickerOptions\" />\n    <span class=\"input-group-btn\">\n            <button type=\"button\" class=\"btn btn-default\" ng-click=\"datepicker.open($event)\" ng-disabled=\"to.disabled\"><i class=\"glyphicon glyphicon-calendar\"></i></button>\n        </span>\n</p>");

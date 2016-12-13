@@ -113,10 +113,10 @@ angular.module('engine')
             post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: false}
         });
 
-        return function (actionId, document, callback, errorCallback) {
+        return function (actionId, document, callback, errorCallback, parentDocumentId) {
             $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-            return _action.post({actionId: actionId, documentId: document.id}, document, callback, errorCallback);
+            return _action.post({actionId: actionId, documentId: parentDocumentId || document.id}, document, callback, errorCallback);
         }
     })
     .service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {

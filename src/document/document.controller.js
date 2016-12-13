@@ -9,7 +9,9 @@ angular.module('engine.document')
         step: '=',
         validatedSteps: '=',
         showValidationButton: '=',
-        documentId: '@'
+        documentId: '@',
+        actions: '=',
+        parentDocumentId: '@'
     }
 })
 .controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
@@ -44,7 +46,7 @@ angular.module('engine.document')
     $scope.documentScope = $scope;
     $scope.document = {};
     $scope.steps = this.options.document.steps;
-    $scope.actions = [];
+    self.actions = [];
     $scope.metrics = {};
     this.allMetrics_d = {};
     this.showErrors = false;
@@ -78,21 +80,21 @@ angular.module('engine.document')
             if(self.documentId && self.documentId != 'new') {
                 engineDocument.get(self.documentId, function (data) {
                     $scope.document = data.document;
-                    $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                    self.actions = engineActionsAvailable.forDocument($scope.document);
                     self.loadMetrics();
                 });
             }
             else { //this is new document
                 $scope.document = angular.copy(self.options.documentJSON);
                 $scope.document.name = (self.options.name || 'Document') + ' initiated on ' + (new Date());
-                $scope.actions = engineActionsAvailable.forDocument($scope.document);
+                self.actions = engineActionsAvailable.forDocument($scope.document);
                 self.loadMetrics();
             }
         });
     };
 
     this.isEditable = function () {
-        if(engineActionUtils.getCreateUpdateAction($scope.actions) != null)
+        if(engineActionUtils.getCreateUpdateAction(self.actions) != null)
             return true;
         return false;
     };
@@ -297,16 +299,16 @@ angular.module('engine.document')
     $scope.saveDocument = function(onSuccess, onError){
 
 
-        var saveAction = engineActionUtils.getCreateUpdateAction($scope.actions);
+        var saveAction = engineActionUtils.getCreateUpdateAction(self.actions);
 
         if(saveAction)
             self.engineAction(saveAction, $scope.document, function (data) {
-                if(onSuccess)
+                if (onSuccess)
                     onSuccess(data);
 
                 self._handleActionResonse(data);
 
-            }, onError);
+            }, onError, undefined);
     };
 
     $scope.onChangeStep = function (newStep, oldStep) {
@@ -404,13 +406,14 @@ angular.module('engine.document')
 
             if(errorCallback)
                 errorCallback(response);
-        });
+        }, self.parentDocumentId);
     };
 
     self.validateAll = function (event, dontShowErrors) {
 
-        for(var i=0; i < self.validatedSteps.length; ++i)
-            self.validatedSteps[i] = 'loading';
+        if(self.validatedSteps)
+            for(var i=0; i < self.validatedSteps.length; ++i)
+                self.validatedSteps[i] = 'loading';
 
         engineDocument.validate($scope.document, function (data) {
             console.log(data);
@@ -445,25 +448,28 @@ angular.module('engine.document')
                 })
             });
 
-            var _firstFailedStep = null;
+            if(self.validatedSteps){
+                var _firstFailedStep = null;
 
-            for(var i=0; i < self.validatedSteps.length; ++i){
-                if(self.validatedSteps[i] == 'loading') {
-                    self.validatedSteps[i] = 'valid';
+                for(var i=0; i < self.validatedSteps.length; ++i){
+                    if(self.validatedSteps[i] == 'loading') {
+                        self.validatedSteps[i] = 'valid';
+                    }
+                    else if(_firstFailedStep === null)
+                        _firstFailedStep = i;
                 }
-                else if(_firstFailedStep === null)
-                    _firstFailedStep = i;
-            }
 
-            if(!dontShowErrors && _firstFailedStep !== null) {
-                self.step = _firstFailedStep;
-                self.showErrors = true;
+                if(!dontShowErrors && _firstFailedStep !== null) {
+                    self.step = _firstFailedStep;
+                    self.showErrors = true;
+                }
             }
 
 
         }, function (response) {
-            for(var i=0; i < self.validatedSteps.length; ++i)
-                self.validatedSteps[i] = 'invalid';
+            if(self.validatedSteps)
+                for(var i=0; i < self.validatedSteps.length; ++i)
+                    self.validatedSteps[i] = 'invalid';
         });
     };
 
@@ -476,8 +482,8 @@ angular.module('engine.document')
     // });
     $scope.$on('engine.common.document.validate', self.validateAll);
 
-    $scope.$on('engine.common.action.invoke', function (event, action) {
-        self.engineAction(action, $scope.document);
+    $scope.$on('engine.common.action.invoke', function (event, action, callback) {
+        self.engineAction(action, $scope.document, callback);
     });
 
     this.init();

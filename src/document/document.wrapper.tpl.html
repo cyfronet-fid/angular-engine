@@ -1,5 +1,5 @@
 <div>
     <h1>CREATE {{ options.name }}: <span class="bold" ng-if="steps.length > 0">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>
-    <engine-document validated-steps="validatedSteps" show-validation-button="options.document.showValidationButton" document-id="{{::documentId}}" ng-model="document" step="$routeParams.step" options="options" class="col-md-8"></engine-document>
+    <engine-document actions="actions" validated-steps="validatedSteps" show-validation-button="options.document.showValidationButton" document-id="{{::documentId}}" ng-model="document" step="$routeParams.step" options="options" class="col-md-8"></engine-document>
     <engine-steps ng-model="document" validated-steps="validatedSteps" step="$routeParams.step" steps="options.document.steps" options="options" class="col-md-4"></engine-steps>
 </div>
