@@ -130,7 +130,7 @@ angular.module('engine')
                 document: {
                     templateUrl: '/src/document/document.wrapper.tpl.html',
                     steps: null,
-                    showValidationButton: false
+                    showValidationButton: true
                 }
             };
 

@@ -17,13 +17,11 @@ angular.module('engine.common')
         };
 
         this.validate = function () {
-            engineDocument.validate(self.document, function (data) {
-                console.log(data);
-            })
+            $scope.$emit('engine.common.document.validate');
         };
 
         this.changeStep = function (newStep) {
-            $scope.$emit('engine.common.step.change', newStep, self.document);
+            self.step = newStep;
         }
     },
     bindings: {

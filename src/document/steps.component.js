@@ -14,6 +14,7 @@ angular.module('engine.steps')
             step: '=',
             steps: '=',
             options: '=',
-            ngChange: '&'
+            ngChange: '&',
+            validatedSteps: '='
         }
     });

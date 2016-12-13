@@ -60,12 +60,17 @@ angular.module('engine.formly')
                 name: 'textarea',
                 templateUrl: $engineFormly.templateUrls['textarea'],
                 wrapper: ['engineLabel', 'engineHasError'],
-                defaultOptions: {
-                    ngModelAttrs: {
-                        rows: {attribute: 'rows'},
-                        cols: {attribute: 'cols'}
-                    }
-                },
+                defaultOptions: function(options) {
+
+                    var _options = {
+                        ngModelAttrs: {
+                            rows: {attribute: 'rows'},
+                            cols: {attribute: 'cols'}
+                        }
+                    };
+
+                    return _options;
+                }
                 // apiCheck: check => ({
                 // templateOptions: {
                 //     rows: check.number.optional,

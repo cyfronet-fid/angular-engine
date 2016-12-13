@@ -2,7 +2,13 @@
     <ul class="nav nav-pills nav-stacked nav-steps">
         <li ng-repeat="_step in $ctrl.steps" ng-class="{active: $ctrl.step == $index}" class="ng-scope">
             <a href="" ng-click="$ctrl.changeStep($index)">
-                <span class="menu-icons"><i class="fa fa-circle-o" aria-hidden="true"></i><i class="fa fa-check-circle" aria-hidden="true"></i></span>
+                <span class="menu-icons">
+                    <i class="fa" aria-hidden="true" style="display: inline-block"
+                       ng-class="{'fa-check-circle' : $ctrl.validatedSteps[$index] == 'valid',
+                                  'fa-circle-o': $ctrl.validatedSteps[$index] == 'blank',
+                                  'fa-cog fa-spin': $ctrl.validatedSteps[$index] == 'loading',
+                                  'fa-times-circle-o': $ctrl.validatedSteps[$index] == 'invalid'}"></i>
+                </span>
                 <span class="menu-steps-desc ng-binding">{{$index + 1}}. {{_step.name}}</span>
             </a>
         </li>
