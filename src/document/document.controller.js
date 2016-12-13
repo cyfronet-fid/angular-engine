@@ -62,6 +62,10 @@ angular.module('engine.document')
 
 
     /**
+     * **NOTE** this function should be called only after all required promises are fulfilled:
+     * * this.stepList.$ready
+     * * this.documentForm.$ready
+     *
      * Initializes document (loads document data, loads available actions, loads metrics for forms)
      * everything is accomplished by chaining promises, method returns promise itself, which should be
      * consumed in order to make sure that all asynchronous operations have been compleated
@@ -91,7 +95,7 @@ angular.module('engine.document')
         }).then(function (actions) {
             self.actions = actions;
         }).then(function () {
-            self.documentForm.init($scope.document, self.options);
+            self.documentForm.init($scope.document, self.options, self.stepList);
             //load metrics to form
             return self.documentForm.loadMetrics();
         }).then(function() {

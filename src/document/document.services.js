@@ -11,7 +11,6 @@ angular.module('engine.document')
         this.$ready = null;
         this.currentStep = null;
 
-
         this._preprocessDocumentSteps();
 
     }
@@ -20,21 +19,15 @@ angular.module('engine.document')
         var self = this;
 
         this.$ready = engineMetricCategories.then(function (metricCategories) {
-            if(!_.isEmpty(self.documentSteps))
-                _.forEach(self.documentSteps, function (step, index) {
+            assert(_.isArray(self.documentSteps) && !_.isEmpty(self.documentSteps), 'documentSteps were not defined');
 
-                    if(_.isArray(step.categories))
-                        self.steps.push(new Step(step.categories));
-                    else { //is string
-                        self.steps.push(new Step(engineMetricCategories.metrics[step.categories].children));
-                    }
-                });
-            else {
-                //this means it will be populated later
-                self.singleStep = true;
-            }
-
-            return self;
+            _.forEach(self.documentSteps, function (step, index) {
+                if(_.isArray(step.categories))
+                    self.steps.push(new Step(step.categories));
+                else { //is string (metricCategory) so we have to retrieve its children
+                    self.steps.push(new Step(metricCategories.metrics[step.categories].children));
+                }
+            });
         });
     };
 
@@ -67,9 +60,13 @@ angular.module('engine.document')
 .factory('Step', function () {
 
     function Step(metricCategories, visible) {
+        this.defaultState = 'blank';
+
         this.metricCategories = metricCategories;
         this.fields = [];
         this.visible = (visible != null);
+        this.state = this.defaultState;
+        this.$valid = false;
     }
 
     Step.prototype.validate = function validate() {
@@ -79,7 +76,8 @@ angular.module('engine.document')
 
     return Step;
 })
-.factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory) {
+.factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $engineApiCheck) {
+    var _apiCheck = $engineApiCheck;
 
     function DocumentForm() {
         this.fieldList = [];
@@ -88,6 +86,7 @@ angular.module('engine.document')
         this.metricCategories = {};
         this.document = null;
         this.documentOptions = null;
+        this.steps = null;
         this.disabled = true;
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
@@ -109,9 +108,15 @@ angular.module('engine.document')
     DocumentForm.prototype.setOptions = function setOptions(documentOptions) {
         this.documentOptions = documentOptions;
     };
-    DocumentForm.prototype.init = function init(document, options) {
+    DocumentForm.prototype.setSteps = function setSteps(steps) {
+        this.steps = steps;
+    };
+    DocumentForm.prototype.init = function init(document, options, steps) {
+        _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);
+
         this.setDocument(document);
         this.setOptions(options);
+        this.setSteps(steps);
     };
 
     DocumentForm.prototype.setEditable = function setEditable(editable) {
@@ -119,8 +124,11 @@ angular.module('engine.document')
     };
 
     DocumentForm.prototype.assertInit = function assertInit() {
-        assert(this.document != null, 'DocumentForm.document is null! make sure to call DocumentForm.init(document, options) before calling other methods');
-        assert(this.documentOptions != null, 'DocumentForm.documentOptions is null! make sure to call DocumentForm.init(document, options) before calling other methods');
+        var message = ' is null! make sure to call DocumentForm.init(document, options, steps) before calling other methods';
+
+        assert(this.document != null, 'DocumentForm.document'+message);
+        assert(this.documentOptions != null, 'DocumentForm.documentOptions'+message);
+        assert(this.steps != null, 'DocumentForm.steps'+message);
     };
 
     DocumentForm.prototype.makeForm = function makeForm() {
