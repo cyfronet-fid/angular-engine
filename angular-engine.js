@@ -186,7 +186,7 @@ angular.module('engine.document').component('engineDocument', {
             $location.search({ step: newVal || 0 });
         }
     });
-}).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction, engineMetricCategories) {
+}).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction, engineMetricCategories, StepList, DocumentForm, $q, $log) {
     var self = this;
     console.log($scope);
     $scope.documentScope = $scope;
@@ -203,39 +203,44 @@ angular.module('engine.document').component('engineDocument', {
         backendValidation: {}
     };
 
-    //if categoryGroup (string) will be overriten in this.init()
-    $scope.currentCategories = $scope.steps == null || angular.isArray($scope.steps) && $scope.steps.length == 0 ? [] : $scope.steps[self.step].categories || [];
+    this.stepList = new StepList($scope.steps);
+    this.documentForm = new DocumentForm();
 
-    this.init = function () {
-        return engineMetricCategories.then(function (data) {
-            engineMetricCategories = data;
+    /**
+     * Initializes document (loads document data, loads available actions, loads metrics for forms)
+     * everything is accomplished by chaining promises, method returns promise itself, which should be
+     * consumed in order to make sure that all asynchronous operations have been compleated
+     *
+     * @returns {Promise<R>|IPromise<U>|Promise<U>}
+     */
+    this.initDocument = function initDocument() {
+        self.stepList.setCurrentStep(self.step);
 
-            if (angular.isArray(self.options.document.steps)) {
-                angular.forEach(self.options.document.steps, function (step) {
-                    if (!angular.isArray(step.categories)) {
-                        var _categoryGroup = step.categories;
-                        step.categories = [];
-                        angular.forEach(data.metrics[_categoryGroup].children, function (category) {
-                            step.categories.push(category.id);
-                        });
-                        $scope.currentCategories = step.categories;
-                    }
-                });
-            }
+        var _actionsToPerform = [];
 
-            if (self.documentId && self.documentId != 'new') {
-                engineDocument.get(self.documentId, function (data) {
-                    $scope.document = data.document;
-                    self.actions = engineActionsAvailable.forDocument($scope.document);
-                    self.loadMetrics();
-                });
-            } else {
-                //this is new document
+        //if the document exists, the first action will be retriving it
+        if (self.documentId && self.documentId != 'new') {
+            _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (document) {
+                $scope.document = data.document;
+            }));
+        } //if document does not exist copy base from optionas, and set the name
+        else {
                 $scope.document = angular.copy(self.options.documentJSON);
                 $scope.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
-                self.actions = engineActionsAvailable.forDocument($scope.document);
-                self.loadMetrics();
             }
+
+        // return chained promise, which will do all other common required operations:
+        return $q.all(_actionsToPerform).then(function () {
+            //load actions available for this document
+            return engineActionsAvailable.forDocument($scope.document).$promise;
+        }).then(function (actions) {
+            self.actions = actions;
+        }).then(function () {
+            self.documentForm.init($scope.document, self.options);
+            //load metrics to form
+            return self.documentForm.loadMetrics();
+        }).then(function () {
+            return self.documentForm.makeForm();
         });
     };
 
@@ -247,14 +252,6 @@ angular.module('engine.document').component('engineDocument', {
         return !self.isEditable();
     };
 
-    function _engineOptionsToFormly(engineOptions) {
-        var r = [];
-        angular.forEach(engineOptions, function (option) {
-            r.push({ name: option.value, value: option.value });
-        });
-        return r;
-    }
-
     this.generateFormFields = function () {
         console.debug('generating form fields for step ' + self.step);
 
@@ -265,83 +262,9 @@ angular.module('engine.document').component('engineDocument', {
 
         angular.forEach(data, function (metric) {
             // console.log(metric)
+
+
             if ($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
-                var field = {
-                    model: $scope.document.metrics,
-                    key: metric.id,
-                    type: 'input',
-                    className: metric.visualClass.join(' '),
-                    templateOptions: {
-                        type: 'text',
-                        label: metric.label,
-                        description: metric.description,
-                        placeholder: 'Enter ' + metric.label,
-                        required: metric.required
-                    },
-                    expressionProperties: {
-                        'templateOptions.disabled': self.isDisabled
-                    },
-                    validators: {
-                        engineValid: {
-                            expression: function expression($viewValue, $modelValue, scope) {
-                                //no backend validation yet
-                                if (_.isEmpty(self.form.backendValidation)) return true;
-
-                                if (self.form.backendValidation.valid) return true;
-
-                                if (metric.id in self.form.backendValidation.results && !self.form.backendValidation.results[metric.id].valid) return false;
-
-                                return true;
-                            },
-                            message: '"THIS IS WRONG!"'
-                        }
-                    },
-                    validation: {
-                        show: self.showErrors,
-                        messages: {
-                            required: 'to.label+"_required"'
-                        }
-                    }
-                };
-
-                if (_.contains(metric.visualClass, 'select')) {
-                    field.type = 'select';
-                    field.templateOptions.options = _engineOptionsToFormly(metric.options);
-                } else if (_.contains(metric.visualClass, 'radioGroup')) {
-                    field.type = 'radio';
-                    field.templateOptions.options = _engineOptionsToFormly(metric.options);
-                } else if (_.contains(metric.visualClass, 'date') && metric.inputType == 'DATE') {
-                    field.type = 'datepicker';
-                } else if (_.contains(metric.visualClass, 'checkbox')) {
-                    field.type = 'checkbox';
-                } else if (metric.inputType == 'NUMBER') {
-                    field.type = 'input';
-                } else if (metric.inputType == 'TEXTAREA') {
-                    field.type = "textarea";
-                    field.templateOptions.rows = 4;
-                    field.templateOptions.cols = 15;
-                } else if (metric.inputType == 'EXTERNAL') {
-                    field = {
-                        template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
-                        templateOptions: { ngModel: $scope.document, options: self.options },
-                        expressionProperties: { 'templateOptions.disabled': self.isDisabled }
-                    };
-                } else if (metric.inputType == 'QUERIED_LIST') {
-                    field.type = undefined;
-                    field.model = undefined;
-                    field = {
-                        template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
-                        templateOptions: {
-                            options: $engine.getOptions(metric.modelId),
-                            document: $scope.document
-                        }, expressionProperties: { 'templateOptions.disabled': self.isDisabled }
-                    };
-                }
-
-                if (metric.reloadOnChange) {
-                    //make reload listener
-                }
-
                 if (categories[metric.categoryId] == undefined) {
                     console.log(metric.categoryId);
                     categories[metric.categoryId] = {
@@ -368,39 +291,7 @@ angular.module('engine.document').component('engineDocument', {
         });
     };
 
-    this.loadMetrics = function () {
-        engineMetric(self.options.documentJSON, function (data) {
-            self.allMetrics = data;
-
-            angular.forEach(self.allMetrics, function (metric) {
-                self.allMetrics_d[metric.id] = metric;
-            });
-
-            var _init = false;
-
-            $scope.$watch('$ctrl.step', function (newVal, oldVal) {
-
-                if (newVal != oldVal) $scope.onChangeStep(newVal, oldVal);
-
-                if (self.step > 0 && $scope.document.id == null) return;
-
-                self.generateFormFields();
-                if (_init == false) {
-                    self.validateAll(null, true);
-                    _init = true;
-                }
-            });
-        });
-    };
-
     this.onChange = function () {};
-
-    $scope.isLastStep = function (step) {
-        if ($scope.steps == null || parseInt(step) == $scope.steps.length) return true;
-    };
-
-    // var categoryClass = options.document.categoryClass || 'text-box';
-    var categoryClass = 'text-box';;
 
     this._handleActionResonse = function (actionResponse) {
         if (actionResponse.type == 'REDIRECT') {
@@ -575,7 +466,9 @@ angular.module('engine.document').component('engineDocument', {
         self.engineAction(action, $scope.document, callback);
     });
 
-    this.init();
+    $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(function () {
+        $log.debug('engineDocumentCtrl initialized: ', self);
+    });
 });
 'use strict';
 
@@ -607,6 +500,347 @@ angular.module('engine.document').factory('DocumentModal', function ($resource, 
             if (callback) callback(result);
         }, function () {});
     };
+});
+'use strict';
+
+angular.module('engine.document').factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck) {
+    var _ac = $engineApiCheck;
+
+    function StepList(documentOptionSteps) {
+        var self = this;
+
+        this.documentSteps = documentOptionSteps;
+        this.steps = [];
+        this.singleStep = false;
+        this.$ready = null;
+        this.currentStep = null;
+
+        this._preprocessDocumentSteps();
+    }
+
+    StepList.prototype._preprocessDocumentSteps = function _preprocessDocumentSteps() {
+        var self = this;
+
+        this.$ready = engineMetricCategories.then(function (metricCategories) {
+            if (!_.isEmpty(self.documentSteps)) _.forEach(self.documentSteps, function (step, index) {
+
+                if (_.isArray(step.categories)) self.steps.push(new Step(step.categories));else {
+                    //is string
+                    self.steps.push(new Step(engineMetricCategories.metrics[step.categories].children));
+                }
+            });else {
+                //this means it will be populated later
+                self.singleStep = true;
+            }
+
+            return self;
+        });
+    };
+
+    StepList.prototype.isLast = function isLast(step) {
+        return step == this.steps.length - 1;
+    };
+
+    StepList.prototype.validate = function validate() {};
+
+    StepList.prototype.getFirstInvalid = function getFirstInvalid() {};
+
+    StepList.prototype.getSteps = function getSteps() {
+        return this.steps;
+    };
+
+    StepList.prototype.setCurrentStep = function setCurrentStep(stepIndex) {
+        this.currentStep = this.steps[stepIndex];
+    };
+
+    StepList.prototype.getCurrentStep = function getCurrentStep() {
+        return this.currentStep;
+    };
+
+    return StepList;
+}).factory('Step', function () {
+
+    function Step(metricCategories, visible) {
+        this.metricCategories = metricCategories;
+        this.fields = [];
+        this.visible = visible != null;
+    }
+
+    Step.prototype.validate = function validate() {};
+
+    return Step;
+}).factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory) {
+
+    function DocumentForm() {
+        this.fieldList = [];
+        this.metricList = [];
+        this.metricDict = {};
+        this.metricCategories = {};
+        this.document = null;
+        this.documentOptions = null;
+        this.disabled = true;
+        this.categoryWrapper = 'category';
+        this.categoryWrapperCSS = 'text-box';
+
+        this.$ready = this.loadMetricCategories();
+    }
+
+    DocumentForm.prototype.loadMetricCategories = function loadMetricCategories() {
+        var self = this;
+
+        return engineMetricCategories.then(function (metricCategories) {
+            self.metricCategories = metricCategories;
+        });
+    };
+    DocumentForm.prototype.setDocument = function setDocument(document) {
+        this.document = document;
+    };
+    DocumentForm.prototype.setOptions = function setOptions(documentOptions) {
+        this.documentOptions = documentOptions;
+    };
+    DocumentForm.prototype.init = function init(document, options) {
+        this.setDocument(document);
+        this.setOptions(options);
+    };
+
+    DocumentForm.prototype.setEditable = function setEditable(editable) {
+        this.disabled = !editable;
+    };
+
+    DocumentForm.prototype.assertInit = function assertInit() {
+        assert(this.document != null, 'DocumentForm.document is null! make sure to call DocumentForm.init(document, options) before calling other methods');
+        assert(this.documentOptions != null, 'DocumentForm.documentOptions is null! make sure to call DocumentForm.init(document, options) before calling other methods');
+    };
+
+    DocumentForm.prototype.makeForm = function makeForm() {
+        var self = this;
+
+        console.log('DocumentForm.makeForm', this.fieldList);
+        this.assertInit();
+
+        assert(this.metricList.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetrics');
+        assert(this.metricCategories.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetricCategories');
+
+        var _formStructure = parseMetricCategories(self.metricCategories.metrics);
+        console.debug('DocumentForm form structure', _formStructure);
+
+        return _formStructure;
+
+        function parseMetricCategories(metricCategories) {
+            var formCategories = [];
+
+            _.forEach(metricCategories, function (metricCategory) {
+                formCategories.push({
+                    templateOptions: {
+                        wrapperClass: self.categoryWrapperCSS,
+                        label: metricCategory.label
+                    }, fieldGroup: parseMetricCategories(metricCategory.children), wrapper: self.categoryWrapper
+                });
+            });
+
+            return formCategories;
+        }
+    };
+
+    DocumentForm.prototype.updateFields = function updateFields(metricList) {
+        this.fieldList = DocumentFieldFactory.makeFields(metricList, { document: this.document, options: this.documentOptions });
+    };
+
+    DocumentForm.prototype.loadMetrics = function loadMetrics() {
+        var self = this;
+
+        return engineMetric(this.document, function (metricList) {
+            self.metricList = metricList;
+
+            angular.forEach(self.metricList, function (metric) {
+                self.metricDict[metric.id] = metric;
+            });
+
+            self.updateFields(self.metricList);
+        }).$promise;
+    };
+
+    return DocumentForm;
+}).factory('DocumentFieldFactory', function (DocumentField, $engine) {
+    function DocumentFieldFactory(metrics) {
+        this._fieldList = [];
+        this.metrics = metrics;
+        this._defaultField = new DocumentField(function () {
+            return true;
+        }, function (field, metric) {
+            return field;
+        });
+
+        this._registerBasicFields();
+    }
+
+    /**
+     * Helper function converting engineOptions to formly option which allows
+     * angular-formly to generate select box / radio button group / etc
+     *
+     * @param engineOptions
+     * @returns {Array}
+     * @private
+     */
+    DocumentFieldFactory.prototype._engineOptionsToFormly = function _engineOptionsToFormly(engineOptions) {
+        var r = [];
+        _.forEach(engineOptions, function (option) {
+            r.push({ name: option.value, value: option.value });
+        });
+        return r;
+    };
+
+    DocumentFieldFactory.prototype.register = function register(documentField) {
+        this._fieldList.push(documentField);
+    };
+
+    DocumentFieldFactory.prototype.makeField = function makeField(metricList, metric, ctx) {
+        for (var i = 0; i < this._fieldList.length; ++i) {
+            if (this._fieldList[i].matches(metric)) return this._fieldList[i].makeField(metricList, metric, ctx);
+        }
+        if (!this.allowDefaultField) throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ", "Metric", metric, "Registered types", this._fieldList);
+
+        return this._defaultField.makeField(metricList, metric, ctx);
+    };
+
+    /**
+     *
+     * @param metricList
+     * @returns {Array}
+     */
+    DocumentFieldFactory.prototype.makeFields = function make(metricList, ctx) {
+        var fields = [];
+
+        _.forEach(metricList, function (metric) {
+            fields.push(this.makeField(metricList, metric, ctx));
+        }, this);
+
+        return fields;
+    };
+
+    DocumentFieldFactory.prototype._registerBasicFields = function _registerBasicFields(metric) {
+        var self = this;
+
+        this.register(new DocumentField({ inputType: 'TEXT' }, function (field, metric, ctx) {
+            return field;
+        }));
+
+        this.register(new DocumentField('select', function (field, metric, ctx) {
+            field.type = 'select';
+            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+            return field;
+        }));
+
+        this.register(new DocumentField('radioGroup', function (field, metric, ctx) {
+            field.type = 'radio';
+            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ visualClass: 'date', inputType: 'DATE' }, function (field, metric, ctx) {
+            field.type = 'datepicker';
+
+            return field;
+        }));
+
+        this.register(new DocumentField('checkbox', function (field, metric, ctx) {
+            field.type = 'checkbox';
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'NUMBER' }, function (field, metric, ctx) {
+            field.type = 'input';
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'TEXTAREA' }, function (field, metric, ctx) {
+            field.type = "textarea";
+            field.templateOptions.rows = 4;
+            field.templateOptions.cols = 15;
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
+            return {
+                template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
+                templateOptions: { ngModel: ctx.document, options: ctx.options }
+            };
+        }));
+
+        this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
+            field.type = undefined;
+            field.model = undefined;
+            field = {
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
+                templateOptions: {
+                    options: $engine.getOptions(metric.modelId),
+                    document: ctx.document
+                }, expressionProperties: { 'templateOptions.disabled': self.isDisabled }
+            };
+
+            return field;
+        }));
+    };
+
+    return new DocumentFieldFactory();
+}).factory('DocumentField', function () {
+    function DocumentField(fieldCondition, fieldBuilder) {
+        if (_.isFunction(fieldCondition)) this.fieldCondition = fieldCondition;else {
+            var _condition;
+            if (_.isString(fieldCondition)) _condition = { visualClass: fieldCondition };else _condition = fieldCondition;
+
+            this.fieldCondition = function (metric) {
+                for (var metricAttribute in _condition) {
+                    if (_.isArray(metric[metricAttribute]) && !_.contains(metric[metricAttribute], _condition[metricAttribute])) return false;else if (_.isString(metric[metricAttribute]) && metric[metricAttribute] != _condition[metricAttribute]) return false;
+                }
+                return true;
+            };
+        }
+
+        this.fieldCustomizer = fieldBuilder;
+    }
+    DocumentField.prototype.matches = function matches(metric) {
+        return this.fieldCondition(metric);
+    };
+
+    DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
+        var formlyField = {
+            model: metricList,
+            key: metric.id,
+            type: 'input',
+            className: metric.visualClass.join(' '),
+            templateOptions: {
+                type: 'text',
+                label: metric.label,
+                description: metric.description,
+                placeholder: 'Enter ' + metric.label,
+                required: metric.required
+            },
+            expressionProperties: {
+                'templateOptions.disabled': self.isDisabled
+            },
+            validators: {},
+            validation: {
+                show: false,
+                messages: {
+                    required: 'to.label+"_required"'
+                }
+            }
+        };
+
+        if (metric.reloadOnChange) {
+            //:TODO: make reload listener
+        }
+
+        return this.fieldCustomizer(formlyField, metric, ctx);
+    };
+
+    return DocumentField;
 });
 'use strict';
 
@@ -856,6 +1090,12 @@ angular.module('engine').provider('$engineConfig', function () {
             this.baseUrl = _baseUrl;
             this.documents = documents;
             this.documents_d = documents_d;
+
+            /**
+             * By default only metrics are visible in document list view, in order to display document fields
+             * (such as ID, creation Date, etc) they must be specified here
+             * @type {[{string}]}
+             */
             this.visibleDocumentFields = _visibleDocumentFields;
 
             /**
@@ -978,10 +1218,14 @@ angular.module('engine').factory('engineResolve', function () {
         });
         collectMetrics(data);
         console.debug(_metricCategories);
-        return { metrics: _metricCategories, getNames: function getNames(metricId) {
-                if (!(metricId in _names)) $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricId);
-                return _names[metricId];
-            } };
+        return {
+            $resolved: true,
+            metrics: _metricCategories,
+            getNames: function getNames(metricCategoryId) {
+                if (!(metricCategoryId in _names)) $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricCategoryId);
+                return _names[metricCategoryId];
+            }
+        };
     });
 
     return _promise;

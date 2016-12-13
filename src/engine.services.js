@@ -80,11 +80,15 @@ angular.module('engine')
             });
             collectMetrics(data);
             console.debug(_metricCategories);
-            return {metrics: _metricCategories, getNames: function (metricId) {
-                if(!(metricId in _names))
-                    $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: '+metricId);
-                return _names[metricId]
-            }};
+            return {
+                $resolved: true,
+                metrics: _metricCategories,
+                getNames: function (metricCategoryId) {
+                    if (!(metricCategoryId in _names))
+                        $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricCategoryId);
+                    return _names[metricCategoryId]
+                }
+            };
         });
 
         return _promise

@@ -227,6 +227,12 @@ angular.module('engine')
                 this.baseUrl = _baseUrl;
                 this.documents = documents;
                 this.documents_d = documents_d;
+
+                /**
+                 * By default only metrics are visible in document list view, in order to display document fields
+                 * (such as ID, creation Date, etc) they must be specified here
+                 * @type {[{string}]}
+                 */
                 this.visibleDocumentFields = _visibleDocumentFields;
 
                 /**
