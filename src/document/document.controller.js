@@ -249,10 +249,15 @@ angular.module('engine.document')
             var _init = false;
 
             $scope.$watch('$ctrl.step', function (newVal, oldVal) {
+
                 if(newVal != oldVal)
                     $scope.onChangeStep(newVal, oldVal);
+
+                if(self.step > 0 && $scope.document.id == null)
+                    return;
+
                 self.generateFormFields();
-                if(_init == false && self.documentId) {
+                if(_init == false) {
                     self.validateAll(null, true);
                     _init = true;
                 }
@@ -306,6 +311,7 @@ angular.module('engine.document')
 
     $scope.onChangeStep = function (newStep, oldStep) {
         if(self.isEditable()) {
+            if($scope.document.id){
             var stepToValidate = oldStep;
 
             self.validatedSteps[stepToValidate] = 'loading';
@@ -343,7 +349,7 @@ angular.module('engine.document')
             }, function (response) {
                 self.validatedSteps[stepToValidate] = 'invalid';
             });
-
+            }
             $scope.saveDocument(function () {
                 self.step = newStep;
             });

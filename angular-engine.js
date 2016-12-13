@@ -377,9 +377,13 @@ angular.module('engine.document').component('engineDocument', {
             var _init = false;
 
             $scope.$watch('$ctrl.step', function (newVal, oldVal) {
+
                 if (newVal != oldVal) $scope.onChangeStep(newVal, oldVal);
+
+                if (self.step > 0 && $scope.document.id == null) return;
+
                 self.generateFormFields();
-                if (_init == false && self.documentId) {
+                if (_init == false) {
                     self.validateAll(null, true);
                     _init = true;
                 }
@@ -422,38 +426,39 @@ angular.module('engine.document').component('engineDocument', {
 
     $scope.onChangeStep = function (newStep, oldStep) {
         if (self.isEditable()) {
-            var stepToValidate = oldStep;
+            if ($scope.document.id) {
+                var stepToValidate = oldStep;
 
-            self.validatedSteps[stepToValidate] = 'loading';
+                self.validatedSteps[stepToValidate] = 'loading';
 
-            var _documentPart = angular.copy($scope.document);
-            _documentPart.metrics = {};
+                var _documentPart = angular.copy($scope.document);
+                _documentPart.metrics = {};
 
-            var _categoriesToValidate = $scope.steps[stepToValidate].categories;
+                var _categoriesToValidate = $scope.steps[stepToValidate].categories;
 
-            angular.forEach(self.allMetrics_d, function (metric, metricId) {
-                if (_.contains(_categoriesToValidate, metric.categoryId)) _documentPart.metrics[metricId] = $scope.document.metrics[metricId];
-            });
-
-            engineDocument.validate(_documentPart, function (data) {
-                console.log(data);
-                self.form.form.$externalValidated = true;
-                self.form.backendValidation = data;
-
-                if (self.form.backendValidation.valid) self.validatedSteps[stepToValidate] = 'valid';else self.validatedSteps[stepToValidate] = 'invalid';
-
-                angular.forEach(self.form.backendValidation.results, function (metric) {
-                    if (metric.metricId in $scope.metrics && $scope.metrics[metric.metricId].formControl) {
-                        $scope.metrics[metric.metricId].validation.show = true;
-                        $scope.metrics[metric.metricId].formControl.$validate();
-                    }
+                angular.forEach(self.allMetrics_d, function (metric, metricId) {
+                    if (_.contains(_categoriesToValidate, metric.categoryId)) _documentPart.metrics[metricId] = $scope.document.metrics[metricId];
                 });
 
-                // self.form.form.$setValidity('proposalName', false. self.form.form);
-            }, function (response) {
-                self.validatedSteps[stepToValidate] = 'invalid';
-            });
+                engineDocument.validate(_documentPart, function (data) {
+                    console.log(data);
+                    self.form.form.$externalValidated = true;
+                    self.form.backendValidation = data;
 
+                    if (self.form.backendValidation.valid) self.validatedSteps[stepToValidate] = 'valid';else self.validatedSteps[stepToValidate] = 'invalid';
+
+                    angular.forEach(self.form.backendValidation.results, function (metric) {
+                        if (metric.metricId in $scope.metrics && $scope.metrics[metric.metricId].formControl) {
+                            $scope.metrics[metric.metricId].validation.show = true;
+                            $scope.metrics[metric.metricId].formControl.$validate();
+                        }
+                    });
+
+                    // self.form.form.$setValidity('proposalName', false. self.form.form);
+                }, function (response) {
+                    self.validatedSteps[stepToValidate] = 'invalid';
+                });
+            }
             $scope.saveDocument(function () {
                 self.step = newStep;
             });
