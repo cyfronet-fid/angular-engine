@@ -115,27 +115,6 @@ angular.module('engine.document').component('engineDocument', {
         actions: '=',
         parentDocumentId: '@'
     }
-}).controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
-    $scope.validatedSteps = [];
-    $scope.options = $route.current.$$route.options;
-    $scope.steps = $route.current.$$route.options.document.steps || null;
-    if (angular.isArray($scope.steps)) angular.forEach($scope.steps, function (step) {
-        $scope.validatedSteps.push('blank');
-    });
-    $scope.document = {};
-    $scope.documentId = $routeParams.id;
-    if ($routeParams.step === undefined) $routeParams.step = 0;
-    $scope.$routeParams = $routeParams;
-
-    $scope.$watch('$routeParams.step', function (newVal, oldVal) {
-        if (angular.isString(newVal)) {
-            newVal = parseInt(newVal);
-            $routeParams.step = newVal;
-        }
-        if (newVal !== oldVal) {
-            $location.search({ step: newVal || 0 });
-        }
-    });
 }).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction, engineMetricCategories, StepList, DocumentForm, $q, $log) {
     var self = this;
     console.log($scope);
@@ -465,6 +444,30 @@ angular.module('engine.document').factory('DocumentModal', function ($resource, 
             if (callback) callback(result);
         }, function () {});
     };
+});
+'use strict';
+
+angular.module('engine.document').controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
+    $scope.validatedSteps = [];
+    $scope.options = $route.current.$$route.options;
+    $scope.steps = $route.current.$$route.options.document.steps || null;
+    if (angular.isArray($scope.steps)) angular.forEach($scope.steps, function (step) {
+        $scope.validatedSteps.push('blank');
+    });
+    $scope.document = {};
+    $scope.documentId = $routeParams.id;
+    if ($routeParams.step === undefined) $routeParams.step = 0;
+    $scope.$routeParams = $routeParams;
+
+    $scope.$watch('$routeParams.step', function (newVal, oldVal) {
+        if (angular.isString(newVal)) {
+            newVal = parseInt(newVal);
+            $routeParams.step = newVal;
+        }
+        if (newVal !== oldVal) {
+            $location.search({ step: newVal || 0 });
+        }
+    });
 });
 'use strict';
 
