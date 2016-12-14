@@ -14,6 +14,8 @@
     "brunch": "^2.4.0",
     "clean-css-brunch": "^2.0.0",
     "css-brunch": "^2.0.0",
+    "dgeni": "^0.4.2",
+    "dgeni-packages": "^0.16.1",
     "http-server": "^0.9.0",
     "jasmine-core": "^2.4.1",
     "javascript-brunch": "^2.0.0",
@@ -23,6 +25,7 @@
     "karma-jasmine": "^0.3.8",
     "lite-server": "^2.2.2",
     "ng-annotate-brunch": "~1.7.2",
+    "ngdocs": "^0.1.0",
     "protractor": "^4.0.9",
     "uglify-js-brunch": "^2.0.0"
   },

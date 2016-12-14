@@ -12,58 +12,8 @@ angular.module('engine.document', ['ngRoute']);
 angular.module('engine.steps', ['ngRoute']);
 'use strict';
 
-angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']).run(function (formlyConfig) {
-    var attributes = ['date-disabled', 'custom-class', 'show-weeks', 'starting-day', 'init-date', 'min-mode', 'max-mode', 'format-day', 'format-month', 'format-year', 'format-day-header', 'format-day-title', 'format-month-title', 'year-range', 'shortcut-propagation', 'datepicker-popup', 'show-button-bar', 'current-text', 'clear-text', 'close-text', 'close-on-date-selection', 'datepicker-append-to-body'];
-
-    var bindings = ['datepicker-mode', 'min-date', 'max-date'];
-
-    var ngModelAttrs = {};
-
-    angular.forEach(attributes, function (attr) {
-        ngModelAttrs[camelize(attr)] = { attribute: attr };
-    });
-
-    angular.forEach(bindings, function (binding) {
-        ngModelAttrs[camelize(binding)] = { bound: binding };
-    });
-
-    console.log(ngModelAttrs);
-
-    formlyConfig.setType({
-        name: 'datepicker',
-        templateUrl: '/src/document/fields/datepicker.tpl.html',
-        // wrapper: ['bootstrapLabel', 'bootstrapHasError'],
-        defaultOptions: {
-            ngModelAttrs: ngModelAttrs,
-            templateOptions: {
-                datepickerOptions: {
-                    format: 'dd.MM.yyyy',
-                    initDate: new Date()
-                }
-            }
-        },
-        controller: ['$scope', function ($scope) {
-            $scope.datepicker = {};
-
-            $scope.datepicker.opened = false;
-
-            $scope.datepicker.open = function ($event) {
-                $scope.datepicker.opened = !$scope.datepicker.opened;
-            };
-        }]
-    });
-
-    function camelize(string) {
-        string = string.replace(/[\-_\s]+(.)?/g, function (match, chr) {
-            return chr ? chr.toUpperCase() : '';
-        });
-        // Ensure 1st char is always lowercase
-        return string.replace(/^([A-Z])/, function (match, chr) {
-            return chr ? chr.toLowerCase() : '';
-        });
-    }
-});
-'use strict';
+angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']);
+;'use strict';
 
 angular.module('engine.formly', []);
 'use strict';
@@ -507,80 +457,239 @@ angular.module('engine.document').factory('DocumentModal', function ($resource, 
 });
 'use strict';
 
-angular.module('engine.document').factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck) {
-    var _ac = $engineApiCheck;
-
-    function StepList(documentOptionSteps) {
-        var self = this;
-
-        this.documentSteps = documentOptionSteps;
-        this.steps = [];
-        this.singleStep = false;
-        this.$ready = null;
-        this.currentStep = null;
-
-        this._preprocessDocumentSteps();
-    }
-
-    StepList.prototype._preprocessDocumentSteps = function _preprocessDocumentSteps() {
-        var self = this;
-
-        this.$ready = engineMetricCategories.then(function (metricCategories) {
-            assert(_.isArray(self.documentSteps) && !_.isEmpty(self.documentSteps), 'documentSteps were not defined');
-
-            _.forEach(self.documentSteps, function (step, index) {
-                if (_.isArray(step.categories)) {
-                    var _categories = [];
-                    _.forEach(step.categories, function (categoryId) {
-                        _categories.push(metricCategories.getNames(categoryId));
-                    });
-
-                    self.steps.push(new Step(_categories));
-                } else {
-                    //is string (metricCategory) so we have to retrieve its children
-                    self.steps.push(new Step(metricCategories.metrics[step.categories].children));
-                }
-            });
+angular.module('engine.document').factory('DocumentCategoryFactory', function (DocumentCategory, $engine) {
+    function DocumentCategoryFactory() {
+        this._categoryTypeList = [];
+        this._defaultField = new DocumentField(function () {
+            return true;
+        }, function (field, metric) {
+            return field;
         });
-    };
 
-    StepList.prototype.isLast = function isLast(step) {
-        return step == this.steps.length - 1;
-    };
-
-    StepList.prototype.validate = function validate() {};
-
-    StepList.prototype.getFirstInvalid = function getFirstInvalid() {};
-
-    StepList.prototype.getSteps = function getSteps() {
-        return this.steps;
-    };
-
-    StepList.prototype.setCurrentStep = function setCurrentStep(stepIndex) {
-        this.currentStep = this.steps[stepIndex];
-    };
-
-    StepList.prototype.getCurrentStep = function getCurrentStep() {
-        return this.currentStep;
-    };
-
-    return StepList;
-}).factory('Step', function () {
-
-    function Step(metricCategories, visible) {
-        this.defaultState = 'blank';
-
-        this.metricCategories = metricCategories;
-        this.fields = [];
-        this.visible = visible != null;
-        this.state = this.defaultState;
-        this.$valid = false;
+        this._registerBasicCategories();
     }
 
-    Step.prototype.validate = function validate() {};
+    DocumentCategoryFactory.prototype.register = function register(documentCategory) {
+        this._categoryTypeList.push(documentCategory);
+    };
 
-    return Step;
-}).factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $engineApiCheck, $log) {
+    DocumentCategoryFactory.prototype.makeCategory = function makeCategory(category, ctx) {
+        for (var i = 0; i < this._categoryTypeList.length; ++i) {
+            if (this._categoryTypeList[i].matches(metric)) return this._categoryTypeList[i].makeField(metricList, metric, ctx);
+        }
+        if (!this.allowDefaultField) throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ", "Metric", metric, "Registered types", this._categoryTypeList);
+
+        return this._defaultField.makeField(metricList, metric, ctx);
+    };
+
+    DocumentCategoryFactory.prototype._registerBasicCategories = function _registerBasicCategories(documentField) {
+        this.register();
+    };
+
+    return new DocumentCategoryFactory();
+}).factory('DocumentCategory', function () {
+    function DocumentCategory(categoryCondition, categoryBuilder) {
+        this.categoryCondition = ConditionBuilder(categoryCondition);
+        this.categoryBuilder = categoryBuilder;
+    }
+
+    DocumentCategory.prototype.matches = function matches(metricCategory) {
+        return this.categoryCondition(metricCategory);
+    };
+
+    DocumentCategory.prototype.makeCategory = function makeCategory(metricCategory, ctx) {
+        var formlyCategory = {
+            id: metricCategory.id,
+            templateOptions: {
+                wrapperClass: self.categoryWrapperCSS,
+                label: metricCategory.label,
+                visualClass: metricCategory.visualClass
+            }, fieldGroup: parseMetricCategories(metricCategory.children), wrapper: self.categoryWrapper
+        };
+
+        return this.fieldCustomizer(formlyCategory, ctx);
+    };
+
+    return DocumentCategory;
+});
+;'use strict';
+
+angular.module('engine.document').factory('DocumentFieldFactory', function (DocumentField, $engine) {
+    function DocumentFieldFactory() {
+        this._fieldTypeList = [];
+        this._defaultField = new DocumentField(function () {
+            return true;
+        }, function (field, metric) {
+            return field;
+        });
+
+        this._registerBasicCategories();
+    }
+
+    /**
+     * Helper function converting engineOptions to formly option which allows
+     * angular-formly to generate select box / radio button group / etc
+     *
+     * @param engineOptions
+     * @returns {Array}
+     * @private
+     */
+    DocumentFieldFactory.prototype._engineOptionsToFormly = function _engineOptionsToFormly(engineOptions) {
+        var r = [];
+        _.forEach(engineOptions, function (option) {
+            r.push({ name: option.value, value: option.value });
+        });
+        return r;
+    };
+
+    DocumentFieldFactory.prototype.register = function register(documentField) {
+        this._fieldTypeList.push(documentField);
+    };
+
+    DocumentFieldFactory.prototype.makeField = function makeField(metricList, metric, ctx) {
+        for (var i = 0; i < this._fieldTypeList.length; ++i) {
+            if (this._fieldTypeList[i].matches(metric)) return this._fieldTypeList[i].makeField(metricList, metric, ctx);
+        }
+        if (!this.allowDefaultField) throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ", "Metric", metric, "Registered types", this._fieldTypeList);
+
+        return this._defaultField.makeField(metricList, metric, ctx);
+    };
+
+    /**
+     *
+     * @param metricList
+     * @returns {Array}
+     */
+    DocumentFieldFactory.prototype.makeFields = function make(metricList, ctx) {
+        var fields = [];
+
+        _.forEach(metricList, function (metric) {
+            fields.push(this.makeField(metricList, metric, ctx));
+        }, this);
+
+        return fields;
+    };
+
+    DocumentFieldFactory.prototype._registerBasicCategories = function _registerBasicFields(metric) {
+        var self = this;
+
+        this.register(new DocumentField({ inputType: 'TEXT' }, function (field, metric, ctx) {
+            return field;
+        }));
+
+        this.register(new DocumentField('select', function (field, metric, ctx) {
+            field.type = 'select';
+            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+            return field;
+        }));
+
+        this.register(new DocumentField('radioGroup', function (field, metric, ctx) {
+            field.type = 'radio';
+            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ visualClass: 'date', inputType: 'DATE' }, function (field, metric, ctx) {
+            field.type = 'datepicker';
+
+            return field;
+        }));
+
+        this.register(new DocumentField('checkbox', function (field, metric, ctx) {
+            field.type = 'checkbox';
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'NUMBER' }, function (field, metric, ctx) {
+            field.type = 'input';
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'TEXTAREA' }, function (field, metric, ctx) {
+            field.type = "textarea";
+            field.templateOptions.rows = 4;
+            field.templateOptions.cols = 15;
+
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
+            return {
+                id: metric.id,
+                categoryId: metric.categoryId,
+                template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
+                templateOptions: { ngModel: ctx.document, options: ctx.options }
+            };
+        }));
+
+        this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
+            field = {
+                id: metric.id,
+                categoryId: metric.categoryId,
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
+                templateOptions: {
+                    options: $engine.getOptions(metric.modelId),
+                    document: ctx.document
+                }, expressionProperties: { 'templateOptions.disabled': self.isDisabled }
+            };
+
+            return field;
+        }));
+    };
+
+    return new DocumentFieldFactory();
+}).factory('DocumentField', function (ConditionBuilder) {
+    function DocumentField(fieldCondition, fieldBuilder) {
+        this.fieldCondition = ConditionBuilder(fieldCondition);
+        this.fieldCustomizer = fieldBuilder;
+    }
+    DocumentField.prototype.matches = function matches(metric) {
+        return this.fieldCondition(metric);
+    };
+
+    DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
+        var formlyField = {
+            model: metricList,
+            categoryId: metric.categoryId,
+            id: metric.id, //this is required for DocumentForm
+            key: metric.id,
+            type: 'input',
+            className: metric.visualClass.join(' '),
+            templateOptions: {
+                type: 'text',
+                label: metric.label,
+                description: metric.description,
+                placeholder: 'Enter ' + metric.label,
+                required: metric.required
+            },
+            expressionProperties: {
+                'templateOptions.disabled': self.isDisabled
+            },
+            validators: {},
+            validation: {
+                show: false,
+                messages: {
+                    required: 'to.label+"_required"'
+                }
+            }
+        };
+
+        if (metric.reloadOnChange) {
+            //:TODO: make reload listener
+        }
+
+        return this.fieldCustomizer(formlyField, metric, ctx);
+    };
+
+    return DocumentField;
+});
+;'use strict';
+
+angular.module('engine.document').factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $engineApiCheck, $log) {
     var _apiCheck = $engineApiCheck;
 
     function DocumentForm() {
@@ -660,14 +769,6 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
             var formCategories = [];
 
             _.forEach(metricCategories, function (metricCategory) {
-                var formMetricCategory = {
-                    id: metricCategory.id,
-                    templateOptions: {
-                        wrapperClass: self.categoryWrapperCSS,
-                        label: metricCategory.label,
-                        visualClass: metricCategory.visualClass
-                    }, fieldGroup: parseMetricCategories(metricCategory.children), wrapper: self.categoryWrapper
-                };
 
                 _metricDict[metricCategory.id] = formMetricCategory;
 
@@ -708,154 +809,8 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
     };
 
     return DocumentForm;
-}).factory('DocumentCategoryFactory', function (DocumentCategory, $engine) {}).factory('DocumentCategory', function () {
-    function DocumentCategory(fieldCondition, fieldBuilder) {
-        this.fieldCondition = fieldCondition;
-        this.fieldCustomizer = fieldBuilder;
-    }
-
-    DocumentCategory.prototype.matches = function matches(metricCategory) {
-        return this.fieldCondition(metricCategory);
-    };
-
-    DocumentCategory.prototype.makeCategory = function makeCategory(metricCategory, ctx) {
-        var formlyFieldCategory = {};
-
-        return this.fieldCustomizer(formlyFieldCategory, ctx);
-    };
-
-    return DocumentCategory;
-}).factory('DocumentFieldFactory', function (DocumentField, $engine) {
-    function DocumentFieldFactory(metrics) {
-        this._fieldList = [];
-        this.metrics = metrics;
-        this._defaultField = new DocumentField(function () {
-            return true;
-        }, function (field, metric) {
-            return field;
-        });
-
-        this._registerBasicFields();
-    }
-
-    /**
-     * Helper function converting engineOptions to formly option which allows
-     * angular-formly to generate select box / radio button group / etc
-     *
-     * @param engineOptions
-     * @returns {Array}
-     * @private
-     */
-    DocumentFieldFactory.prototype._engineOptionsToFormly = function _engineOptionsToFormly(engineOptions) {
-        var r = [];
-        _.forEach(engineOptions, function (option) {
-            r.push({ name: option.value, value: option.value });
-        });
-        return r;
-    };
-
-    DocumentFieldFactory.prototype.register = function register(documentField) {
-        this._fieldList.push(documentField);
-    };
-
-    DocumentFieldFactory.prototype.makeField = function makeField(metricList, metric, ctx) {
-        for (var i = 0; i < this._fieldList.length; ++i) {
-            if (this._fieldList[i].matches(metric)) return this._fieldList[i].makeField(metricList, metric, ctx);
-        }
-        if (!this.allowDefaultField) throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ", "Metric", metric, "Registered types", this._fieldList);
-
-        return this._defaultField.makeField(metricList, metric, ctx);
-    };
-
-    /**
-     *
-     * @param metricList
-     * @returns {Array}
-     */
-    DocumentFieldFactory.prototype.makeFields = function make(metricList, ctx) {
-        var fields = [];
-
-        _.forEach(metricList, function (metric) {
-            fields.push(this.makeField(metricList, metric, ctx));
-        }, this);
-
-        return fields;
-    };
-
-    DocumentFieldFactory.prototype._registerBasicFields = function _registerBasicFields(metric) {
-        var self = this;
-
-        this.register(new DocumentField({ inputType: 'TEXT' }, function (field, metric, ctx) {
-            return field;
-        }));
-
-        this.register(new DocumentField('select', function (field, metric, ctx) {
-            field.type = 'select';
-            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
-
-            return field;
-        }));
-
-        this.register(new DocumentField('radioGroup', function (field, metric, ctx) {
-            field.type = 'radio';
-            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
-
-            return field;
-        }));
-
-        this.register(new DocumentField({ visualClass: 'date', inputType: 'DATE' }, function (field, metric, ctx) {
-            field.type = 'datepicker';
-
-            return field;
-        }));
-
-        this.register(new DocumentField('checkbox', function (field, metric, ctx) {
-            field.type = 'checkbox';
-
-            return field;
-        }));
-
-        this.register(new DocumentField({ inputType: 'NUMBER' }, function (field, metric, ctx) {
-            field.type = 'input';
-
-            return field;
-        }));
-
-        this.register(new DocumentField({ inputType: 'TEXTAREA' }, function (field, metric, ctx) {
-            field.type = "textarea";
-            field.templateOptions.rows = 4;
-            field.templateOptions.cols = 15;
-
-            return field;
-        }));
-
-        this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
-            return {
-                id: metric.id,
-                categoryId: metric.categoryId,
-                template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
-                templateOptions: { ngModel: ctx.document, options: ctx.options }
-            };
-        }));
-
-        this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
-            field = {
-                id: metric.id,
-                categoryId: metric.categoryId,
-                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
-                templateOptions: {
-                    options: $engine.getOptions(metric.modelId),
-                    document: ctx.document
-                }, expressionProperties: { 'templateOptions.disabled': self.isDisabled }
-            };
-
-            return field;
-        }));
-    };
-
-    return new DocumentFieldFactory();
-}).factory('DocumentField', function () {
-    function DocumentField(fieldCondition, fieldBuilder) {
+}).factory('ConditionBuilder', function () {
+    return function (fieldCondition) {
         if (_.isFunction(fieldCondition)) this.fieldCondition = fieldCondition;else {
             var _condition;
             if (_.isString(fieldCondition)) _condition = { visualClass: fieldCondition };else _condition = fieldCondition;
@@ -867,48 +822,83 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
                 return true;
             };
         }
+    };
+});
+'use strict';
 
-        this.fieldCustomizer = fieldBuilder;
+angular.module('engine.document').factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck) {
+    var _ac = $engineApiCheck;
+
+    function StepList(documentOptionSteps) {
+        var self = this;
+
+        this.documentSteps = documentOptionSteps;
+        this.steps = [];
+        this.singleStep = false;
+        this.$ready = null;
+        this.currentStep = null;
+
+        this._preprocessDocumentSteps();
     }
-    DocumentField.prototype.matches = function matches(metric) {
-        return this.fieldCondition(metric);
-    };
 
-    DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
-        var formlyField = {
-            model: metricList,
-            categoryId: metric.categoryId,
-            id: metric.id, //this is required for DocumentForm
-            key: metric.id,
-            type: 'input',
-            className: metric.visualClass.join(' '),
-            templateOptions: {
-                type: 'text',
-                label: metric.label,
-                description: metric.description,
-                placeholder: 'Enter ' + metric.label,
-                required: metric.required
-            },
-            expressionProperties: {
-                'templateOptions.disabled': self.isDisabled
-            },
-            validators: {},
-            validation: {
-                show: false,
-                messages: {
-                    required: 'to.label+"_required"'
+    StepList.prototype._preprocessDocumentSteps = function _preprocessDocumentSteps() {
+        var self = this;
+
+        this.$ready = engineMetricCategories.then(function (metricCategories) {
+            assert(_.isArray(self.documentSteps) && !_.isEmpty(self.documentSteps), 'documentSteps were not defined');
+
+            _.forEach(self.documentSteps, function (step, index) {
+                if (_.isArray(step.categories)) {
+                    var _categories = [];
+                    _.forEach(step.categories, function (categoryId) {
+                        _categories.push(metricCategories.getNames(categoryId));
+                    });
+
+                    self.steps.push(new Step(_categories));
+                } else {
+                    //is string (metricCategory) so we have to retrieve its children
+                    self.steps.push(new Step(metricCategories.metrics[step.categories].children));
                 }
-            }
-        };
-
-        if (metric.reloadOnChange) {
-            //:TODO: make reload listener
-        }
-
-        return this.fieldCustomizer(formlyField, metric, ctx);
+            });
+        });
     };
 
-    return DocumentField;
+    StepList.prototype.isLast = function isLast(step) {
+        return step == this.steps.length - 1;
+    };
+
+    StepList.prototype.validate = function validate() {};
+
+    StepList.prototype.getFirstInvalid = function getFirstInvalid() {};
+
+    StepList.prototype.getSteps = function getSteps() {
+        return this.steps;
+    };
+
+    StepList.prototype.setCurrentStep = function setCurrentStep(stepIndex) {
+        this.currentStep = this.steps[stepIndex];
+    };
+
+    StepList.prototype.getCurrentStep = function getCurrentStep() {
+        return this.currentStep;
+    };
+
+    return StepList;
+}).factory('Step', function () {
+
+    function Step(metricCategories, visible) {
+        this.defaultState = 'blank';
+
+        this.metricCategories = metricCategories;
+        this.fields = [];
+        this.visible = visible != null;
+        this.state = this.defaultState;
+        this.$valid = false;
+    }
+
+    Step.prototype.validate = function validate() {};
+
+    return Step;
 });
 'use strict';
 
@@ -1403,17 +1393,18 @@ angular.module('engine.formly').provider('$engineFormly', function () {
     var self = this;
 
     var _typeTemplateUrls = {
-        input: '/src/formly/input.tpl.html',
-        select: '/src/formly/select.tpl.html',
-        checkbox: '/src/formly/checkbox.tpl.html',
-        radio: '/src/formly/radio.tpl.html',
-        textarea: '/src/formly/textarea.tpl.html',
-        multiCheckbox: '/src/formly/multiCheckbox.tpl.html'
+        input: '/src/formly/types/templates/input.tpl.html',
+        select: '/src/formly/types/templates/select.tpl.html',
+        checkbox: '/src/formly/types/templates/checkbox.tpl.html',
+        radio: '/src/formly/types/templates/radio.tpl.html',
+        textarea: '/src/formly/types/templates/textarea.tpl.html',
+        datepicker: '/src/formly/types/templates/datepicker.tpl.html',
+        multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html'
     };
     var _wrapperTemplateUrls = {
-        category: '/src/formly/category.tpl.html',
-        label: '/src/formly/label.tpl.html',
-        hasError: '/src/formly/has-error.tpl.html'
+        category: '/src/formly/wrappers/templates/category.tpl.html',
+        label: '/src/formly/wrappers/templates/label.tpl.html',
+        hasError: '/src/formly/wrappers/templates/has-error.tpl.html'
     };
 
     this.templateUrls = _typeTemplateUrls;
@@ -1433,6 +1424,59 @@ angular.module('engine.formly').provider('$engineFormly', function () {
             this.wrapperUrls = _wrapperTemplateUrls;
         }();
     };
+});
+'use strict';
+
+angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engine) {
+    var attributes = ['date-disabled', 'custom-class', 'show-weeks', 'starting-day', 'init-date', 'min-mode', 'max-mode', 'format-day', 'format-month', 'format-year', 'format-day-header', 'format-day-title', 'format-month-title', 'year-range', 'shortcut-propagation', 'datepicker-popup', 'show-button-bar', 'current-text', 'clear-text', 'close-text', 'close-on-date-selection', 'datepicker-append-to-body'];
+
+    var bindings = ['datepicker-mode', 'min-date', 'max-date'];
+
+    var ngModelAttrs = {};
+
+    angular.forEach(attributes, function (attr) {
+        ngModelAttrs[camelize(attr)] = { attribute: attr };
+    });
+
+    angular.forEach(bindings, function (binding) {
+        ngModelAttrs[camelize(binding)] = { bound: binding };
+    });
+
+    console.log(ngModelAttrs);
+
+    formlyConfig.setType({
+        name: 'datepicker',
+        templateUrl: $engineFormly.templateUrls['datepicker'],
+        // wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+        defaultOptions: {
+            ngModelAttrs: ngModelAttrs,
+            templateOptions: {
+                datepickerOptions: {
+                    format: 'dd.MM.yyyy',
+                    initDate: new Date()
+                }
+            }
+        },
+        controller: ['$scope', function ($scope) {
+            $scope.datepicker = {};
+
+            $scope.datepicker.opened = false;
+
+            $scope.datepicker.open = function ($event) {
+                $scope.datepicker.opened = !$scope.datepicker.opened;
+            };
+        }]
+    });
+
+    function camelize(string) {
+        string = string.replace(/[\-_\s]+(.)?/g, function (match, chr) {
+            return chr ? chr.toUpperCase() : '';
+        });
+        // Ensure 1st char is always lowercase
+        return string.replace(/^([A-Z])/, function (match, chr) {
+            return chr ? chr.toLowerCase() : '';
+        });
+    }
 });
 'use strict';
 
@@ -1634,37 +1678,37 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document actions=\"actions\" validated-steps=\"validatedSteps\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" validated-steps=\"validatedSteps\" step=\"$routeParams.step\" steps=\"options.document.steps\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/fields/datepicker.tpl.html", "<p class=\"input-group\">\n    <input  type=\"text\"\n            id=\"{{::id}}\"\n            name=\"{{::id}}\"\n            ng-model=\"model[options.key]\"\n            class=\"form-control\"\n            ng-click=\"datepicker.open($event)\"\n            uib-datepicker-popup=\"{{to.datepickerOptions.format}}\"\n            is-open=\"datepicker.opened\"\n            datepicker-options=\"to.datepickerOptions\" />\n    <span class=\"input-group-btn\">\n            <button type=\"button\" class=\"btn btn-default\" ng-click=\"datepicker.open($event)\" ng-disabled=\"to.disabled\"><i class=\"glyphicon glyphicon-calendar\"></i></button>\n        </span>\n</p>");
-}]);
-angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.steps\" ng-class=\"{active: $ctrl.step == $index}\" class=\"ng-scope\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : $ctrl.validatedSteps[$index] == 'valid',\n                                  'fa-circle-o': $ctrl.validatedSteps[$index] == 'blank',\n                                  'fa-cog fa-spin': $ctrl.validatedSteps[$index] == 'loading',\n                                  'fa-times-circle-o': $ctrl.validatedSteps[$index] == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
+  $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/datepicker.tpl.html", "<p class=\"input-group\">\n    <input  type=\"text\"\n            id=\"{{::id}}\"\n            name=\"{{::id}}\"\n            ng-model=\"model[options.key]\"\n            class=\"form-control\"\n            ng-click=\"datepicker.open($event)\"\n            uib-datepicker-popup=\"{{to.datepickerOptions.format}}\"\n            is-open=\"datepicker.opened\"\n            datepicker-options=\"to.datepickerOptions\" />\n    <span class=\"input-group-btn\">\n            <button type=\"button\" class=\"btn btn-default\" ng-click=\"datepicker.open($event)\" ng-disabled=\"to.disabled\"><i class=\"glyphicon glyphicon-calendar\"></i></button>\n        </span>\n</p>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/has-error.tpl.html", "<div class=\"form-group\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n  <div ng-messages=\"fc.$error\" ng-if=\"showError\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/input.tpl.html", "<input class=\"form-control\" ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/input.tpl.html", "<input class=\"form-control\" ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");
+  $templateCache.put("/src/formly/types/templates/label.tpl.html", "<div>\n    <label for=\"{{id}}\" class=\"control-label {{to.labelSrOnly ? 'sr-only' : ''}}\" ng-if=\"to.label\">\n        <span translate>{{to.label}}</span>\n        {{to.required ? '*' : ''}}\n        <span translate class=\"grey-text\" ng-if=\"to.description\" translate>({{to.description}})</span>\n    </label>\n    <formly-transclude></formly-transclude>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/label.tpl.html", "<div>\n    <label for=\"{{id}}\" class=\"control-label {{to.labelSrOnly ? 'sr-only' : ''}}\" ng-if=\"to.label\">\n        <span translate>{{to.label}}</span>\n        {{to.required ? '*' : ''}}\n        <span translate class=\"grey-text\" ng-if=\"to.description\" translate>({{to.description}})</span>\n    </label>\n    <formly-transclude></formly-transclude>\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/multiCheckbox.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"checkbox\">\n    <label>\n      <input type=\"checkbox\"\n             id=\"{{id + '_'+ $index}}\"\n             ng-model=\"multiCheckbox.checked[$index]\"\n             ng-change=\"multiCheckbox.change()\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/multiCheckbox.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"checkbox\">\n    <label>\n      <input type=\"checkbox\"\n             id=\"{{id + '_'+ $index}}\"\n             ng-model=\"multiCheckbox.checked[$index]\"\n             ng-change=\"multiCheckbox.change()\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/radio.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/radio.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/select.tpl.html", "<select class=\"form-control\" ng-model=\"model[options.key]\"></select>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/select.tpl.html", "<select class=\"form-control\" ng-model=\"model[options.key]\"></select>");
+  $templateCache.put("/src/formly/types/templates/textarea.tpl.html", "<textarea class=\"form-control\" ng-model=\"model[options.key]\"></textarea>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/textarea.tpl.html", "<textarea class=\"form-control\" ng-model=\"model[options.key]\"></textarea>");
+  $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/wrappers/templates/has-error.tpl.html", "<div class=\"form-group\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n  <div ng-messages=\"fc.$error\" ng-if=\"showError\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name) | date}}");

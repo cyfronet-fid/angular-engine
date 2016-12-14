@@ -3,17 +3,18 @@ angular.module('engine.formly')
     var self = this;
 
     var _typeTemplateUrls = {
-        input: '/src/formly/input.tpl.html',
-        select: '/src/formly/select.tpl.html',
-        checkbox: '/src/formly/checkbox.tpl.html',
-        radio: '/src/formly/radio.tpl.html',
-        textarea: '/src/formly/textarea.tpl.html',
-        multiCheckbox: '/src/formly/multiCheckbox.tpl.html'
+        input: '/src/formly/types/templates/input.tpl.html',
+        select: '/src/formly/types/templates/select.tpl.html',
+        checkbox: '/src/formly/types/templates/checkbox.tpl.html',
+        radio: '/src/formly/types/templates/radio.tpl.html',
+        textarea: '/src/formly/types/templates/textarea.tpl.html',
+        datepicker: '/src/formly/types/templates/datepicker.tpl.html',
+        multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html'
     };
     var _wrapperTemplateUrls = {
-        category: '/src/formly/category.tpl.html',
-        label: '/src/formly/label.tpl.html',
-        hasError: '/src/formly/has-error.tpl.html'
+        category: '/src/formly/wrappers/templates/category.tpl.html',
+        label: '/src/formly/wrappers/templates/label.tpl.html',
+        hasError: '/src/formly/wrappers/templates/has-error.tpl.html'
     };
 
     this.templateUrls = _typeTemplateUrls;
