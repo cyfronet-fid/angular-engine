@@ -104,9 +104,14 @@ angular.module('engine.document')
             self.documentForm.init($scope.document, self.options, self.stepList);
             //load metrics to form
             return self.documentForm.loadMetrics();
-        }).then(function() {
-            self.documentForm.makeForm();
-            self.documentForm.setStep(self.step);
+        });
+    };
+
+    this.postinitDocument = function postinitDocument() {
+        self.documentForm.makeForm();
+
+        $scope.$watch('$ctrl.step', function (newStep, oldStep) {
+            self.documentForm.setStep(newStep);
         });
     };
 
@@ -375,7 +380,7 @@ angular.module('engine.document')
         self.engineAction(action, $scope.document, callback);
     });
 
-    $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(function () {
+    $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(this.postinitDocument).then(function () {
         $log.debug('engineDocumentCtrl initialized: ', self);
     });
 });

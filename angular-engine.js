@@ -203,7 +203,10 @@ angular.module('engine.document').component('engineDocument', {
 
     this.postinitDocument = function postinitDocument() {
         self.documentForm.makeForm();
-        self.documentForm.setStep(self.step);
+
+        $scope.$watch('$ctrl.step', function (newStep, oldStep) {
+            self.documentForm.setStep(newStep);
+        });
     };
 
     this.isEditable = function () {
