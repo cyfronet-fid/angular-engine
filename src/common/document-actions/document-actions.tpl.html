@@ -4,5 +4,5 @@
 <button type="submit" ng-if="$ctrl.showValidationButton && (!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1)"
         class="btn btn-default" ng-click="$ctrl.validate()" translate>Validate</button>
 
-<button type="submit" ng-repeat="action in $ctrl.actions" ng-if="!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1" style="margin-left: 5px"
-        class="btn btn-default" ng-click="$ctrl.engineAction(action)" translate>{{action.label}}</button>
+<button type="submit" ng-repeat="action in $ctrl.actionList.actions" ng-if="!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1" style="margin-left: 5px"
+        class="btn btn-default" ng-click="action.call()" translate>{{action.label}}</button>

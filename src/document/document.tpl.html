@@ -3,7 +3,9 @@
         <formly-form model="document" fields="$ctrl.documentForm.formlyFields" class="horizontal"
                      options="$ctrl.documentForm.formlyOptions" form="$ctrl.documentForm.formlyState">
 
-            <engine-document-actions show-validation-button="$ctrl.showValidationButton" ng-if="!$ctrl.options.subdocument" document="document" document-scope="documentScope" steps="$ctrl.options.document.steps" step="$ctrl.step" step-change="onChangeStep(step)" actions="$ctrl.actions" class="btn-group"></engine-document-actions>
+            <engine-document-actions show-validation-button="$ctrl.showValidationButton" ng-if="!$ctrl.options.subdocument"
+                                     document="document" document-scope="documentScope"
+                                     steps="$ctrl.stepList" step="$ctrl.step" class="btn-group"></engine-document-actions>
         </formly-form>
     </form>
 </div>

@@ -16,23 +16,15 @@ angular.module('engine.document')
 })
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
                                             engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
-                                            engineAction, engineMetricCategories, StepList, DocumentForm, $q, $log) {
+                                            engineAction, engineMetricCategories, StepList, DocumentForm,
+                                            DocumentActionList, $q, $log) {
     var self = this;
     console.log($scope);
     $scope.documentScope = $scope;
-    $scope.document = {};
+    $scope.document = null;
     $scope.steps = this.options.document.steps;
-    self.actions = [];
-    $scope.metrics = {};
-    this.allMetrics_d = {};
-    this.showErrors = false;
 
-    this.form = {
-        form: {},
-        options: {},
-        backendValidation: {}
-    };
-
+    this.actionList = null;
     this.stepList = new StepList($scope.steps);
     this.documentForm = new DocumentForm();
 
@@ -61,7 +53,7 @@ angular.module('engine.document')
 
         //if the document exists, the first action will be retriving it
         if (self.documentId && self.documentId != 'new') {
-            _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (document) {
+            _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (data) {
                 $scope.document = data.document;
             }));
         } //if document does not exist copy base from optionas, and set the name
@@ -72,10 +64,8 @@ angular.module('engine.document')
 
         // return chained promise, which will do all other common required operations:
         return $q.all(_actionsToPerform).then(function () {
-            //load actions available for this document
-            return engineActionsAvailable.forDocument($scope.document).$promise;
-        }).then(function (actions) {
-            self.actions = actions;
+            self.actionList = new DocumentActionList($scope.document, self.parentDocumentId);
+            return self.actionList.$ready;
         }).then(function () {
             self.documentForm.init($scope.document, self.options, self.stepList);
             //load metrics to form
@@ -91,98 +81,14 @@ angular.module('engine.document')
         self.documentForm.makeForm();
 
         $scope.$watch('$ctrl.step', function (newStep, oldStep) {
+            if(newStep != oldStep)
+                self.save();
             self.documentForm.setStep(newStep);
         });
     };
 
-    this.isEditable = function () {
-        if(engineActionUtils.getCreateUpdateAction(self.actions) != null)
-            return true;
-        return false;
-    };
-    this.isDisabled = function () {
-        return !self.isEditable();
-    };
-
-
-
-    this.generateFormFields = function () {
-        console.debug('generating form fields for step '+self.step);
-
-        var categories = {};
-        $scope.documentFields = [];
-        var data = self.allMetrics;
-        if(angular.isArray($scope.steps))
-            $scope.currentCategories = $scope.steps[self.step].categories;
-
-        angular.forEach(data, function (metric) {
-            // console.log(metric)
-
-
-
-
-            if ($scope.steps == null || $scope.currentCategories.indexOf(metric.categoryId) != -1) {
-                if (categories[metric.categoryId] == undefined) {
-                    console.log(metric.categoryId);
-                    categories[metric.categoryId] = {
-                        templateOptions: {
-                            wrapperClass: categoryClass,
-                            label: engineMetricCategories.getNames(metric.categoryId).label
-                        }, fieldGroup: [], wrapper: 'category'
-                    };
-                }
-                categories[metric.categoryId].fieldGroup.push(field);
-
-                $scope.metrics[metric.id] = field;
-                if(!(metric.id in $scope.document.metrics))
-                    $scope.document.metrics[metric.id] = null;
-                //
-                // if(self.showErrors)
-                //     field.formControl.$validate();
-
-            }
-        });
-        // console.log('categories');
-        // console.log(categories);
-
-        angular.forEach(categories, function (category) {
-            $scope.documentFields.push(category);
-        });
-
-    };
-
-    this.onChange = function () {
-
-    };
-
-    this._handleActionResonse = function (actionResponse) {
-        if(actionResponse.type == 'REDIRECT') {
-            //before redirecting, load document from engine to ascertain it's document type
-            engineDocument.get(actionResponse.redirectToDocument, function (_data) {
-
-                $location.path($engine.pathToDocument($engine.getOptions(_data.document.states.documentType),
-                               actionResponse.redirectToDocument));
-
-                //if redirecting to new document, clear steps
-                if($scope.document.id != null && $scope.document.id != actionResponse.redirectToDocument)
-                    $location.search({step: 0});
-            });
-        }
-    };
-
-    $scope.saveDocument = function(onSuccess, onError){
-
-
-        var saveAction = engineActionUtils.getCreateUpdateAction(self.actions);
-
-        if(saveAction)
-            self.engineAction(saveAction, $scope.document, function (data) {
-                if (onSuccess)
-                    onSuccess(data);
-
-                self._handleActionResonse(data);
-
-            }, onError, undefined);
+    this.save = function () {
+        return self.actionList.callSave();
     };
 
     $scope.onChangeStep = function (newStep, oldStep) {
@@ -226,131 +132,19 @@ angular.module('engine.document')
                 self.validatedSteps[stepToValidate] = 'invalid';
             });
             }
-            $scope.saveDocument(function () {
-                self.step = newStep;
-            });
+
         }
         else {
             self.step = newStep;
         }
     };
 
+    $scope.$on('engine.common.document.validate', function () {
+        self.documentForm.validate();
+    });
 
-    /**
-     * Invokes engine action on the document, also broadcasts events to subcomponents
-     *
-     * @param {string} action
-     * @param {object} document
-     * @param {Function} callback
-     * @param {Function} errorCallback
-     */
-    this.engineAction = function (action, document, callback, errorCallback) {
+    $scope.$on('engine.common.action.after', function (event, document, action, result) {
 
-        var actionId = action.id;
-
-        var eventBeforeAction = $scope.$broadcast('engine.common.action.before', new DocumentEventCtx(document, action));
-
-        if(eventBeforeAction.defaultPrevented)
-            return;
-
-        if(engineActionUtils.isSaveAction(action)){
-            var eventBeforeSave = $scope.$broadcast('engine.common.save.before', new DocumentEventCtx(document, action));
-
-            if(eventBeforeSave.defaultPrevented)
-                return;
-        }
-
-        //calls engineAction Service
-        engineAction(actionId, document, function (data) {
-            $scope.$broadcast('engine.common.action.after', new DocumentEventCtx(document, action));
-
-            if(engineActionUtils.isSaveAction(action))
-                $scope.$broadcast('engine.common.save.after', new DocumentEventCtx(document, action));
-
-            if(callback)
-                callback(data);
-
-            self._handleActionResonse(data);
-
-        }, function (response) {
-            $scope.$broadcast('engine.common.action.error', new DocumentEventCtx(document, response));
-
-            if(engineActionUtils.isSaveAction(action))
-                $scope.$broadcast('engine.common.save.error', new DocumentEventCtx(document, action));
-
-            if(errorCallback)
-                errorCallback(response);
-        }, self.parentDocumentId);
-    };
-
-    self.validateAll = function (event, dontShowErrors) {
-
-        if(self.validatedSteps)
-            for(var i=0; i < self.validatedSteps.length; ++i)
-                self.validatedSteps[i] = 'loading';
-
-        engineDocument.validate($scope.document, function (data) {
-            console.log(data);
-            self.form.form.$externalValidated = true;
-            self.form.backendValidation = data;
-
-            var _failedCategories = {};
-
-            var _mentionedCategories = {};
-
-            angular.forEach(self.form.backendValidation.results, function (metric) {
-                var categoryId = self.allMetrics_d[metric.metricId].categoryId;
-                if(metric.valid === false){
-                    _failedCategories[categoryId] = true;
-                }
-                _mentionedCategories[categoryId] = true;
-
-                if(!dontShowErrors)
-                    if(metric.metricId in $scope.metrics && $scope.metrics[metric.metricId].formControl){
-                        $scope.metrics[metric.metricId].validation.show = true;
-                        $scope.metrics[metric.metricId].formControl.$validate();
-                    }
-            });
-
-            angular.forEach($scope.steps, function (step, index) {
-                angular.forEach(step.categories, function (category) {
-                    if(category in _failedCategories)
-                        self.validatedSteps[index] = 'invalid';
-                    else if(!(category in _mentionedCategories) && self.validatedSteps[index] != 'invalid')
-                        self.validatedSteps[index] = 'blank';
-
-                })
-            });
-
-            if(self.validatedSteps){
-                var _firstFailedStep = null;
-
-                for(var i=0; i < self.validatedSteps.length; ++i){
-                    if(self.validatedSteps[i] == 'loading') {
-                        self.validatedSteps[i] = 'valid';
-                    }
-                    else if(_firstFailedStep === null)
-                        _firstFailedStep = i;
-                }
-
-                if(!dontShowErrors && _firstFailedStep !== null) {
-                    self.step = _firstFailedStep;
-                    self.showErrors = true;
-                }
-            }
-
-
-        }, function (response) {
-            if(self.validatedSteps)
-                for(var i=0; i < self.validatedSteps.length; ++i)
-                    self.validatedSteps[i] = 'invalid';
-        });
-    };
-
-    $scope.$on('engine.common.document.validate', self.validateAll);
-
-    $scope.$on('engine.common.action.invoke', function (event, action, callback) {
-        self.engineAction(action, $scope.document, callback);
     });
 
     $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(this.postinitDocument).then(function () {

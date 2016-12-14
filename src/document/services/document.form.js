@@ -1,6 +1,6 @@
 angular.module('engine.document')
 .factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory,
-                                   DocumentCategoryFactory, $engineApiCheck, $log) {
+                                   DocumentCategoryFactory, $engineApiCheck, $log, DocumentValidator) {
     var _apiCheck = $engineApiCheck;
 
     function DocumentForm() {
@@ -16,6 +16,8 @@ angular.module('engine.document')
         this.categoryWrapperCSS = 'text-box';
         this.formStructure = [];
         this.formlyFields = [];
+        this.validator = null;
+        this.currentStep = null;
         /**
          * this is for formly use, in here all formly state data is stored
          * @type {object}
@@ -61,6 +63,7 @@ angular.module('engine.document')
 
     DocumentForm.prototype.setStep = function setStep(step) {
         this.formlyFields = this.formStructure[step];
+        this.currentStep = step;
         $log.debug('current fields to display in form', this.formlyFields);
     };
 
@@ -90,6 +93,8 @@ angular.module('engine.document')
 
         connectFields();
         postprocess();
+
+        this.validator = new DocumentValidator(this.steps, this.formlyFields);
 
         console.debug('DocumentForm form structure', self.formStructure);
 
@@ -149,6 +154,10 @@ angular.module('engine.document')
 
             self.updateFields(self.metricList);
         }).$promise;
+    };
+
+    DocumentForm.prototype.validate = function validate() {
+        return this.validator.validate(this.currentStep);
     };
 
     return DocumentForm;

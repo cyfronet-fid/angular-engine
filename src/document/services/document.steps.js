@@ -42,16 +42,18 @@ angular.module('engine.document')
             return step == this.steps.length-1;
         };
 
-        StepList.prototype.validate = function validate() {
-
-        };
-
         StepList.prototype.getFirstInvalid = function getFirstInvalid() {
-
+            _.find(this.steps, function (step) {
+                return step.state == Step.STATE_INVALID;
+            })
         };
 
         StepList.prototype.getSteps = function getSteps() {
             return this.steps;
+        };
+
+        StepList.prototype.getStep = function getStep(stepIndex) {
+            return this.steps[stepIndex];
         };
 
         StepList.prototype.setCurrentStep = function setCurrentStep(stepIndex) {
@@ -67,8 +69,6 @@ angular.module('engine.document')
     .factory('Step', function () {
 
         function Step(metricCategories, visible) {
-            this.defaultState = 'blank';
-
             this.metricCategories = metricCategories;
             this.fields = [];
             this.visible = (visible != null);
@@ -76,10 +76,17 @@ angular.module('engine.document')
             this.$valid = false;
         }
 
-        Step.prototype.validate = function validate() {
+        Step.prototype.STATE_VALID = 'valid';
+        Step.prototype.STATE_INVALID = 'invalid';
+        Step.prototype.STATE_BLANK = 'blank';
+        Step.prototype.STATE_LOADING = 'loading';
+        Step.prototype.validStates = [this.STATE_VALID, this.STATE_INVALID, this.STATE_LOADING, this.STATE_BLANK];
+        Step.prototype.defaultState = 'blank';
 
+        Step.prototype.setState = function setState(state) {
+            _ac([_ac.oneOf(this.validStates)], arguments);
+            this.state = state;
         };
-
 
         return Step;
     });

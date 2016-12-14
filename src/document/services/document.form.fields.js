@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log) {
+.factory('DocumentFieldFactory', function (DocumentField, $engine, $log) {
     function DocumentFieldFactory() {
         this._fieldTypeList = [];
         this._defaultField = new DocumentField();
@@ -127,7 +127,7 @@ angular.module('engine.document')
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
                     document: ctx.document
-                }, expressionProperties: {'templateOptions.disabled': self.isDisabled}
+                }//, expressionProperties: {'templateOptions.disabled': 'false'}
             };
 
             return field;
@@ -136,57 +136,57 @@ angular.module('engine.document')
 
     return new DocumentFieldFactory();
 })
-    .factory('DocumentField', function (ConditionBuilder) {
-        function DocumentField(fieldCondition, fieldBuilder) {
-            if(fieldBuilder == null)
-                fieldBuilder = function (formlyField, metric, ctx) {return formlyField;};
-            if(fieldCondition == null)
-                fieldCondition = function () {return true;};
+.factory('DocumentField', function (ConditionBuilder) {
+    function DocumentField(fieldCondition, fieldBuilder) {
+        if(fieldBuilder == null)
+            fieldBuilder = function (formlyField, metric, ctx) {return formlyField;};
+        if(fieldCondition == null)
+            fieldCondition = function () {return true;};
 
-            this.fieldCondition = ConditionBuilder(fieldCondition);
-            this.fieldCustomizer = fieldBuilder;
-        }
-        DocumentField.prototype.matches = function matches(metric) {
-            return this.fieldCondition(metric);
-        };
+        this.fieldCondition = ConditionBuilder(fieldCondition);
+        this.fieldCustomizer = fieldBuilder;
+    }
+    DocumentField.prototype.matches = function matches(metric) {
+        return this.fieldCondition(metric);
+    };
 
-        DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
-            var formlyField = {
-                key: metric.id,
-                // model: metricList,
-                type: 'input',
-                className: metric.visualClass.join(' '),
-                data: {
-                    categoryId: metric.categoryId,
-                    id: metric.id //this is required for DocumentForm
-                },
-                templateOptions: {
-                    type: 'text',
-                    label: metric.label,
-                    description: metric.description,
-                    placeholder: 'Enter ' + metric.label,
-                    required: metric.required
-                },
-                expressionProperties: {
-                    // 'templateOptions.disabled': self.isDisabled
-                },
-                // validators: {
-                // },
-                validation: {
-                    // show: true,
-                    messages: {
-                        required: 'to.label+"_required"'
-                    }
+    DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
+        var formlyField = {
+            key: metric.id,
+            model: ctx.document.metrics,
+            type: 'input',
+            className: metric.visualClass.join(' '),
+            data: {
+                categoryId: metric.categoryId,
+                id: metric.id //this is required for DocumentForm
+            },
+            templateOptions: {
+                type: 'text',
+                label: metric.label,
+                description: metric.description,
+                placeholder: 'Enter ' + metric.label,
+                required: metric.required
+            },
+            // expressionProperties: {
+                // 'templateOptions.disabled': self.isDisabled
+            // },
+            // validators: {
+            // },
+            validation: {
+                // show: true,
+                messages: {
+                    required: 'to.label+"_required"'
                 }
-            };
-
-            if (metric.reloadOnChange) {
-                //:TODO: make reload listener
             }
-
-
-            return this.fieldCustomizer(formlyField, metric, ctx);
         };
 
-        return DocumentField;
-    })
+        if (metric.reloadOnChange) {
+            //:TODO: make reload listener
+        }
+
+
+        return this.fieldCustomizer(formlyField, metric, ctx);
+    };
+
+    return DocumentField;
+});

@@ -244,7 +244,7 @@ angular.module('engine')
                 this.getOptions = function (documentModelId) {
                     _apiCheck.string(documentModelId);
 
-                    return documents_d[documentModelId] || {}
+                    return documents_d[documentModelId]
                 };
 
                 this.enableDebug = function () {
