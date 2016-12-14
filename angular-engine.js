@@ -198,10 +198,12 @@ angular.module('engine.document').component('engineDocument', {
             self.documentForm.init($scope.document, self.options, self.stepList);
             //load metrics to form
             return self.documentForm.loadMetrics();
-        }).then(function () {
-            self.documentForm.makeForm();
-            self.documentForm.setStep(self.step);
         });
+    };
+
+    this.postinitDocument = function postinitDocument() {
+        self.documentForm.makeForm();
+        self.documentForm.setStep(self.step);
     };
 
     this.isEditable = function () {
@@ -426,7 +428,7 @@ angular.module('engine.document').component('engineDocument', {
         self.engineAction(action, $scope.document, callback);
     });
 
-    $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(function () {
+    $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(this.postinitDocument).then(function () {
         $log.debug('engineDocumentCtrl initialized: ', self);
     });
 });
@@ -1802,7 +1804,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiCheckbox.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"checkbox\">\n    <label>\n      <input type=\"checkbox\"\n             id=\"{{id + '_'+ $index}}\"\n             ng-model=\"multiCheckbox.checked[$index]\"\n             ng-change=\"multiCheckbox.change()\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/radio.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/radio.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/select.tpl.html", "<select class=\"form-control\" ng-model=\"model[options.key]\"></select>");
