@@ -1,3 +1,7 @@
-.table-options {
-
+.row-compensate {
+    margin-right: 0px;
+    margin-left: 0px;
+}
+.datepicker {
+    width:150px !important;
 }

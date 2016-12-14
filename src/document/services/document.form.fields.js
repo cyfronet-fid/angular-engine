@@ -1,8 +1,8 @@
 angular.module('engine.document')
-    .factory('DocumentFieldFactory', function (DocumentField, $engine) {
+    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log) {
     function DocumentFieldFactory() {
         this._fieldTypeList = [];
-        this._defaultField = new DocumentField(function(){return true;}, function (field, metric) { return field; });
+        this._defaultField = new DocumentField();
 
         this._registerBasicCategories();
     }
@@ -32,10 +32,11 @@ angular.module('engine.document')
             if(this._fieldTypeList[i].matches(metric))
                 return this._fieldTypeList[i].makeField(metricList, metric, ctx);
         }
-        if(!this.allowDefaultField)
-            throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ",
-                "Metric", metric, "Registered types", this._fieldTypeList);
-
+        if(!this.allowDefaultField){
+            var message = "DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ";
+            $log.error(message, "Metric", metric, "Registered types", this._fieldTypeList);
+            throw new Error(message);
+        }
         return this._defaultField.makeField(metricList, metric, ctx);
     };
 
@@ -103,20 +104,24 @@ angular.module('engine.document')
 
         this.register(new DocumentField({inputType: 'EXTERNAL'}, function (field, metric, ctx) {
             return {
-                id: metric.id,
-                categoryId: metric.categoryId,
+                data: {
+                    categoryId: metric.categoryId,
+                    id: metric.id //this is required for DocumentForm
+                },
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' +
                 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
-                templateOptions: {ngModel: ctx.document, options: ctx.options},
+                templateOptions: {ngModel: ctx.document, options: ctx.options}
                 // expressionProperties: {'templateOptions.disabled': false}
             };
         }));
 
         this.register(new DocumentField({inputType: 'QUERIED_LIST'}, function (field, metric, ctx) {
             field = {
-                id: metric.id,
-                categoryId: metric.categoryId,
+                data: {
+                    categoryId: metric.categoryId,
+                    id: metric.id //this is required for DocumentForm
+                },
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
                 templateOptions: {
@@ -133,6 +138,11 @@ angular.module('engine.document')
 })
     .factory('DocumentField', function (ConditionBuilder) {
         function DocumentField(fieldCondition, fieldBuilder) {
+            if(fieldBuilder == null)
+                fieldBuilder = function (formlyField, metric, ctx) {return formlyField;};
+            if(fieldCondition == null)
+                fieldCondition = function () {return true;};
+
             this.fieldCondition = ConditionBuilder(fieldCondition);
             this.fieldCustomizer = fieldBuilder;
         }
@@ -142,12 +152,14 @@ angular.module('engine.document')
 
         DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
             var formlyField = {
-                model: metricList,
-                categoryId: metric.categoryId,
-                id: metric.id, //this is required for DocumentForm
                 key: metric.id,
+                // model: metricList,
                 type: 'input',
                 className: metric.visualClass.join(' '),
+                data: {
+                    categoryId: metric.categoryId,
+                    id: metric.id //this is required for DocumentForm
+                },
                 templateOptions: {
                     type: 'text',
                     label: metric.label,
@@ -156,12 +168,12 @@ angular.module('engine.document')
                     required: metric.required
                 },
                 expressionProperties: {
-                    'templateOptions.disabled': self.isDisabled
+                    // 'templateOptions.disabled': self.isDisabled
                 },
-                validators: {
-                },
+                // validators: {
+                // },
                 validation: {
-                    show: false,
+                    // show: true,
                     messages: {
                         required: 'to.label+"_required"'
                     }

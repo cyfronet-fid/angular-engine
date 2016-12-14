@@ -1,6 +1,7 @@
 <div>
-    <form ng-submit="$ctrl.onSubmit()" name="$ctrl.form.form" novalidate>
-        <formly-form model="document" fields="documentFields" class="horizontal" options="$ctrl.form.options" form="$ctrl.form.form">
+    <form ng-submit="$ctrl.onSubmit()" name="$ctrl.documentForm.formlyState" novalidate>
+        <formly-form model="document" fields="$ctrl.documentForm.formlyFields" class="horizontal"
+                     options="$ctrl.documentForm.formlyOptions" form="$ctrl.documentForm.formlyState">
 
             <engine-document-actions show-validation-button="$ctrl.showValidationButton" ng-if="!$ctrl.options.subdocument" document="document" document-scope="documentScope" steps="$ctrl.options.document.steps" step="$ctrl.step" step-change="onChangeStep(step)" actions="$ctrl.actions" class="btn-group"></engine-document-actions>
         </formly-form>

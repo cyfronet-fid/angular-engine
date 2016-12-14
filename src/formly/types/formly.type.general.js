@@ -16,7 +16,7 @@ angular.module('engine.formly')
 
         formlyConfig.setType({
                 name: 'radio',
-                templateUrl: '/src/formly/radio.html',
+                templateUrl: $engineFormly.templateUrls['radio'],
                 wrapper: ['engineLabel', 'engineHasError'],
                 defaultOptions: {
                     noFormControl: false

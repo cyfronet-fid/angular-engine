@@ -1,5 +1,6 @@
 angular.module('engine.document')
-.factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $engineApiCheck, $log) {
+.factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory,
+                                   DocumentCategoryFactory, $engineApiCheck, $log) {
     var _apiCheck = $engineApiCheck;
 
     function DocumentForm() {
@@ -14,6 +15,17 @@ angular.module('engine.document')
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
         this.formStructure = [];
+        this.formlyFields = [];
+        /**
+         * this is for formly use, in here all formly state data is stored
+         * @type {object}
+         */
+        this.formlyState = {};
+        /**
+         * this is for formly use, in here all formly state data is stored
+         * @type {{}}
+         */
+        this.formlyOptions = {}
 
         this.$ready = this.loadMetricCategories();
 
@@ -47,6 +59,11 @@ angular.module('engine.document')
         this.disabled = !editable;
     };
 
+    DocumentForm.prototype.setStep = function setStep(step) {
+        this.formlyFields = this.formStructure[step];
+        $log.debug('current fields to display in form', this.formlyFields);
+    };
+
     DocumentForm.prototype.assertInit = function assertInit() {
         var message = ' is null! make sure to call DocumentForm.init(document, options, steps) before calling other methods';
 
@@ -65,12 +82,14 @@ angular.module('engine.document')
         assert(this.metricCategories.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetricCategories');
 
         var _metricDict = {};
+        var _categoriesToPostProcess = [];
 
         _.forEach(this.steps.getSteps(), function (step) {
             self.formStructure.push(parseMetricCategories(step.metricCategories));
         });
 
         connectFields();
+        postprocess();
 
         console.debug('DocumentForm form structure', self.formStructure);
 
@@ -81,8 +100,13 @@ angular.module('engine.document')
 
             _.forEach(metricCategories, function (metricCategory) {
 
+                var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, {document: self.document});
+
+                formMetricCategory.fieldGroup = parseMetricCategories(metricCategory.children);
 
                 _metricDict[metricCategory.id] = formMetricCategory;
+                if(_.isFunction(formMetricCategory.data.$process))
+                    _categoriesToPostProcess.push(formMetricCategory);
 
                 formCategories.push(formMetricCategory);
             });
@@ -92,14 +116,20 @@ angular.module('engine.document')
 
         function connectFields() {
             _.forEach(self.fieldList, function (field) {
-                if(_metricDict[field.categoryId] === undefined){
+                if(_metricDict[field.data.categoryId] === undefined){
                     $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
-                              'field', field, 'categoryId', field.categoryId);
+                              'field', field, 'categoryId', field.data.categoryId);
                     return;
                 }
 
-                _metricDict[field.categoryId].fieldGroup.push(field);
+                _metricDict[field.data.categoryId].fieldGroup.push(field);
             });
+        }
+
+        function postprocess() {
+            _.forEach(_categoriesToPostProcess, function (entry) {
+                entry.data.$process();
+            })
         }
     };
 
@@ -122,27 +152,4 @@ angular.module('engine.document')
     };
 
     return DocumentForm;
-})
-.factory('ConditionBuilder', function () {
-    return function (fieldCondition) {
-        if (_.isFunction(fieldCondition))
-            this.fieldCondition = fieldCondition;
-        else {
-            var _condition;
-            if (_.isString(fieldCondition))
-                _condition = {visualClass: fieldCondition};
-            else
-                _condition = fieldCondition;
-
-            this.fieldCondition = function (metric) {
-                for (var metricAttribute in _condition) {
-                    if (_.isArray(metric[metricAttribute]) && !_.contains(metric[metricAttribute], _condition[metricAttribute]))
-                        return false;
-                    else if (_.isString(metric[metricAttribute]) && metric[metricAttribute] != _condition[metricAttribute])
-                        return false;
-                }
-                return true;
-            }
-        }
-    };
 });

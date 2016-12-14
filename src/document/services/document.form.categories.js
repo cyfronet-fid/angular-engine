@@ -1,39 +1,65 @@
 angular.module('engine.document')
-    .factory('DocumentCategoryFactory', function (DocumentCategory, $engine) {
-    function DocumentCategoryFactory() {
-        this._categoryTypeList = [];
-        this._defaultField = new DocumentField(function(){return true;}, function (field, metric) { return field; });
+    .factory('DocumentCategoryFactory', function (DocumentCategory, $log) {
+        function DocumentCategoryFactory() {
+            this._categoryTypeList = [];
+            this._defaultCategory = new DocumentCategory();
 
-        this._registerBasicCategories();
-    }
-
-    DocumentCategoryFactory.prototype.register = function register(documentCategory) {
-        this._categoryTypeList.push(documentCategory);
-    };
-
-    DocumentCategoryFactory.prototype.makeCategory = function makeCategory(category, ctx) {
-        for(var i = 0; i < this._categoryTypeList.length; ++i) {
-            if(this._categoryTypeList[i].matches(metric))
-                return this._categoryTypeList[i].makeField(metricList, metric, ctx);
+            this._registerBasicCategories();
         }
-        if(!this.allowDefaultField)
-            throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ",
-                "Metric", metric, "Registered types", this._categoryTypeList);
 
-        return this._defaultField.makeField(metricList, metric, ctx);
-    };
+        DocumentCategoryFactory.prototype.register = function register(documentCategory) {
+            this._categoryTypeList.push(documentCategory);
+        };
 
-    DocumentCategoryFactory.prototype._registerBasicCategories = function _registerBasicCategories(documentField) {
-        this.register()
-    };
+        DocumentCategoryFactory.prototype.makeCategory = function makeCategory(category, ctx) {
+            for (var i = 0; i < this._categoryTypeList.length; ++i) {
+                if (this._categoryTypeList[i].matches(category))
+                    return this._categoryTypeList[i].makeCategory(category, ctx);
+            }
 
-    return new DocumentCategoryFactory();
+            return this._defaultCategory.makeCategory(category, ctx);
+        };
 
-})
-    .factory('DocumentCategory', function () {
+        DocumentCategoryFactory.prototype._registerBasicCategories = function _registerBasicCategories() {
+            this.register(new DocumentCategory('row', function (formlyCategory, metricCategory, ctx) {
+                formlyCategory.templateOptions.wrapperClass = '';
+                formlyCategory.wrapper = 'row';
+                formlyCategory.data.$process = function () {
+                    $log.debug('calling $process on DocumentCategory', formlyCategory);
+
+
+                    // TODO INCLUDE OPERATOR DEFINED WIDTHS
+                    // _.find(formlyCategory.fieldGroup, function (field) {
+                    //     return field.templateOptions.css == 'col-md-6';
+                    // });
+
+                    var size = Math.floor(12/formlyCategory.fieldGroup.length);
+                    size = size < 1 ? 1 : size;
+
+                    _.forEach(formlyCategory.fieldGroup, function (field) {
+                        field.templateOptions.css = 'col-md-'+size;
+                    })
+                };
+                return formlyCategory;
+            }));
+
+        };
+
+        return new DocumentCategoryFactory();
+
+    })
+    .factory('DocumentCategory', function (ConditionBuilder) {
         function DocumentCategory(categoryCondition, categoryBuilder) {
+            if(categoryBuilder == null)
+                categoryBuilder = function (formlyCategory, metricCategory, ctx) {return formlyCategory;};
+            if(categoryCondition == null)
+                categoryCondition = function () {return true;};
+
             this.categoryCondition = ConditionBuilder(categoryCondition);
-            this.categoryBuilder = categoryBuilder;
+            this.categoryCustomizer = categoryBuilder;
+
+            this.categoryWrapper = 'category';
+            this.categoryWrapperCSS = 'text-box';
         }
 
         DocumentCategory.prototype.matches = function matches(metricCategory) {
@@ -41,17 +67,23 @@ angular.module('engine.document')
         };
 
         DocumentCategory.prototype.makeCategory = function makeCategory(metricCategory, ctx) {
+            //**IMPORTANT NOTE** metricCategory.children should not be parsed here
+            //DocumentCategory is parsing only given category, taking care of category hierarchy is part
+            //of DocumentForm job, that's why fieldGroup is intentionally set to `null`
             var formlyCategory = {
-                id: metricCategory.id,
                 templateOptions: {
-                    wrapperClass: self.categoryWrapperCSS,
+                    categoryId: metricCategory.id,
+                    wrapperClass: this.categoryWrapperCSS,
                     label: metricCategory.label,
                     visualClass: metricCategory.visualClass
-                }, fieldGroup: parseMetricCategories(metricCategory.children), wrapper: self.categoryWrapper
+                },
+                fieldGroup: null,
+                wrapper: this.categoryWrapper,
+                data: {}
             };
 
-            return this.fieldCustomizer(formlyCategory, ctx);
+            return this.categoryCustomizer(formlyCategory, metricCategory, ctx);
         };
 
         return DocumentCategory;
-    })
+    });

@@ -1,14 +1,18 @@
-<p class="input-group">
-    <input  type="text"
-            id="{{::id}}"
-            name="{{::id}}"
-            ng-model="model[options.key]"
-            class="form-control"
-            ng-click="datepicker.open($event)"
-            uib-datepicker-popup="{{to.datepickerOptions.format}}"
-            is-open="datepicker.opened"
-            datepicker-options="to.datepickerOptions" />
+<p class="input-group input-group-datepicker">
+    <input id="{{::id}}"
+           name="{{::id}}"
+           ng-model="model[options.key]"
+           class="form-control datepicker"
+           type="text"
+           uib-datepicker-popup="{{to.datepickerOptions.format || 'yyyy-MM-dd'}}"
+           datepicker-localdate
+           is-open="openedDatePopUp"
+           show-button-bar = false
+           datepicker-options="to.datepickerOptions || todayMinValueDateOptions"
+           ng-click="openPopUp($event)"/>
     <span class="input-group-btn">
-            <button type="button" class="btn btn-default" ng-click="datepicker.open($event)" ng-disabled="to.disabled"><i class="glyphicon glyphicon-calendar"></i></button>
-        </span>
+        <button type="button" class="btn btn-default" ng-click="openPopUp($event)">
+            <i class="glyphicon glyphicon-calendar"></i>
+        </button>
+    </span>
 </p>

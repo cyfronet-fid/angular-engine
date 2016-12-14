@@ -45,7 +45,7 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
     formlyConfig.setType({
         name: 'datepicker',
         templateUrl: $engineFormly.templateUrls['datepicker'],
-        // wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+        wrapper: ['engineLabel', 'engineHasError'],
         defaultOptions: {
             ngModelAttrs: ngModelAttrs,
             templateOptions: {
@@ -55,15 +55,26 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
                 }
             }
         },
-        controller: ['$scope', function ($scope) {
-            $scope.datepicker = {};
+        controller: function ($scope) {
+            $scope.openedDatePopUp = false;
 
-            $scope.datepicker.opened = false;
 
-            $scope.datepicker.open = function ($event) {
-                $scope.datepicker.opened = !$scope.datepicker.opened;
+            $scope.today = function () {
+                $scope.$parent.metricFormValues[metricId] = $filter('date')(new Date(),'yyyy-MM-dd');
             };
-        }]
+
+            $scope.openPopUp = function ($event) {
+                $event.preventDefault();
+                $event.stopPropagation();
+                $scope.openedDatePopUp = true;
+            };
+
+            $scope.dateOptions = {
+                formatYear: 'yy',
+                startingDay: 1
+            };
+
+        }
     });
 
     function camelize(string) {

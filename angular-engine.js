@@ -168,6 +168,11 @@ angular.module('engine.document').component('engineDocument', {
      * @returns {Promise<R>|IPromise<U>|Promise<U>}
      */
     this.initDocument = function initDocument() {
+        var message = 'engineDocumentCtrl.initDocument called before all required dependencies were resolved, make ' + 'sure that iniDocument is called after everything is loaded';
+
+        assert(self.stepList.$ready, message);
+        assert(self.documentForm.$ready, message);
+
         self.stepList.setCurrentStep(self.step);
 
         var _actionsToPerform = [];
@@ -194,7 +199,8 @@ angular.module('engine.document').component('engineDocument', {
             //load metrics to form
             return self.documentForm.loadMetrics();
         }).then(function () {
-            return self.documentForm.makeForm();
+            self.documentForm.makeForm();
+            self.documentForm.setStep(self.step);
         });
     };
 
@@ -457,14 +463,10 @@ angular.module('engine.document').factory('DocumentModal', function ($resource, 
 });
 'use strict';
 
-angular.module('engine.document').factory('DocumentCategoryFactory', function (DocumentCategory, $engine) {
+angular.module('engine.document').factory('DocumentCategoryFactory', function (DocumentCategory, $log) {
     function DocumentCategoryFactory() {
         this._categoryTypeList = [];
-        this._defaultField = new DocumentField(function () {
-            return true;
-        }, function (field, metric) {
-            return field;
-        });
+        this._defaultCategory = new DocumentCategory();
 
         this._registerBasicCategories();
     }
@@ -475,22 +477,50 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
 
     DocumentCategoryFactory.prototype.makeCategory = function makeCategory(category, ctx) {
         for (var i = 0; i < this._categoryTypeList.length; ++i) {
-            if (this._categoryTypeList[i].matches(metric)) return this._categoryTypeList[i].makeField(metricList, metric, ctx);
+            if (this._categoryTypeList[i].matches(category)) return this._categoryTypeList[i].makeCategory(category, ctx);
         }
-        if (!this.allowDefaultField) throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ", "Metric", metric, "Registered types", this._categoryTypeList);
 
-        return this._defaultField.makeField(metricList, metric, ctx);
+        return this._defaultCategory.makeCategory(category, ctx);
     };
 
-    DocumentCategoryFactory.prototype._registerBasicCategories = function _registerBasicCategories(documentField) {
-        this.register();
+    DocumentCategoryFactory.prototype._registerBasicCategories = function _registerBasicCategories() {
+        this.register(new DocumentCategory('row', function (formlyCategory, metricCategory, ctx) {
+            formlyCategory.templateOptions.wrapperClass = '';
+            formlyCategory.wrapper = 'row';
+            formlyCategory.data.$process = function () {
+                $log.debug('calling $process on DocumentCategory', formlyCategory);
+
+                // TODO INCLUDE OPERATOR DEFINED WIDTHS
+                // _.find(formlyCategory.fieldGroup, function (field) {
+                //     return field.templateOptions.css == 'col-md-6';
+                // });
+
+                var size = Math.floor(12 / formlyCategory.fieldGroup.length);
+                size = size < 1 ? 1 : size;
+
+                _.forEach(formlyCategory.fieldGroup, function (field) {
+                    field.templateOptions.css = 'col-md-' + size;
+                });
+            };
+            return formlyCategory;
+        }));
     };
 
     return new DocumentCategoryFactory();
-}).factory('DocumentCategory', function () {
+}).factory('DocumentCategory', function (ConditionBuilder) {
     function DocumentCategory(categoryCondition, categoryBuilder) {
+        if (categoryBuilder == null) categoryBuilder = function categoryBuilder(formlyCategory, metricCategory, ctx) {
+            return formlyCategory;
+        };
+        if (categoryCondition == null) categoryCondition = function categoryCondition() {
+            return true;
+        };
+
         this.categoryCondition = ConditionBuilder(categoryCondition);
-        this.categoryBuilder = categoryBuilder;
+        this.categoryCustomizer = categoryBuilder;
+
+        this.categoryWrapper = 'category';
+        this.categoryWrapperCSS = 'text-box';
     }
 
     DocumentCategory.prototype.matches = function matches(metricCategory) {
@@ -498,30 +528,57 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
     };
 
     DocumentCategory.prototype.makeCategory = function makeCategory(metricCategory, ctx) {
+        //**IMPORTANT NOTE** metricCategory.children should not be parsed here
+        //DocumentCategory is parsing only given category, taking care of category hierarchy is part
+        //of DocumentForm job, that's why fieldGroup is intentionally set to `null`
         var formlyCategory = {
-            id: metricCategory.id,
             templateOptions: {
-                wrapperClass: self.categoryWrapperCSS,
+                categoryId: metricCategory.id,
+                wrapperClass: this.categoryWrapperCSS,
                 label: metricCategory.label,
                 visualClass: metricCategory.visualClass
-            }, fieldGroup: parseMetricCategories(metricCategory.children), wrapper: self.categoryWrapper
+            },
+            fieldGroup: null,
+            wrapper: this.categoryWrapper,
+            data: {}
         };
 
-        return this.fieldCustomizer(formlyCategory, ctx);
+        return this.categoryCustomizer(formlyCategory, metricCategory, ctx);
     };
 
     return DocumentCategory;
 });
-;'use strict';
+'use strict';
 
-angular.module('engine.document').factory('DocumentFieldFactory', function (DocumentField, $engine) {
+angular.module('engine.document').factory('ConditionBuilder', function ($engineApiCheck) {
+    var _apiCheck = $engineApiCheck;
+
+    return function (fieldCondition) {
+        _apiCheck([_apiCheck.oneOfType([_apiCheck.func, _apiCheck.string, _apiCheck.object])], arguments);
+
+        var rFieldCondition = null;
+
+        if (_.isFunction(fieldCondition)) rFieldCondition = fieldCondition;else {
+            var _condition;
+            if (_.isString(fieldCondition)) _condition = { visualClass: fieldCondition };else _condition = fieldCondition;
+
+            rFieldCondition = function rFieldCondition(metric) {
+                for (var metricAttribute in _condition) {
+                    if (_.isArray(metric[metricAttribute]) && !_.contains(metric[metricAttribute], _condition[metricAttribute])) return false;else if (_.isString(metric[metricAttribute]) && metric[metricAttribute] != _condition[metricAttribute]) return false;else if (metric[metricAttribute] == null) return false;
+                }
+                return true;
+            };
+        }
+
+        return rFieldCondition;
+    };
+});
+'use strict';
+
+angular.module('engine.document').factory('DocumentFieldFactory', function (DocumentField, $engine, $log) {
     function DocumentFieldFactory() {
         this._fieldTypeList = [];
-        this._defaultField = new DocumentField(function () {
-            return true;
-        }, function (field, metric) {
-            return field;
-        });
+        this._defaultField = new DocumentField();
 
         this._registerBasicCategories();
     }
@@ -550,8 +607,11 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         for (var i = 0; i < this._fieldTypeList.length; ++i) {
             if (this._fieldTypeList[i].matches(metric)) return this._fieldTypeList[i].makeField(metricList, metric, ctx);
         }
-        if (!this.allowDefaultField) throw new Error("DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ", "Metric", metric, "Registered types", this._fieldTypeList);
-
+        if (!this.allowDefaultField) {
+            var message = "DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ";
+            $log.error(message, "Metric", metric, "Registered types", this._fieldTypeList);
+            throw new Error(message);
+        }
         return this._defaultField.makeField(metricList, metric, ctx);
     };
 
@@ -619,17 +679,22 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
             return {
-                id: metric.id,
-                categoryId: metric.categoryId,
+                data: {
+                    categoryId: metric.categoryId,
+                    id: metric.id //this is required for DocumentForm
+                },
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
                 templateOptions: { ngModel: ctx.document, options: ctx.options }
+                // expressionProperties: {'templateOptions.disabled': false}
             };
         }));
 
         this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
             field = {
-                id: metric.id,
-                categoryId: metric.categoryId,
+                data: {
+                    categoryId: metric.categoryId,
+                    id: metric.id //this is required for DocumentForm
+                },
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
@@ -644,6 +709,13 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
     return new DocumentFieldFactory();
 }).factory('DocumentField', function (ConditionBuilder) {
     function DocumentField(fieldCondition, fieldBuilder) {
+        if (fieldBuilder == null) fieldBuilder = function fieldBuilder(formlyField, metric, ctx) {
+            return formlyField;
+        };
+        if (fieldCondition == null) fieldCondition = function fieldCondition() {
+            return true;
+        };
+
         this.fieldCondition = ConditionBuilder(fieldCondition);
         this.fieldCustomizer = fieldBuilder;
     }
@@ -653,12 +725,14 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
     DocumentField.prototype.makeField = function makeField(metricList, metric, ctx) {
         var formlyField = {
-            model: metricList,
-            categoryId: metric.categoryId,
-            id: metric.id, //this is required for DocumentForm
             key: metric.id,
+            // model: metricList,
             type: 'input',
             className: metric.visualClass.join(' '),
+            data: {
+                categoryId: metric.categoryId,
+                id: metric.id //this is required for DocumentForm
+            },
             templateOptions: {
                 type: 'text',
                 label: metric.label,
@@ -667,11 +741,12 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 required: metric.required
             },
             expressionProperties: {
-                'templateOptions.disabled': self.isDisabled
+                // 'templateOptions.disabled': self.isDisabled
             },
-            validators: {},
+            // validators: {
+            // },
             validation: {
-                show: false,
+                // show: true,
                 messages: {
                     required: 'to.label+"_required"'
                 }
@@ -689,7 +764,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 });
 ;'use strict';
 
-angular.module('engine.document').factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $engineApiCheck, $log) {
+angular.module('engine.document').factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, DocumentCategoryFactory, $engineApiCheck, $log) {
     var _apiCheck = $engineApiCheck;
 
     function DocumentForm() {
@@ -704,6 +779,17 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
         this.formStructure = [];
+        this.formlyFields = [];
+        /**
+         * this is for formly use, in here all formly state data is stored
+         * @type {object}
+         */
+        this.formlyState = {};
+        /**
+         * this is for formly use, in here all formly state data is stored
+         * @type {{}}
+         */
+        this.formlyOptions = {};
 
         this.$ready = this.loadMetricCategories();
     }
@@ -736,6 +822,11 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         this.disabled = !editable;
     };
 
+    DocumentForm.prototype.setStep = function setStep(step) {
+        this.formlyFields = this.formStructure[step];
+        $log.debug('current fields to display in form', this.formlyFields);
+    };
+
     DocumentForm.prototype.assertInit = function assertInit() {
         var message = ' is null! make sure to call DocumentForm.init(document, options, steps) before calling other methods';
 
@@ -754,12 +845,14 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         assert(this.metricCategories.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetricCategories');
 
         var _metricDict = {};
+        var _categoriesToPostProcess = [];
 
         _.forEach(this.steps.getSteps(), function (step) {
             self.formStructure.push(parseMetricCategories(step.metricCategories));
         });
 
         connectFields();
+        postprocess();
 
         console.debug('DocumentForm form structure', self.formStructure);
 
@@ -770,7 +863,12 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 
             _.forEach(metricCategories, function (metricCategory) {
 
+                var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, { document: self.document });
+
+                formMetricCategory.fieldGroup = parseMetricCategories(metricCategory.children);
+
                 _metricDict[metricCategory.id] = formMetricCategory;
+                if (_.isFunction(formMetricCategory.data.$process)) _categoriesToPostProcess.push(formMetricCategory);
 
                 formCategories.push(formMetricCategory);
             });
@@ -780,12 +878,18 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 
         function connectFields() {
             _.forEach(self.fieldList, function (field) {
-                if (_metricDict[field.categoryId] === undefined) {
-                    $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!', 'field', field, 'categoryId', field.categoryId);
+                if (_metricDict[field.data.categoryId] === undefined) {
+                    $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!', 'field', field, 'categoryId', field.data.categoryId);
                     return;
                 }
 
-                _metricDict[field.categoryId].fieldGroup.push(field);
+                _metricDict[field.data.categoryId].fieldGroup.push(field);
+            });
+        }
+
+        function postprocess() {
+            _.forEach(_categoriesToPostProcess, function (entry) {
+                entry.data.$process();
             });
         }
     };
@@ -809,20 +913,6 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
     };
 
     return DocumentForm;
-}).factory('ConditionBuilder', function () {
-    return function (fieldCondition) {
-        if (_.isFunction(fieldCondition)) this.fieldCondition = fieldCondition;else {
-            var _condition;
-            if (_.isString(fieldCondition)) _condition = { visualClass: fieldCondition };else _condition = fieldCondition;
-
-            this.fieldCondition = function (metric) {
-                for (var metricAttribute in _condition) {
-                    if (_.isArray(metric[metricAttribute]) && !_.contains(metric[metricAttribute], _condition[metricAttribute])) return false;else if (_.isString(metric[metricAttribute]) && metric[metricAttribute] != _condition[metricAttribute]) return false;
-                }
-                return true;
-            };
-        }
-    };
 });
 'use strict';
 
@@ -1447,7 +1537,7 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
     formlyConfig.setType({
         name: 'datepicker',
         templateUrl: $engineFormly.templateUrls['datepicker'],
-        // wrapper: ['bootstrapLabel', 'bootstrapHasError'],
+        wrapper: ['engineLabel', 'engineHasError'],
         defaultOptions: {
             ngModelAttrs: ngModelAttrs,
             templateOptions: {
@@ -1457,15 +1547,24 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
                 }
             }
         },
-        controller: ['$scope', function ($scope) {
-            $scope.datepicker = {};
+        controller: function controller($scope) {
+            $scope.openedDatePopUp = false;
 
-            $scope.datepicker.opened = false;
-
-            $scope.datepicker.open = function ($event) {
-                $scope.datepicker.opened = !$scope.datepicker.opened;
+            $scope.today = function () {
+                $scope.$parent.metricFormValues[metricId] = $filter('date')(new Date(), 'yyyy-MM-dd');
             };
-        }]
+
+            $scope.openPopUp = function ($event) {
+                $event.preventDefault();
+                $event.stopPropagation();
+                $scope.openedDatePopUp = true;
+            };
+
+            $scope.dateOptions = {
+                formatYear: 'yy',
+                startingDay: 1
+            };
+        }
     });
 
     function camelize(string) {
@@ -1497,7 +1596,7 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
 
     formlyConfig.setType({
         name: 'radio',
-        templateUrl: '/src/formly/radio.html',
+        templateUrl: $engineFormly.templateUrls['radio'],
         wrapper: ['engineLabel', 'engineHasError'],
         defaultOptions: {
             noFormControl: false
@@ -1541,6 +1640,16 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
         //     cols: check.number.optional
         // }
         // })
+    });
+});
+'use strict';
+
+angular.module('engine.formly').config(function ($engineFormlyProvider) {
+    $engineFormlyProvider.setWrapperTemplateUrl('row', '/src/formly/wrappers/templates/row.tpl.html');
+}).run(function (formlyConfig, $engineFormly) {
+    formlyConfig.setWrapper({
+        name: 'row',
+        templateUrl: $engineFormly.wrapperUrls['row']
     });
 });
 'use strict';
@@ -1672,7 +1781,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" validatedSteps=\"validatedSteps\" actions=\"actions\" ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action)\" translate>{{action.label}}</button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.form.form\" novalidate>\n        <formly-form model=\"document\" fields=\"documentFields\" class=\"horizontal\" options=\"$ctrl.form.options\" form=\"$ctrl.form.form\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" steps=\"$ctrl.options.document.steps\" step=\"$ctrl.step\" step-change=\"onChangeStep(step)\" actions=\"$ctrl.actions\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"document\" fields=\"$ctrl.documentForm.formlyFields\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\" document=\"document\" document-scope=\"documentScope\" steps=\"$ctrl.options.document.steps\" step=\"$ctrl.step\" step-change=\"onChangeStep(step)\" actions=\"$ctrl.actions\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document actions=\"actions\" validated-steps=\"validatedSteps\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" validated-steps=\"validatedSteps\" step=\"$routeParams.step\" steps=\"options.document.steps\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
@@ -1684,13 +1793,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/datepicker.tpl.html", "<p class=\"input-group\">\n    <input  type=\"text\"\n            id=\"{{::id}}\"\n            name=\"{{::id}}\"\n            ng-model=\"model[options.key]\"\n            class=\"form-control\"\n            ng-click=\"datepicker.open($event)\"\n            uib-datepicker-popup=\"{{to.datepickerOptions.format}}\"\n            is-open=\"datepicker.opened\"\n            datepicker-options=\"to.datepickerOptions\" />\n    <span class=\"input-group-btn\">\n            <button type=\"button\" class=\"btn btn-default\" ng-click=\"datepicker.open($event)\" ng-disabled=\"to.disabled\"><i class=\"glyphicon glyphicon-calendar\"></i></button>\n        </span>\n</p>");
+  $templateCache.put("/src/formly/types/templates/datepicker.tpl.html", "<p class=\"input-group input-group-datepicker\">\n    <input id=\"{{::id}}\"\n           name=\"{{::id}}\"\n           ng-model=\"model[options.key]\"\n           class=\"form-control datepicker\"\n           type=\"text\"\n           uib-datepicker-popup=\"{{to.datepickerOptions.format || 'yyyy-MM-dd'}}\"\n           datepicker-localdate\n           is-open=\"openedDatePopUp\"\n           show-button-bar = false\n           datepicker-options=\"to.datepickerOptions || todayMinValueDateOptions\"\n           ng-click=\"openPopUp($event)\"/>\n    <span class=\"input-group-btn\">\n        <button type=\"button\" class=\"btn btn-default\" ng-click=\"openPopUp($event)\">\n            <i class=\"glyphicon glyphicon-calendar\"></i>\n        </button>\n    </span>\n</p>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/input.tpl.html", "<input class=\"form-control\" ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");
-}]);
-angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/label.tpl.html", "<div>\n    <label for=\"{{id}}\" class=\"control-label {{to.labelSrOnly ? 'sr-only' : ''}}\" ng-if=\"to.label\">\n        <span translate>{{to.label}}</span>\n        {{to.required ? '*' : ''}}\n        <span translate class=\"grey-text\" ng-if=\"to.description\" translate>({{to.description}})</span>\n    </label>\n    <formly-transclude></formly-transclude>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiCheckbox.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"checkbox\">\n    <label>\n      <input type=\"checkbox\"\n             id=\"{{id + '_'+ $index}}\"\n             ng-model=\"multiCheckbox.checked[$index]\"\n             ng-change=\"multiCheckbox.change()\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
@@ -1708,7 +1814,13 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/wrappers/templates/has-error.tpl.html", "<div class=\"form-group\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n  <div ng-messages=\"fc.$error\" ng-if=\"showError\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n\n</div>\n");
+  $templateCache.put("/src/formly/wrappers/templates/has-error.tpl.html", "<div class=\"form-group {{::to.css}}\" ng-class=\"{'has-error': showError}\">\n  <formly-transclude></formly-transclude>\n  <div ng-messages=\"fc.$error\" ng-if=\"showError\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n\n</div>\n");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/wrappers/templates/label.tpl.html", "<div class=\"\">\n    <label for=\"{{id}}\" class=\"control-label {{to.labelSrOnly ? 'sr-only' : ''}}\" ng-if=\"to.label\">\n        <span translate>{{to.label}}</span>\n        {{to.required ? '*' : ''}}\n        <span translate class=\"grey-text\" ng-if=\"to.description\" translate>({{to.description}})</span>\n    </label>\n    <formly-transclude></formly-transclude>\n</div>\n");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/wrappers/templates/row.tpl.html", "<div>\n    <div class=\"row  {{options.templateOptions.wrapperClass}}\">\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name) | date}}");

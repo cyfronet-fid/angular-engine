@@ -73,6 +73,12 @@ angular.module('engine.document')
      * @returns {Promise<R>|IPromise<U>|Promise<U>}
      */
     this.initDocument = function initDocument() {
+        var message = 'engineDocumentCtrl.initDocument called before all required dependencies were resolved, make ' +
+                      'sure that iniDocument is called after everything is loaded';
+
+        assert(self.stepList.$ready, message);
+        assert(self.documentForm.$ready, message);
+
         self.stepList.setCurrentStep(self.step);
 
         var _actionsToPerform = [];
@@ -99,7 +105,8 @@ angular.module('engine.document')
             //load metrics to form
             return self.documentForm.loadMetrics();
         }).then(function() {
-            return self.documentForm.makeForm();
+            self.documentForm.makeForm();
+            self.documentForm.setStep(self.step);
         });
     };
 
