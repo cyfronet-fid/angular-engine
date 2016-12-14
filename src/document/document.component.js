@@ -83,6 +83,10 @@ angular.module('engine.document')
         });
     };
 
+    /**
+     * This method is called after whole document was initiated,
+     * here all $watch, and other such methods should be defined
+     */
     this.postinitDocument = function postinitDocument() {
         self.documentForm.makeForm();
 
@@ -343,13 +347,6 @@ angular.module('engine.document')
         });
     };
 
-    // $scope.$on('engine.common.step.before', function (event, newStep, oldStep) {
-    //     $scope.onChangeStep(newStep, oldStep);
-    // });
-    //
-    // $scope.$on('engine.common.step.change', function (event, newStep, oldStep) {
-    //     $scope.onChangeStep(newStep, oldStep);
-    // });
     $scope.$on('engine.common.document.validate', self.validateAll);
 
     $scope.$on('engine.common.action.invoke', function (event, action, callback) {
