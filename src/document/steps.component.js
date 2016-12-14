@@ -6,15 +6,12 @@ angular.module('engine.steps')
 
             this.changeStep = function (newStep) {
                 self.step = newStep;
-                $timeout(self.ngChange);
             }
         },
         bindings: {
             ngModel: '=',
             step: '=',
-            steps: '=',
-            options: '=',
-            ngChange: '&',
-            validatedSteps: '='
+            stepList: '=',
+            options: '='
         }
     });

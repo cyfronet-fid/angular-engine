@@ -5,7 +5,7 @@ angular.module('engine.document')
     bindings: {
         ngModel: '=',
         options: '=',
-        steps: '=',
+        stepList: '=',
         step: '=',
         validatedSteps: '=',
         showValidationButton: '=',
@@ -25,7 +25,6 @@ angular.module('engine.document')
     $scope.steps = this.options.document.steps;
 
     this.actionList = null;
-    this.stepList = new StepList($scope.steps);
     this.documentForm = new DocumentForm();
 
 
@@ -81,8 +80,13 @@ angular.module('engine.document')
         self.documentForm.makeForm();
 
         $scope.$watch('$ctrl.step', function (newStep, oldStep) {
-            if(newStep != oldStep)
-                self.save();
+            if(newStep != oldStep){
+                if(self.documentForm.isEditable()){
+                    self.documentForm.validate();
+                    self.save();
+                }
+            }
+            self.stepList.setCurrentStep(newStep);
             self.documentForm.setStep(newStep);
         });
     };
@@ -133,9 +137,6 @@ angular.module('engine.document')
             });
             }
 
-        }
-        else {
-            self.step = newStep;
         }
     };
 

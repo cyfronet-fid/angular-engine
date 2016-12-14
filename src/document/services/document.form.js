@@ -11,7 +11,7 @@ angular.module('engine.document')
         this.document = null;
         this.documentOptions = null;
         this.steps = null;
-        this.disabled = true;
+        this.disabled = false;
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
         this.formStructure = [];
@@ -59,6 +59,10 @@ angular.module('engine.document')
 
     DocumentForm.prototype.setEditable = function setEditable(editable) {
         this.disabled = !editable;
+    };
+
+    DocumentForm.prototype.isEditable = function isEditable() {
+        return !this.disabled;
     };
 
     DocumentForm.prototype.setStep = function setStep(step) {

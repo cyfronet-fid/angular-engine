@@ -1,5 +1,5 @@
 angular.module('engine.document')
-.factory('DocumentValidator', function ($log) {
+.factory('DocumentValidator', function (engineDocument, $log, Step) {
     function DocumentValidator(stepList, fieldList) {
         this.stepList = stepList;
         this.fieldList = fieldList;
@@ -8,10 +8,17 @@ angular.module('engine.document')
     DocumentValidator.prototype.validate = function validate(step) {
         $log.debug('DocumentValidator.validate called');
 
-        if(self.validatedSteps)
-            for(var i=0; i < self.validatedSteps.length; ++i)
-                self.validatedSteps[i] = 'loading';
 
+        this.stepList.getStep(step).setState(Step.STATE_LOADING);
+        this.stepList.getStep(step).setState(Step.STATE_INVALID);
+
+
+
+
+        // if(self.validatedSteps)
+        //     for(var i=0; i < self.validatedSteps.length; ++i)
+        //         self.validatedSteps[i] = 'loading';
+        //
         // engineDocument.validate($scope.document, function (data) {
         //     console.log(data);
         //     self.form.form.$externalValidated = true;

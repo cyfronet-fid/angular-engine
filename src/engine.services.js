@@ -151,13 +151,7 @@ angular.module('engine')
                 $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional],
                                  arguments);
 
-                return _document.validate({}, document, function (data) {
-                    document.$valid = data.valid;
-
-
-                    if(callback)
-                        callback(data);
-                }, errorCallback);
+                return _document.validate({}, document, callback, errorCallback);
             }
         }
     }).service('EngineInterceptor', function () {

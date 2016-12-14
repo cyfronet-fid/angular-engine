@@ -130,7 +130,7 @@ angular.module('engine.document').component('engineDocument', {
     bindings: {
         ngModel: '=',
         options: '=',
-        steps: '=',
+        stepList: '=',
         step: '=',
         validatedSteps: '=',
         showValidationButton: '=',
@@ -146,7 +146,6 @@ angular.module('engine.document').component('engineDocument', {
     $scope.steps = this.options.document.steps;
 
     this.actionList = null;
-    this.stepList = new StepList($scope.steps);
     this.documentForm = new DocumentForm();
 
     /**
@@ -200,7 +199,13 @@ angular.module('engine.document').component('engineDocument', {
         self.documentForm.makeForm();
 
         $scope.$watch('$ctrl.step', function (newStep, oldStep) {
-            if (newStep != oldStep) self.save();
+            if (newStep != oldStep) {
+                if (self.documentForm.isEditable()) {
+                    self.documentForm.validate();
+                    self.save();
+                }
+            }
+            self.stepList.setCurrentStep(newStep);
             self.documentForm.setStep(newStep);
         });
     };
@@ -244,8 +249,6 @@ angular.module('engine.document').component('engineDocument', {
                     self.validatedSteps[stepToValidate] = 'invalid';
                 });
             }
-        } else {
-            self.step = newStep;
         }
     };
 
@@ -292,23 +295,24 @@ angular.module('engine.document').factory('DocumentModal', function ($resource, 
 });
 'use strict';
 
-angular.module('engine.document').controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams) {
-    $scope.validatedSteps = [];
+angular.module('engine.document').controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, StepList) {
     $scope.options = $route.current.$$route.options;
-    $scope.steps = $route.current.$$route.options.document.steps || null;
-    if (angular.isArray($scope.steps)) angular.forEach($scope.steps, function (step) {
-        $scope.validatedSteps.push('blank');
-    });
+
+    $scope.stepList = new StepList($route.current.$$route.options.document.steps);
+
     $scope.document = {};
     $scope.documentId = $routeParams.id;
-    if ($routeParams.step === undefined) $routeParams.step = 0;
+    if ($routeParams.step === undefined) $routeParams.step = 0;else $routeParams.step = parseInt($routeParams.step);
+
     $scope.$routeParams = $routeParams;
 
     $scope.$watch('$routeParams.step', function (newVal, oldVal) {
+
         if (angular.isString(newVal)) {
             newVal = parseInt(newVal);
             $routeParams.step = newVal;
         }
+        // $scope.stepList.setCurrentStep(newVal);
         if (newVal !== oldVal) {
             $location.search({ step: newVal || 0 });
         }
@@ -762,7 +766,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         this.document = null;
         this.documentOptions = null;
         this.steps = null;
-        this.disabled = true;
+        this.disabled = false;
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
         this.formStructure = [];
@@ -809,6 +813,10 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 
     DocumentForm.prototype.setEditable = function setEditable(editable) {
         this.disabled = !editable;
+    };
+
+    DocumentForm.prototype.isEditable = function isEditable() {
+        return !this.disabled;
     };
 
     DocumentForm.prototype.setStep = function setStep(step) {
@@ -940,10 +948,10 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
                         _categories.push(metricCategories.getNames(categoryId));
                     });
 
-                    self.steps.push(new Step(_categories));
+                    self.steps.push(new Step(_categories, step));
                 } else {
                     //is string (metricCategory) so we have to retrieve its children
-                    self.steps.push(new Step(metricCategories.metrics[step.categories].children));
+                    self.steps.push(new Step(metricCategories.metrics[step.categories].children, step));
                 }
             });
         });
@@ -975,34 +983,44 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
         return this.currentStep;
     };
 
-    return StepList;
-}).factory('Step', function () {
+    StepList.prototype.getCurrentStepIndex = function getCurrentStepIndex() {
+        return this.steps.indexOf(this.currentStep);
+    };
 
-    function Step(metricCategories, visible) {
+    return StepList;
+}).factory('Step', function ($engineApiCheck) {
+
+    function Step(metricCategories, data, visible) {
         this.metricCategories = metricCategories;
         this.fields = [];
         this.visible = visible != null;
-        this.state = this.defaultState;
+        this.state = Step.defaultState;
         this.$valid = false;
+        this.name = data.name;
     }
 
-    Step.prototype.STATE_VALID = 'valid';
-    Step.prototype.STATE_INVALID = 'invalid';
-    Step.prototype.STATE_BLANK = 'blank';
-    Step.prototype.STATE_LOADING = 'loading';
-    Step.prototype.validStates = [this.STATE_VALID, this.STATE_INVALID, this.STATE_LOADING, this.STATE_BLANK];
-    Step.prototype.defaultState = 'blank';
+    Step.STATE_VALID = 'valid';
+    Step.STATE_INVALID = 'invalid';
+    Step.STATE_BLANK = 'blank';
+    Step.STATE_LOADING = 'loading';
+    Step.validStates = [Step.STATE_VALID, Step.STATE_INVALID, Step.STATE_LOADING, Step.STATE_BLANK];
+    Step.defaultState = 'blank';
 
     Step.prototype.setState = function setState(state) {
-        _ac([_ac.oneOf(this.validStates)], arguments);
+        assert(state != null, 'Privided state (', state, ') is not in', Step.validStates);
+        $engineApiCheck([$engineApiCheck.oneOf(Step.validStates)], arguments);
         this.state = state;
+    };
+
+    Step.prototype.getState = function getState() {
+        return this.state;
     };
 
     return Step;
 });
 'use strict';
 
-angular.module('engine.document').factory('DocumentValidator', function ($log) {
+angular.module('engine.document').factory('DocumentValidator', function (engineDocument, $log, Step) {
     function DocumentValidator(stepList, fieldList) {
         this.stepList = stepList;
         this.fieldList = fieldList;
@@ -1011,9 +1029,14 @@ angular.module('engine.document').factory('DocumentValidator', function ($log) {
     DocumentValidator.prototype.validate = function validate(step) {
         $log.debug('DocumentValidator.validate called');
 
-        if (self.validatedSteps) for (var i = 0; i < self.validatedSteps.length; ++i) {
-            self.validatedSteps[i] = 'loading';
-        } // engineDocument.validate($scope.document, function (data) {
+        this.stepList.getStep(step).setState(Step.STATE_LOADING);
+        this.stepList.getStep(step).setState(Step.STATE_INVALID);
+
+        // if(self.validatedSteps)
+        //     for(var i=0; i < self.validatedSteps.length; ++i)
+        //         self.validatedSteps[i] = 'loading';
+        //
+        // engineDocument.validate($scope.document, function (data) {
         //     console.log(data);
         //     self.form.form.$externalValidated = true;
         //     self.form.backendValidation = data;
@@ -1082,16 +1105,13 @@ angular.module('engine.steps').component('engineSteps', {
 
         this.changeStep = function (newStep) {
             self.step = newStep;
-            $timeout(self.ngChange);
         };
     },
     bindings: {
         ngModel: '=',
         step: '=',
-        steps: '=',
-        options: '=',
-        ngChange: '&',
-        validatedSteps: '='
+        stepList: '=',
+        options: '='
     }
 });
 'use strict';
@@ -1514,11 +1534,7 @@ angular.module('engine').factory('engineResolve', function () {
         validate: function validate(document, callback, errorCallback) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
-            return _document.validate({}, document, function (data) {
-                document.$valid = data.valid;
-
-                if (callback) callback(data);
-            }, errorCallback);
+            return _document.validate({}, document, callback, errorCallback);
         }
     };
 }).service('EngineInterceptor', function () {
@@ -1867,10 +1883,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"document\" fields=\"$ctrl.documentForm.formlyFields\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document actions=\"actions\" validated-steps=\"validatedSteps\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" validated-steps=\"validatedSteps\" step=\"$routeParams.step\" steps=\"options.document.steps\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document step-list=\"stepList\" actions=\"actions\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.steps\" ng-class=\"{active: $ctrl.step == $index}\" class=\"ng-scope\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : $ctrl.validatedSteps[$index] == 'valid',\n                                  'fa-circle-o': $ctrl.validatedSteps[$index] == 'blank',\n                                  'fa-cog fa-spin': $ctrl.validatedSteps[$index] == 'loading',\n                                  'fa-times-circle-o': $ctrl.validatedSteps[$index] == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
+  $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle-o': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");

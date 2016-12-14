@@ -28,11 +28,11 @@ angular.module('engine.document')
                             _categories.push(metricCategories.getNames(categoryId));
                         });
 
-                        self.steps.push(new Step(_categories));
+                        self.steps.push(new Step(_categories, step));
 
                     }
                     else { //is string (metricCategory) so we have to retrieve its children
-                        self.steps.push(new Step(metricCategories.metrics[step.categories].children));
+                        self.steps.push(new Step(metricCategories.metrics[step.categories].children, step));
                     }
                 });
             });
@@ -64,28 +64,38 @@ angular.module('engine.document')
             return this.currentStep;
         };
 
+        StepList.prototype.getCurrentStepIndex = function getCurrentStepIndex() {
+            return this.steps.indexOf(this.currentStep);
+        };
+
         return StepList;
     })
-    .factory('Step', function () {
+    .factory('Step', function ($engineApiCheck) {
 
-        function Step(metricCategories, visible) {
+        function Step(metricCategories, data, visible) {
             this.metricCategories = metricCategories;
             this.fields = [];
             this.visible = (visible != null);
-            this.state = this.defaultState;
+            this.state = Step.defaultState;
             this.$valid = false;
+            this.name = data.name;
         }
 
-        Step.prototype.STATE_VALID = 'valid';
-        Step.prototype.STATE_INVALID = 'invalid';
-        Step.prototype.STATE_BLANK = 'blank';
-        Step.prototype.STATE_LOADING = 'loading';
-        Step.prototype.validStates = [this.STATE_VALID, this.STATE_INVALID, this.STATE_LOADING, this.STATE_BLANK];
-        Step.prototype.defaultState = 'blank';
+        Step.STATE_VALID = 'valid';
+        Step.STATE_INVALID = 'invalid';
+        Step.STATE_BLANK = 'blank';
+        Step.STATE_LOADING = 'loading';
+        Step.validStates = [Step.STATE_VALID, Step.STATE_INVALID, Step.STATE_LOADING, Step.STATE_BLANK];
+        Step.defaultState = 'blank';
 
         Step.prototype.setState = function setState(state) {
-            _ac([_ac.oneOf(this.validStates)], arguments);
+            assert(state != null, 'Privided state (',state,') is not in', Step.validStates);
+            $engineApiCheck([$engineApiCheck.oneOf(Step.validStates)], arguments);
             this.state = state;
+        };
+
+        Step.prototype.getState = function getState() {
+            return this.state;
         };
 
         return Step;
