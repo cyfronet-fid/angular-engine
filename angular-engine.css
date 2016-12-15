@@ -5,3 +5,11 @@
 .datepicker {
     width:150px !important;
 }
+
+.modal-body .text-box {
+    background-color: transparent;
+    border-radius: 0px;
+    margin-bottom: 0px;
+    box-shadow: none;
+    padding: 0px;
+}
