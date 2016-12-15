@@ -272,10 +272,12 @@ angular.module('engine.document').factory('DocumentModal', function ($resource, 
     return function (_documentOptions, parentDocumentId, callback) {
         var modalInstance = $uibModal.open({
             templateUrl: '/src/document/document-modal.tpl.html',
-            controller: function controller($scope, documentOptions, engineActionsAvailable, $uibModalInstance) {
+            controller: function controller($scope, documentOptions, engineActionsAvailable, StepList, $uibModalInstance) {
+                $scope.step = 0;
                 $scope.documentOptions = documentOptions;
                 $scope.parentDocumentId = parentDocumentId;
-                $scope.validatedSteps = [];
+
+                $scope.stepList = new StepList($scope.documentOptions.document.steps);
 
                 $scope.engineAction = function (action) {
                     $scope.$broadcast('engine.common.action.invoke', action, $scope.closeModal);
@@ -953,7 +955,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 });
 'use strict';
 
-angular.module('engine.document').factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck) {
+angular.module('engine.document').factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck, $log) {
     var _ac = $engineApiCheck;
 
     function StepList(documentOptionSteps) {
@@ -984,6 +986,11 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
                     self.steps.push(new Step(_categories, step, index));
                 } else {
                     //is string (metricCategory) so we have to retrieve its children
+                    if (!(step.categories in metricCategories.metrics)) {
+                        $log.error(step.categories, ' not in ', metricCategories.metrics, '. Make sure that metric category registered in document.steps exists');
+                        throw new Error();
+                    }
+
                     self.steps.push(new Step(metricCategories.metrics[step.categories].children, step, index));
                 }
             });
@@ -1284,17 +1291,24 @@ angular.module('engine').provider('$engineConfig', function () {
         list: _apiCheck.shape({
             caption: _apiCheck.string,
             templateUrl: _apiCheck.string,
-            createButtonLabel: _apiCheck.string
+            createButtonLabel: _apiCheck.string.optional
         }),
         document: _apiCheck.shape({
             templateUrl: _apiCheck.string,
-            steps: _apiCheck.arrayOf(_apiCheck.shape({
-                name: _apiCheck.string,
-                categories: _apiCheck.arrayOf(_apiCheck.string)
-            })),
+            steps: _apiCheck.arrayOf(_apiCheck.object),
             showValidateButton: _apiCheck.bool.optional
         })
     });
+
+    var _defaultDocumentOptions = {
+        list: {
+            templateUrl: '/src/list/list.wrapper.tpl.html'
+        },
+        document: {
+            templateUrl: '/src/document/document.wrapper.tpl.html',
+            showValidationButton: true
+        }
+    };
 
     /**
      * Register dashboard in angular-engine, angular URL will be generated queries to declared documents
@@ -1346,21 +1360,11 @@ angular.module('engine').provider('$engineConfig', function () {
      * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
      */
     this.document = function (documentModelType, listUrl, documentUrl, query, options) {
+        options = angular.merge(angular.copy(_defaultDocumentOptions), options);
 
-        var _options = {
-            list: {
-                templateUrl: '/src/list/list.wrapper.tpl.html'
-            },
-            document: {
-                templateUrl: '/src/document/document.wrapper.tpl.html',
-                steps: null,
-                showValidationButton: true
-            }
-        };
+        _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
 
-        options = angular.merge(_options, options);
-
-        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
+        assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
 
         options.documentModelType = documentModelType;
         options.listUrl = listUrl;
@@ -1399,7 +1403,11 @@ angular.module('engine').provider('$engineConfig', function () {
      * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
      */
     this.subdocument = function (documentModelType, query, options) {
-        _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, query, options]);
+        options = angular.merge(angular.copy(_defaultDocumentOptions), options);
+
+        _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, query, options]);
+
+        assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
 
         options.query = query;
         options.subdocument = true;
@@ -1895,24 +1903,6 @@ angular.module('engine.list').component('engineDocumentList', {
         listCaption: '=',
         columns: '='
     }
-}).controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard) {
-    $scope.options = $route.current.$$route.options;
-    var query = $route.current.$$route.options.query;
-
-    if (angular.isArray(query)) {
-        $scope.queries = [];
-        angular.forEach(query, function (q) {
-            $scope.queries.push({ id: q });
-        });
-    } else {
-        //dashboard
-        engineDashboard.fromCategory(query, function (data) {
-            $scope.queries = [];
-            angular.forEach(data, function (query) {
-                $scope.queries.push(query);
-            });
-        });
-    }
 }).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal) {
     var self = this;
     self.engineResolve = engineResolve;
@@ -1978,7 +1968,28 @@ angular.module('engine.list').component('engineDocumentList', {
         return engineActionUtils.getCreateUpdateAction($scope.actions) != null;
     };
 });
-"use strict";
+'use strict';
+
+angular.module('engine.list').controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard) {
+    $scope.options = $route.current.$$route.options;
+    var query = $route.current.$$route.options.query;
+
+    if (angular.isArray(query)) {
+        $scope.queries = [];
+        angular.forEach(query, function (q) {
+            $scope.queries.push({ id: q });
+        });
+    } else {
+        //dashboard
+        engineDashboard.fromCategory(query, function (data) {
+            $scope.queries = [];
+            angular.forEach(data, function (query) {
+                $scope.queries.push(query);
+            });
+        });
+    }
+});
+;"use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">{{$ctrl.step+2}}. {{$ctrl.steps[$ctrl.step+1].name | translate}}</button>\n\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && (!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>");
@@ -1987,7 +1998,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" validatedSteps=\"validatedSteps\" actions=\"actions\" ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action)\" translate>{{action.label}}</button>\n</div>");
+  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" step-list=\"stepList\" ng-model=\"document\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action)\" translate>{{action.label}}</button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");

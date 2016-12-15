@@ -4,10 +4,12 @@ angular.module('engine.document')
         return function(documentOptions, parentDocumentId, callback){
             var modalInstance = $uibModal.open({
                 templateUrl: '/src/document/document-modal.tpl.html',
-                controller: function ($scope, documentOptions, engineActionsAvailable, $uibModalInstance) {
+                controller: function ($scope, documentOptions, engineActionsAvailable, StepList, $uibModalInstance) {
+                    $scope.step = 0;
                     $scope.documentOptions = documentOptions;
                     $scope.parentDocumentId = parentDocumentId;
-                    $scope.validatedSteps = [];
+
+                    $scope.stepList = new StepList($scope.documentOptions.document.steps);
 
                     $scope.engineAction = function(action) {
                         $scope.$broadcast('engine.common.action.invoke', action, $scope.closeModal);

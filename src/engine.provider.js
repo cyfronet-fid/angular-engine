@@ -58,17 +58,24 @@ angular.module('engine')
             list: _apiCheck.shape({
                 caption: _apiCheck.string,
                 templateUrl: _apiCheck.string,
-                createButtonLabel: _apiCheck.string
+                createButtonLabel: _apiCheck.string.optional
             }),
             document: _apiCheck.shape({
                 templateUrl: _apiCheck.string,
-                steps: _apiCheck.arrayOf(_apiCheck.shape({
-                    name: _apiCheck.string,
-                    categories: _apiCheck.arrayOf(_apiCheck.string)
-                })),
+                steps: _apiCheck.arrayOf(_apiCheck.object),
                 showValidateButton: _apiCheck.bool.optional
             })
         });
+
+        var _defaultDocumentOptions = {
+            list: {
+                templateUrl: '/src/list/list.wrapper.tpl.html',
+            },
+            document: {
+                templateUrl: '/src/document/document.wrapper.tpl.html',
+                showValidationButton: true
+            }
+        };
 
         /**
          * Register dashboard in angular-engine, angular URL will be generated queries to declared documents
@@ -122,22 +129,12 @@ angular.module('engine')
          * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
          */
         this.document = function (documentModelType, listUrl, documentUrl, query, options) {
+            options = angular.merge(angular.copy(_defaultDocumentOptions), options);
 
-            var _options = {
-                list: {
-                    templateUrl: '/src/list/list.wrapper.tpl.html'
-                },
-                document: {
-                    templateUrl: '/src/document/document.wrapper.tpl.html',
-                    steps: null,
-                    showValidationButton: true
-                }
-            };
-
-            options = angular.merge(_options, options);
-
-            _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string),
+            _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string),
                 _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
+
+            assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
 
             options.documentModelType = documentModelType;
             options.listUrl = listUrl;
@@ -176,7 +173,11 @@ angular.module('engine')
          * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
          */
         this.subdocument = function (documentModelType, query, options) {
-            _apiCheck([_apiCheck.string, _apiCheck.string, _apiCheck.documentOptions], [documentModelType, query, options]);
+            options = angular.merge(angular.copy(_defaultDocumentOptions), options);
+
+            _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, query, options]);
+
+            assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
 
             options.query = query;
             options.subdocument = true;
