@@ -20,7 +20,7 @@ angular.module('engine.common')
         };
 
         $scope.$watch('$ctrl.document', function (newDocument, oldDocument) {
-            if(!_.isEmpty(newDocument) && newDocument != null && newDocument != oldDocument)
+            if(!_.isEmpty(newDocument) && newDocument != null)
                 self.actionList.setDocument(newDocument);
         });
         self.actionList = new DocumentActionList(self.document, self.documentParentId, self._documentScope);
@@ -29,6 +29,7 @@ angular.module('engine.common')
         documentScope: '=',
         document: '=',
         options: '=',
+        steps: '=',
         step: '=',
         showValidationButton: '=',
         documentParentId: '@'

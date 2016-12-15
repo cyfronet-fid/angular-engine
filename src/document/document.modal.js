@@ -8,8 +8,13 @@ angular.module('engine.document')
                     $scope.step = 0;
                     $scope.documentOptions = documentOptions;
                     $scope.parentDocumentId = parentDocumentId;
-
+                    $scope.$scope = $scope;
                     $scope.stepList = new StepList($scope.documentOptions.document.steps);
+                    $scope.document = {};
+
+                    // $scope.documentChange = function (newDocument) {
+                    //     $scope.document = newDocument;
+                    // };
 
                     $scope.engineAction = function(action) {
                         $scope.$broadcast('engine.common.action.invoke', action, $scope.closeModal);

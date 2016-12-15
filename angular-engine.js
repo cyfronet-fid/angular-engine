@@ -78,7 +78,7 @@ angular.module('engine.common').component('engineDocumentActions', {
         };
 
         $scope.$watch('$ctrl.document', function (newDocument, oldDocument) {
-            if (!_.isEmpty(newDocument) && newDocument != null && newDocument != oldDocument) self.actionList.setDocument(newDocument);
+            if (!_.isEmpty(newDocument) && newDocument != null) self.actionList.setDocument(newDocument);
         });
         self.actionList = new DocumentActionList(self.document, self.documentParentId, self._documentScope);
     },
@@ -86,6 +86,7 @@ angular.module('engine.common').component('engineDocumentActions', {
         documentScope: '=',
         document: '=',
         options: '=',
+        steps: '=',
         step: '=',
         showValidationButton: '=',
         documentParentId: '@'
@@ -128,7 +129,8 @@ angular.module('engine.document').component('engineDocument', {
     templateUrl: '/src/document/document.tpl.html',
     controller: 'engineDocumentCtrl',
     bindings: {
-        ngModel: '=',
+        documentChange: '&',
+        document: '=',
         options: '=',
         stepList: '=',
         step: '=',
@@ -141,8 +143,8 @@ angular.module('engine.document').component('engineDocument', {
 }).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction, engineMetricCategories, StepList, DocumentForm, DocumentActionList, $q, $log) {
     var self = this;
     console.log($scope);
-    $scope.documentScope = $scope;
-    $scope.document = null;
+    this.document = null;
+    self.documentScope = $scope;
     $scope.steps = this.options.document.steps;
 
     this.actionList = null;
@@ -172,20 +174,21 @@ angular.module('engine.document').component('engineDocument', {
         //if the document exists, the first action will be retriving it
         if (self.documentId && self.documentId != 'new') {
             _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (data) {
-                $scope.document = data.document;
+                self.document = data.document;
+                // self.documentChange(self.document);
             }));
         } //if document does not exist copy base from optionas, and set the name
         else {
-                $scope.document = angular.copy(self.options.documentJSON);
-                $scope.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
+                self.document = angular.copy(self.options.documentJSON);
+                self.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
             }
 
         // return chained promise, which will do all other common required operations:
         return $q.all(_actionsToPerform).then(function () {
-            self.actionList = new DocumentActionList($scope.document, self.parentDocumentId);
+            self.actionList = new DocumentActionList(self.document, self.parentDocumentId);
             return self.actionList.$ready;
         }).then(function () {
-            self.documentForm.init($scope.document, self.options, self.stepList);
+            self.documentForm.init(self.document, self.options, self.stepList);
             //load metrics to form
             return self.documentForm.loadMetrics();
         });
@@ -216,44 +219,6 @@ angular.module('engine.document').component('engineDocument', {
         return self.actionList.callSave();
     };
 
-    $scope.onChangeStep = function (newStep, oldStep) {
-        if (self.isEditable()) {
-            if ($scope.document.id) {
-                var stepToValidate = oldStep;
-
-                self.validatedSteps[stepToValidate] = 'loading';
-
-                var _documentPart = angular.copy($scope.document);
-                _documentPart.metrics = {};
-
-                var _categoriesToValidate = $scope.steps[stepToValidate].categories;
-
-                angular.forEach(self.allMetrics_d, function (metric, metricId) {
-                    if (_.contains(_categoriesToValidate, metric.categoryId)) _documentPart.metrics[metricId] = $scope.document.metrics[metricId];
-                });
-
-                engineDocument.validate(_documentPart, function (data) {
-                    console.log(data);
-                    self.form.form.$externalValidated = true;
-                    self.form.backendValidation = data;
-
-                    if (self.form.backendValidation.valid) self.validatedSteps[stepToValidate] = 'valid';else self.validatedSteps[stepToValidate] = 'invalid';
-
-                    angular.forEach(self.form.backendValidation.results, function (metric) {
-                        if (metric.metricId in $scope.metrics && $scope.metrics[metric.metricId].formControl) {
-                            $scope.metrics[metric.metricId].validation.show = true;
-                            $scope.metrics[metric.metricId].formControl.$validate();
-                        }
-                    });
-
-                    // self.form.form.$setValidity('proposalName', false. self.form.form);
-                }, function (response) {
-                    self.validatedSteps[stepToValidate] = 'invalid';
-                });
-            }
-        }
-    };
-
     $scope.$on('engine.common.document.validate', function () {
         self.documentForm.validate().then(function (valid) {
             if (!valid) self.step = self.stepList.getFirstInvalidIndex();
@@ -276,8 +241,13 @@ angular.module('engine.document').factory('DocumentModal', function ($resource, 
                 $scope.step = 0;
                 $scope.documentOptions = documentOptions;
                 $scope.parentDocumentId = parentDocumentId;
-
+                $scope.$scope = $scope;
                 $scope.stepList = new StepList($scope.documentOptions.document.steps);
+                $scope.document = {};
+
+                // $scope.documentChange = function (newDocument) {
+                //     $scope.document = newDocument;
+                // };
 
                 $scope.engineAction = function (action) {
                     $scope.$broadcast('engine.common.action.invoke', action, $scope.closeModal);
@@ -332,26 +302,37 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
 
         var self = this;
         this.$scope = $scope;
-        this.document = document;
         this.parentDocumentId = parentDocumentId;
         this.actions = [];
 
-        this.$ready = this.loadActions();
+        this.markInit = null;
+
+        this.loadActions = function loadActions() {
+            engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
+                self.actions = [];
+                _.forEach(actions, function (action) {
+                    self.actions.push(new DocumentAction(action, self.document, self.parentDocumentId, self.$scope));
+                });
+            });
+        };
+
+        this.$ready = $q(function (resolve, reject) {
+            self.markInit = resolve;
+        }).then(self.loadActions);
+
+        this.setDocument(document);
     }
 
-    DocumentActionList.prototype.loadActions = function loadActions() {
-        var self = this;
-        engActionResource.getAvailable(this.document, this.parentDocumentId || this.document.id).$promise.then(function (actions) {
-            self.actions = [];
-            _.forEach(actions, function (action) {
-                self.actions.push(new DocumentAction(action, self.document, self.parentDocumentId, self.$scope));
-            });
-        });
-    };
-
     DocumentActionList.prototype.setDocument = function setDocument(document) {
+        if (document == null || _.isEmpty(document) || document == this.document) return;
+
+        var prevDoc = this.document;
         this.document = document;
-        this.loadActions();
+
+        // if(!prevDoc && prevDoc != null && !_.isEmpty(prevDoc))
+        this.markInit();
+        // else
+        if (this.$ready.$resolved) this.$ready = this.loadActions();
     };
     DocumentActionList.prototype.getSaveAction = function getSaveAction() {
         return _.find(this.actions, function (action) {
@@ -1992,19 +1973,19 @@ angular.module('engine.list').controller('engineListWrapperCtrl', function ($sco
 ;"use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"$ctrl.step < $ctrl.steps.length - 1\">{{$ctrl.step+2}}. {{$ctrl.steps[$ctrl.step+1].name | translate}}</button>\n\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && (!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"!$ctrl.steps || $ctrl.step == $ctrl.steps.length - 1\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>");
+  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step).name}}</button>\n\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" step-list=\"stepList\" ng-model=\"document\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action)\" translate>{{action.label}}</button>\n</div>");
+  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" step-list=\"stepList\" document=\"document\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\"\n                             document=\"document\" document-scope=\"$scope\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group\"></engine-document-actions>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document step-list=\"stepList\" actions=\"actions\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle-o': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");

@@ -5,27 +5,39 @@ angular.module('engine.document')
 
             var self = this;
             this.$scope = $scope;
-            this.document = document;
             this.parentDocumentId = parentDocumentId;
             this.actions = [];
 
+            this.markInit = null;
 
-            this.$ready = this.loadActions();
+            this.loadActions = function loadActions() {
+                engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
+                    self.actions = [];
+                    _.forEach(actions, function (action) {
+                        self.actions.push(new DocumentAction(action, self.document, self.parentDocumentId, self.$scope));
+                    });
+                });
+            };
+
+            this.$ready = $q(function (resolve, reject) {
+                self.markInit = resolve;
+            }).then(self.loadActions);
+
+            this.setDocument(document);
         }
 
-        DocumentActionList.prototype.loadActions = function loadActions() {
-            var self = this;
-            engActionResource.getAvailable(this.document, this.parentDocumentId || this.document.id).$promise.then(function (actions) {
-                self.actions = [];
-                _.forEach(actions, function (action) {
-                    self.actions.push(new DocumentAction(action, self.document, self.parentDocumentId, self.$scope));
-                });
-            });
-        };
-
         DocumentActionList.prototype.setDocument = function setDocument(document) {
+            if(document == null || _.isEmpty(document) || document == this.document)
+                return;
+
+            var prevDoc = this.document;
             this.document = document;
-            this.loadActions();
+
+            // if(!prevDoc && prevDoc != null && !_.isEmpty(prevDoc))
+            this.markInit();
+            // else
+            if(this.$ready.$resolved)
+                this.$ready = this.loadActions();
         };
         DocumentActionList.prototype.getSaveAction = function getSaveAction() {
             return _.find(this.actions, function (action) {
