@@ -5,9 +5,8 @@
            class="form-control datepicker"
            type="text"
            uib-datepicker-popup="{{to.datepickerOptions.format || 'yyyy-MM-dd'}}"
-           datepicker-localdate
            is-open="openedDatePopUp"
-           show-button-bar = false
+           show-button-bar="false"
            datepicker-options="to.datepickerOptions || todayMinValueDateOptions"
            ng-click="openPopUp($event)"/>
     <span class="input-group-btn">

@@ -50,7 +50,7 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
             ngModelAttrs: ngModelAttrs,
             templateOptions: {
                 datepickerOptions: {
-                    format: 'dd.MM.yyyy',
+                    format: 'dd-MM-yyyy',
                     initDate: new Date()
                 }
             }
@@ -60,7 +60,7 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
 
 
             $scope.today = function () {
-                $scope.$parent.metricFormValues[metricId] = $filter('date')(new Date(),'yyyy-MM-dd');
+                $scope.model[$scope.options.key] = $filter('date')(new Date(),'yyyy-MM-dd');
             };
 
             $scope.openPopUp = function ($event) {

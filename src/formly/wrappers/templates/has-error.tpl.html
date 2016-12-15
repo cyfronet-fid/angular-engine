@@ -1,4 +1,4 @@
-<div class="form-group {{::to.css}}" ng-class="{'has-error': showError}">
+<div class="form-group {{::to.css}}" ng-class="{'has-error': showError }">
   <formly-transclude></formly-transclude>
   <div ng-messages="fc.$error" ng-if="showError" class="error-messages">
     <div ng-message="{{ ::name }}" ng-repeat="(name, message) in ::options.validation.messages" class="message help-block ng-binding ng-scope" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>
