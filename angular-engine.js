@@ -185,7 +185,7 @@ angular.module('engine.document').component('engineDocument', {
 
         // return chained promise, which will do all other common required operations:
         return $q.all(_actionsToPerform).then(function () {
-            self.actionList = new DocumentActionList(self.document, self.parentDocumentId);
+            self.actionList = new DocumentActionList(self.document, self.parentDocumentId, $scope);
             return self.actionList.$ready;
         }).then(function () {
             self.documentForm.init(self.document, self.options, self.stepList);
@@ -354,7 +354,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
     };
 
     return DocumentActionList;
-}).factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log) {
+}).factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q) {
     function DocumentAction(engAction, document, parentDocumentId, $scope) {
         $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.string.optional, $engineApiCheck.object.optional], arguments);
         this.document = document;
@@ -377,27 +377,39 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
         $log.debug('engine.document.actions', 'action called', this);
 
         if (this.$scope) {
-            event = this.$scope.$broadcast('engine.common.action.before', this.document, this);
+            var promises = [];
+
+            event = this.$scope.$broadcast('engine.common.action.before', { 'document': this.document,
+                'action': this,
+                'promises': promises });
 
             if (event.defaultPrevented) {
-                this.$scope.$broadcast('engine.common.action.prevented', new this.document(), this, event);
+                this.$scope.$broadcast('engine.common.action.prevented', { 'document': this.document,
+                    'action': this,
+                    'event': event });
                 return;
             }
 
             if (this.isSave()) {
-                event = this.$scope.$broadcast('engine.common.save.before', this.document, this);
+                event = self.$scope.$broadcast('engine.common.save.before', { 'document': this.document,
+                    'action': this,
+                    'promises': promises });
 
                 if (event.defaultPrevented) {
-                    this.$scope.$broadcast('engine.common.action.prevented', this.document, this, event);
+                    self.$scope.$broadcast('engine.common.action.prevented', { 'document': this.document,
+                        'action': this,
+                        'event': event });
                     return;
                 }
             }
         }
-        return engActionResource.invoke(this.actionId, this.document, this.parentDocumentId).$promise.then(function (result) {
+        return $q.all(promises).then(function () {
+            return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise;
+        }).then(function (result) {
             $log.debug('engine.document.actions', 'action call returned', result);
             if (self.$scope) {
-                self.$scope.$broadcast('engine.common.action.after', self.document, self, result);
-                self.$scope.$broadcast('engine.common.save.after', self.document, self, result);
+                self.$scope.$broadcast('engine.common.action.after', { 'document': self.document, 'action': self, 'result': result });
+                self.$scope.$broadcast('engine.common.save.after', { 'document': self.document, 'action': self, 'result': result });
             }
             return DocumentActionProcess(self.document, result);
         });
@@ -2041,7 +2053,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name)}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ $ctrl.listCaption || options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <!--<a href=\"\" ng-click=\"$ctrl.destroy(document_entry.document)\" class=\"table-options\">-->\n                        <!--<i class=\"fa fa-trash-o\" aria-hidden=\"true\"></i>-->\n                    <!--</a>-->\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action.id, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <!--<td><a ng-href=\"#/proposals/{{proposal.id}}\" class=\"proposal-title\">{{ proposal.title }}</a></td>-->\n        <!--<td class=\"text-center\">{{ proposal.beamline }}</td>-->\n        <!--<td class=\"text-center table-status\">{{ proposal.status }}</td>-->\n        <!--<td class=\"text-center\">{{ proposal.createdAt | date }}</td>-->\n        <!--<td class=\"text-center\"><a href=\"\" class=\"blue-button\"></a></td>-->\n\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\">create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n");
+  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ $ctrl.listCaption || options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action.id, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\">create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.wrapper.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"$last\" query=\"query.id\" options=\"options\" list-caption=\"query.label\"></engine-document-list>");

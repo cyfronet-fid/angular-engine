@@ -58,7 +58,7 @@ angular.module('engine.document')
 
         return DocumentActionList;
     })
-    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log) {
+    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q) {
         function DocumentAction(engAction, document, parentDocumentId, $scope) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.string.optional, $engineApiCheck.object.optional], arguments);
             this.document = document;
@@ -81,27 +81,41 @@ angular.module('engine.document')
             $log.debug('engine.document.actions', 'action called', this);
 
             if(this.$scope) {
-                event = this.$scope.$broadcast('engine.common.action.before', this.document, this);
+                var promises = [];
+
+                event = this.$scope.$broadcast('engine.common.action.before', {'document': this.document,
+                                                                               'action': this,
+                                                                               'promises': promises});
 
                 if(event.defaultPrevented) {
-                    this.$scope.$broadcast('engine.common.action.prevented', new this.document, this, event);
+                    this.$scope.$broadcast('engine.common.action.prevented', {'document': this.document,
+                                                                              'action': this,
+                                                                              'event': event});
                     return;
                 }
 
                 if(this.isSave()){
-                    event = this.$scope.$broadcast('engine.common.save.before', this.document, this);
+                    event = self.$scope.$broadcast('engine.common.save.before', {'document': this.document,
+                                                                                 'action': this,
+                                                                                 'promises': promises});
 
                     if(event.defaultPrevented) {
-                        this.$scope.$broadcast('engine.common.action.prevented', this.document, this, event);
+                        self.$scope.$broadcast('engine.common.action.prevented', {'document': this.document,
+                                                                                  'action': this,
+                                                                                  'event': event});
                         return;
                     }
                 }
+
+
             }
-            return engActionResource.invoke(this.actionId, this.document, this.parentDocumentId).$promise.then(function (result) {
+            return $q.all(promises).then(function(){
+                return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise
+            }).then(function (result) {
                 $log.debug('engine.document.actions', 'action call returned', result);
                 if(self.$scope) {
-                    self.$scope.$broadcast('engine.common.action.after', self.document, self, result);
-                    self.$scope.$broadcast('engine.common.save.after', self.document, self, result);
+                    self.$scope.$broadcast('engine.common.action.after', {'document': self.document, 'action': self, 'result': result});
+                    self.$scope.$broadcast('engine.common.save.after', {'document': self.document, 'action': self, 'result': result});
                 }
                 return DocumentActionProcess(self.document, result);
             });

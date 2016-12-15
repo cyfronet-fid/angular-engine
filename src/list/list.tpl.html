@@ -10,9 +10,6 @@
             <tr ng-repeat="document_entry in documents">
                 <td ng-repeat="column in columns" class="{{column.css}}" ng-include="getCellTemplate(document_entry.document, column)"></td>
                 <td class="text-right" style="padding-top: 5px">
-                    <!--<a href="" ng-click="$ctrl.destroy(document_entry.document)" class="table-options">-->
-                        <!--<i class="fa fa-trash-o" aria-hidden="true"></i>-->
-                    <!--</a>-->
                     <div class="dropdown" style="height: 9px;">
                         <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><span class="glyphicon glyphicon-cog"></span></a>
                         <ul class="dropdown-menu">
@@ -23,12 +20,6 @@
                 </td>
             </tr>
         </table>
-        <!--<td><a ng-href="#/proposals/{{proposal.id}}" class="proposal-title">{{ proposal.title }}</a></td>-->
-        <!--<td class="text-center">{{ proposal.beamline }}</td>-->
-        <!--<td class="text-center table-status">{{ proposal.status }}</td>-->
-        <!--<td class="text-center">{{ proposal.createdAt | date }}</td>-->
-        <!--<td class="text-center"><a href="" class="blue-button"></a></td>-->
-
     </div>
 </div>
 <a href="" ng-if="$ctrl._showCreateButton && canCreateDocument()" ng-click="onCreateDocument()" class="btn btn-primary">
