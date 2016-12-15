@@ -15,6 +15,7 @@ angular.module('engine.document')
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
         this.formStructure = [];
+        this.currentFormlyFields = [];
         this.formlyFields = [];
         this.validator = null;
         this.currentStep = null;
@@ -22,12 +23,12 @@ angular.module('engine.document')
          * this is for formly use, in here all formly state data is stored
          * @type {object}
          */
-        this.formlyState = {};
+        // this.formlyState = {};
         /**
          * this is for formly use, in here all formly state data is stored
          * @type {{}}
          */
-        this.formlyOptions = {}
+        // this.formlyOptions = {};
 
         this.$ready = this.loadMetricCategories();
 
@@ -66,9 +67,14 @@ angular.module('engine.document')
     };
 
     DocumentForm.prototype.setStep = function setStep(step) {
-        this.formlyFields = this.formStructure[step];
+        this.currentFormlyFields = this.formStructure[step];
+
+        if(this.currentStep != null)
+            this.formStructure[this.currentStep].data.hide = true;
+
         this.currentStep = step;
-        $log.debug('current fields to display in form', this.formlyFields);
+        this.formStructure[this.currentStep].data.hide = false;
+        $log.debug('current fields to display in form', this.currentFormlyFields);
     };
 
     DocumentForm.prototype.assertInit = function assertInit() {
@@ -92,28 +98,32 @@ angular.module('engine.document')
         var _categoriesToPostProcess = [];
 
         _.forEach(this.steps.getSteps(), function (step) {
-            self.formStructure.push(parseMetricCategories(step.metricCategories));
+            var formStepStructure = DocumentCategoryFactory.makeStepCategory();
+            formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
+
+            self.formStructure.push(formStepStructure);
+            connectFields(step);
         });
 
-        connectFields();
         postprocess();
 
-        this.validator = new DocumentValidator(this.steps, this.formlyFields);
+        this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
         console.debug('DocumentForm form structure', self.formStructure);
 
         return self.formStructure;
 
-        function parseMetricCategories(metricCategories) {
+        function parseMetricCategories(step, metricCategories) {
             var formCategories = [];
 
             _.forEach(metricCategories, function (metricCategory) {
 
                 var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, {document: self.document});
 
-                formMetricCategory.fieldGroup = parseMetricCategories(metricCategory.children);
+                formMetricCategory.fieldGroup = parseMetricCategories(step, metricCategory.children);
 
                 _metricDict[metricCategory.id] = formMetricCategory;
+                step.metrics[metricCategory.id] = formMetricCategory;
                 if(_.isFunction(formMetricCategory.data.$process))
                     _categoriesToPostProcess.push(formMetricCategory);
 
@@ -123,15 +133,18 @@ angular.module('engine.document')
             return formCategories;
         }
 
-        function connectFields() {
+        function connectFields(step) {
             _.forEach(self.fieldList, function (field) {
                 if(_metricDict[field.data.categoryId] === undefined){
                     $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
                               'field', field, 'categoryId', field.data.categoryId);
                     return;
                 }
+                if(step.metrics[field.data.categoryId] === undefined)
+                    return;
 
                 _metricDict[field.data.categoryId].fieldGroup.push(field);
+                step.fields[field.data.id] = field;
             });
         }
 
@@ -160,8 +173,8 @@ angular.module('engine.document')
         }).$promise;
     };
 
-    DocumentForm.prototype.validate = function validate() {
-        return this.validator.validate(this.currentStep);
+    DocumentForm.prototype.validate = function validate(step) {
+        return this.validator.validate(step);
     };
 
     return DocumentForm;

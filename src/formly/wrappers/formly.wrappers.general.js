@@ -16,4 +16,8 @@ angular.module('engine.formly')
             name: 'category',
             templateUrl: $engineFormly.wrapperUrls['category']
         });
+        formlyConfig.setWrapper({
+            name: 'step',
+            templateUrl: $engineFormly.wrapperUrls['step']
+        });
     });

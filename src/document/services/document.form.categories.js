@@ -20,6 +20,17 @@ angular.module('engine.document')
             return this._defaultCategory.makeCategory(category, ctx);
         };
 
+        DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory() {
+            var formStepStructure = {
+                fieldGroup: null,
+                templateOptions: {},
+                data: {hide: true},
+                wrapper: 'step'
+            };
+
+            return formStepStructure;
+        };
+
         DocumentCategoryFactory.prototype._registerBasicCategories = function _registerBasicCategories() {
             this.register(new DocumentCategory('row', function (formlyCategory, metricCategory, ctx) {
                 formlyCategory.templateOptions.wrapperClass = '';

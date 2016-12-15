@@ -79,16 +79,18 @@ angular.module('engine.document')
     this.postinitDocument = function postinitDocument() {
         self.documentForm.makeForm();
 
-        $scope.$watch('$ctrl.step', function (newStep, oldStep) {
-            if(newStep != oldStep){
-                if(self.documentForm.isEditable()){
-                    self.documentForm.validate();
-                    self.save();
-                }
+        $scope.$watch('$ctrl.step', self.onStepChange);
+    };
+
+    this.onStepChange = function (newStep, oldStep) {
+        if(newStep != oldStep){
+            if(self.documentForm.isEditable()){
+                self.documentForm.validate(oldStep);
+                self.save();
             }
-            self.stepList.setCurrentStep(newStep);
-            self.documentForm.setStep(newStep);
-        });
+        }
+        self.stepList.setCurrentStep(newStep);
+        self.documentForm.setStep(newStep);
     };
 
     this.save = function () {
@@ -141,7 +143,10 @@ angular.module('engine.document')
     };
 
     $scope.$on('engine.common.document.validate', function () {
-        self.documentForm.validate();
+        self.documentForm.validate().then(function (valid) {
+            if(!valid)
+                self.step = self.stepList.getFirstInvalidIndex();
+        });
     });
 
     $scope.$on('engine.common.action.after', function (event, document, action, result) {

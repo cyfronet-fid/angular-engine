@@ -198,16 +198,18 @@ angular.module('engine.document').component('engineDocument', {
     this.postinitDocument = function postinitDocument() {
         self.documentForm.makeForm();
 
-        $scope.$watch('$ctrl.step', function (newStep, oldStep) {
-            if (newStep != oldStep) {
-                if (self.documentForm.isEditable()) {
-                    self.documentForm.validate();
-                    self.save();
-                }
+        $scope.$watch('$ctrl.step', self.onStepChange);
+    };
+
+    this.onStepChange = function (newStep, oldStep) {
+        if (newStep != oldStep) {
+            if (self.documentForm.isEditable()) {
+                self.documentForm.validate(oldStep);
+                self.save();
             }
-            self.stepList.setCurrentStep(newStep);
-            self.documentForm.setStep(newStep);
-        });
+        }
+        self.stepList.setCurrentStep(newStep);
+        self.documentForm.setStep(newStep);
     };
 
     this.save = function () {
@@ -253,7 +255,9 @@ angular.module('engine.document').component('engineDocument', {
     };
 
     $scope.$on('engine.common.document.validate', function () {
-        self.documentForm.validate();
+        self.documentForm.validate().then(function (valid) {
+            if (!valid) self.step = self.stepList.getFirstInvalidIndex();
+        });
     });
 
     $scope.$on('engine.common.action.after', function (event, document, action, result) {});
@@ -472,6 +476,17 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
         }
 
         return this._defaultCategory.makeCategory(category, ctx);
+    };
+
+    DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory() {
+        var formStepStructure = {
+            fieldGroup: null,
+            templateOptions: {},
+            data: { hide: true },
+            wrapper: 'step'
+        };
+
+        return formStepStructure;
     };
 
     DocumentCategoryFactory.prototype._registerBasicCategories = function _registerBasicCategories() {
@@ -739,7 +754,14 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             validation: {
                 // show: true,
                 messages: {
-                    required: 'to.label+"_required"'
+                    required: function required(viewValue, modelValue, scope) {
+                        if (scope.to.serverErrors == null || _.isEmpty(scope.to.serverErrors)) return scope.to.label + "_required";
+                        return '';
+                    },
+                    server: function server(viewValue, modelValue, scope) {
+                        return scope.to.serverErrors[0];
+                    },
+                    date: 'to.label+"_date"'
                 }
             }
         };
@@ -770,6 +792,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         this.categoryWrapper = 'category';
         this.categoryWrapperCSS = 'text-box';
         this.formStructure = [];
+        this.currentFormlyFields = [];
         this.formlyFields = [];
         this.validator = null;
         this.currentStep = null;
@@ -777,12 +800,12 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
          * this is for formly use, in here all formly state data is stored
          * @type {object}
          */
-        this.formlyState = {};
+        // this.formlyState = {};
         /**
          * this is for formly use, in here all formly state data is stored
          * @type {{}}
          */
-        this.formlyOptions = {};
+        // this.formlyOptions = {};
 
         this.$ready = this.loadMetricCategories();
     }
@@ -820,9 +843,13 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
     };
 
     DocumentForm.prototype.setStep = function setStep(step) {
-        this.formlyFields = this.formStructure[step];
+        this.currentFormlyFields = this.formStructure[step];
+
+        if (this.currentStep != null) this.formStructure[this.currentStep].data.hide = true;
+
         this.currentStep = step;
-        $log.debug('current fields to display in form', this.formlyFields);
+        this.formStructure[this.currentStep].data.hide = false;
+        $log.debug('current fields to display in form', this.currentFormlyFields);
     };
 
     DocumentForm.prototype.assertInit = function assertInit() {
@@ -846,28 +873,32 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         var _categoriesToPostProcess = [];
 
         _.forEach(this.steps.getSteps(), function (step) {
-            self.formStructure.push(parseMetricCategories(step.metricCategories));
+            var formStepStructure = DocumentCategoryFactory.makeStepCategory();
+            formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
+
+            self.formStructure.push(formStepStructure);
+            connectFields(step);
         });
 
-        connectFields();
         postprocess();
 
-        this.validator = new DocumentValidator(this.steps, this.formlyFields);
+        this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
         console.debug('DocumentForm form structure', self.formStructure);
 
         return self.formStructure;
 
-        function parseMetricCategories(metricCategories) {
+        function parseMetricCategories(step, metricCategories) {
             var formCategories = [];
 
             _.forEach(metricCategories, function (metricCategory) {
 
                 var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, { document: self.document });
 
-                formMetricCategory.fieldGroup = parseMetricCategories(metricCategory.children);
+                formMetricCategory.fieldGroup = parseMetricCategories(step, metricCategory.children);
 
                 _metricDict[metricCategory.id] = formMetricCategory;
+                step.metrics[metricCategory.id] = formMetricCategory;
                 if (_.isFunction(formMetricCategory.data.$process)) _categoriesToPostProcess.push(formMetricCategory);
 
                 formCategories.push(formMetricCategory);
@@ -876,14 +907,16 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
             return formCategories;
         }
 
-        function connectFields() {
+        function connectFields(step) {
             _.forEach(self.fieldList, function (field) {
                 if (_metricDict[field.data.categoryId] === undefined) {
                     $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!', 'field', field, 'categoryId', field.data.categoryId);
                     return;
                 }
+                if (step.metrics[field.data.categoryId] === undefined) return;
 
                 _metricDict[field.data.categoryId].fieldGroup.push(field);
+                step.fields[field.data.id] = field;
             });
         }
 
@@ -912,8 +945,8 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         }).$promise;
     };
 
-    DocumentForm.prototype.validate = function validate() {
-        return this.validator.validate(this.currentStep);
+    DocumentForm.prototype.validate = function validate(step) {
+        return this.validator.validate(step);
     };
 
     return DocumentForm;
@@ -948,10 +981,10 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
                         _categories.push(metricCategories.getNames(categoryId));
                     });
 
-                    self.steps.push(new Step(_categories, step));
+                    self.steps.push(new Step(_categories, step, index));
                 } else {
                     //is string (metricCategory) so we have to retrieve its children
-                    self.steps.push(new Step(metricCategories.metrics[step.categories].children, step));
+                    self.steps.push(new Step(metricCategories.metrics[step.categories].children, step, index));
                 }
             });
         });
@@ -962,9 +995,13 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
     };
 
     StepList.prototype.getFirstInvalid = function getFirstInvalid() {
-        _.find(this.steps, function (step) {
+        return _.find(this.steps, function (step) {
             return step.state == Step.STATE_INVALID;
         });
+    };
+
+    StepList.prototype.getFirstInvalidIndex = function getFirstInvalidIndex() {
+        return this.getFirstInvalid().index;
     };
 
     StepList.prototype.getSteps = function getSteps() {
@@ -990,13 +1027,15 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
     return StepList;
 }).factory('Step', function ($engineApiCheck) {
 
-    function Step(metricCategories, data, visible) {
+    function Step(metricCategories, data, index, visible) {
         this.metricCategories = metricCategories;
-        this.fields = [];
+        this.metrics = {};
+        this.fields = {};
         this.visible = visible != null;
         this.state = Step.defaultState;
         this.$valid = false;
         this.name = data.name;
+        this.index = index;
     }
 
     Step.STATE_VALID = 'valid';
@@ -1021,22 +1060,86 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
 'use strict';
 
 angular.module('engine.document').factory('DocumentValidator', function (engineDocument, $engineApiCheck, $log, Step) {
-    function DocumentValidator(stepList, fieldList) {
+    function DocumentValidator(document, stepList, formStructure) {
         this.stepList = stepList;
-        this.fieldList = fieldList;
+        this.formStructure = formStructure;
+        this.document = document;
     }
+
+    DocumentValidator.prototype.setStepsState = function setStepsState(steps, state) {
+        $engineApiCheck([$engineApiCheck.arrayOf($engineApiCheck.instanceOf(Step)), $engineApiCheck.oneOf(Step.validStates)], arguments);
+        _.forEach(steps, function (step) {
+            step.setState(state);
+        });
+    };
+
+    DocumentValidator.prototype.makeDocumentForValidation = function makeDocumentForValidation(document, stepsToValidate) {
+        var documentForValidation = _.omit(document, 'metrics');
+
+        documentForValidation.metrics = {};
+
+        _.forEach(stepsToValidate, function (step) {
+            _.forEach(step.fields, function (field) {
+                documentForValidation.metrics[field.data.id] = document.metrics[field.data.id];
+                if (documentForValidation.metrics[field.data.id] === undefined) // if field has not been set, set it to null, otherwise it won't be sent
+                    documentForValidation.metrics[field.data.id] = null;
+            });
+        });
+
+        return documentForValidation;
+    };
 
     DocumentValidator.prototype.validate = function validate(step) {
         $engineApiCheck([$engineApiCheck.typeOrArrayOf($engineApiCheck.number).optional], arguments);
 
+        var self = this;
+
         $log.debug('DocumentValidator.validate called');
 
-        this.stepList.getStep(step).setState(Step.STATE_LOADING);
-        this.stepList.getStep(step).setState(Step.STATE_INVALID);
+        var stepsToValidate = [];
 
-        // if(self.validatedSteps)
-        //     for(var i=0; i < self.validatedSteps.length; ++i)
-        //         self.validatedSteps[i] = 'loading';
+        if (step == null) stepsToValidate = this.stepList.getSteps();else {
+            if (!_.isArray(step)) step = [step];
+
+            _.forEach(step, function (stepIndex) {
+                stepsToValidate.push(self.stepList.getStep(stepIndex));
+            });
+        }
+
+        this.setStepsState(stepsToValidate, Step.STATE_LOADING);
+
+        var documentForValidation = this.makeDocumentForValidation(this.document, stepsToValidate);
+
+        return engineDocument.validate(documentForValidation).$promise.then(function (validationData) {
+            $log.debug(validationData);
+
+            var _validatedMetrics = _.indexBy(validationData.results, 'metricId');
+
+            _.forEach(stepsToValidate, function (step) {
+                _.forEach(step.fields, function (field, fieldId) {
+                    if (_validatedMetrics[fieldId].valid == false) {
+                        step.setState(Step.STATE_INVALID);
+                        if (self.formStructure[field.id] != null) {
+                            _.forEach(_validatedMetrics[fieldId].messages, function (message) {
+                                self.formStructure[field.id].$setValidity(message, false);
+                            });
+                            self.formStructure[field.id].$setValidity('server', false);
+                            self.formStructure[field.id].$setValidity('required', true);
+
+                            field.validation.show = true;
+                        }
+                        field.templateOptions.serverErrors = _validatedMetrics[fieldId].messages;
+                    }
+                });
+
+                $log.debug(self.formStructure.$error);
+
+                if (step.getState() == Step.STATE_LOADING) step.setState(Step.STATE_VALID);
+            });
+
+            return validationData.valid;
+        });
+
         //
         // engineDocument.validate($scope.document, function (data) {
         //     console.log(data);
@@ -1595,7 +1698,8 @@ angular.module('engine.formly').provider('$engineFormly', function () {
     var _wrapperTemplateUrls = {
         category: '/src/formly/wrappers/templates/category.tpl.html',
         label: '/src/formly/wrappers/templates/label.tpl.html',
-        hasError: '/src/formly/wrappers/templates/has-error.tpl.html'
+        hasError: '/src/formly/wrappers/templates/has-error.tpl.html',
+        step: '/src/formly/wrappers/templates/step.tpl.html'
     };
 
     this.templateUrls = _typeTemplateUrls;
@@ -1772,6 +1876,10 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly) {
         name: 'category',
         templateUrl: $engineFormly.wrapperUrls['category']
     });
+    formlyConfig.setWrapper({
+        name: 'step',
+        templateUrl: $engineFormly.wrapperUrls['step']
+    });
 });
 'use strict';
 
@@ -1882,7 +1990,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" validatedSteps=\"validatedSteps\" actions=\"actions\" ng-model=\"document\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <button type=\"submit\" ng-repeat=\"action in actions\" style=\"margin-left: 5px\" class=\"btn btn-default\" ng-click=\"engineAction(action)\" translate>{{action.label}}</button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"document\" fields=\"$ctrl.documentForm.formlyFields\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>CREATE {{ options.name }}: <span class=\"bold\" ng-if=\"steps.length > 0\">{{steps[$routeParams.step].name}} {{$routeParams.step + 1}}/{{steps.length}}</span></h1>\n    <engine-document step-list=\"stepList\" actions=\"actions\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" ng-model=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
@@ -1915,13 +2023,16 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/wrappers/templates/has-error.tpl.html", "<div class=\"form-group {{::to.css}}\" ng-class=\"{'has-error': showError }\">\n  <formly-transclude></formly-transclude>\n  <div ng-messages=\"fc.$error\" ng-if=\"showError\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n\n</div>\n");
+  $templateCache.put("/src/formly/wrappers/templates/has-error.tpl.html", "<div class=\"form-group {{::to.css}}\" ng-class=\"{'has-error': showError }\">\n  <formly-transclude></formly-transclude>\n  <div ng-if=\"showError\" class=\"error-messages\">\n    <div ng-repeat=\"(key, error) in fc.$error\" class=\"message help-block ng-binding ng-scope\" translate>{{options.validation.messages[key](fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n  <!-- after researching more about ng-messages integrate it\n  <div ng-messages=\"fc.$error\" ng-if=\"showError\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n  -->\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/label.tpl.html", "<div class=\"\">\n    <label for=\"{{id}}\" class=\"control-label {{to.labelSrOnly ? 'sr-only' : ''}}\" ng-if=\"to.label\">\n        <span translate>{{to.label}}</span>\n        {{to.required ? '*' : ''}}\n        <span translate class=\"grey-text\" ng-if=\"to.description\" translate>({{to.description}})</span>\n    </label>\n    <formly-transclude></formly-transclude>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/row.tpl.html", "<div>\n    <div class=\"row  {{options.templateOptions.wrapperClass}}\">\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/wrappers/templates/step.tpl.html", "<div ng-hide=\"options.data.hide\">\n    <formly-transclude></formly-transclude>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name) | date}}");

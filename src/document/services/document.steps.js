@@ -28,11 +28,11 @@ angular.module('engine.document')
                             _categories.push(metricCategories.getNames(categoryId));
                         });
 
-                        self.steps.push(new Step(_categories, step));
+                        self.steps.push(new Step(_categories, step, index));
 
                     }
                     else { //is string (metricCategory) so we have to retrieve its children
-                        self.steps.push(new Step(metricCategories.metrics[step.categories].children, step));
+                        self.steps.push(new Step(metricCategories.metrics[step.categories].children, step, index));
                     }
                 });
             });
@@ -43,9 +43,13 @@ angular.module('engine.document')
         };
 
         StepList.prototype.getFirstInvalid = function getFirstInvalid() {
-            _.find(this.steps, function (step) {
+            return _.find(this.steps, function (step) {
                 return step.state == Step.STATE_INVALID;
             })
+        };
+
+        StepList.prototype.getFirstInvalidIndex = function getFirstInvalidIndex() {
+            return this.getFirstInvalid().index;
         };
 
         StepList.prototype.getSteps = function getSteps() {
@@ -72,13 +76,15 @@ angular.module('engine.document')
     })
     .factory('Step', function ($engineApiCheck) {
 
-        function Step(metricCategories, data, visible) {
+        function Step(metricCategories, data, index, visible) {
             this.metricCategories = metricCategories;
-            this.fields = [];
+            this.metrics = {};
+            this.fields = {};
             this.visible = (visible != null);
             this.state = Step.defaultState;
             this.$valid = false;
             this.name = data.name;
+            this.index = index;
         }
 
         Step.STATE_VALID = 'valid';

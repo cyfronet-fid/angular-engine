@@ -14,7 +14,8 @@ angular.module('engine.formly')
     var _wrapperTemplateUrls = {
         category: '/src/formly/wrappers/templates/category.tpl.html',
         label: '/src/formly/wrappers/templates/label.tpl.html',
-        hasError: '/src/formly/wrappers/templates/has-error.tpl.html'
+        hasError: '/src/formly/wrappers/templates/has-error.tpl.html',
+        step: '/src/formly/wrappers/templates/step.tpl.html'
     };
 
     this.templateUrls = _typeTemplateUrls;

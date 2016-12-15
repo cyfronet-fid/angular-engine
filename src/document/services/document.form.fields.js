@@ -175,7 +175,15 @@ angular.module('engine.document')
             validation: {
                 // show: true,
                 messages: {
-                    required: 'to.label+"_required"'
+                    required: function (viewValue, modelValue, scope) {
+                        if(scope.to.serverErrors == null || _.isEmpty(scope.to.serverErrors))
+                            return scope.to.label+"_required";
+                        return '';
+                    },
+                    server: function (viewValue, modelValue, scope) {
+                        return scope.to.serverErrors[0];
+                    },
+                    date: 'to.label+"_date"'
                 }
             }
         };
