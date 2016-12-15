@@ -656,7 +656,9 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ visualClass: 'date', inputType: 'DATE' }, function (field, metric, ctx) {
             field.type = 'datepicker';
-
+            field.data.prepareValue = function (originalValue) {
+                return new Date(originalValue);
+            };
             return field;
         }));
 
@@ -770,7 +772,13 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             //:TODO: make reload listener
         }
 
-        return this.fieldCustomizer(formlyField, metric, ctx);
+        var ret = this.fieldCustomizer(formlyField, metric, ctx);
+
+        if (_.isFunction(ret.data.prepareValue)) {
+            ctx.document.metrics[metric.id] = ret.data.prepareValue(ctx.document.metrics[metric.id]);
+        }
+
+        return ret;
     };
 
     return DocumentField;
@@ -1956,7 +1964,8 @@ angular.module('engine.list').component('engineDocumentList', {
     };
     $scope.onDocumentSelect = function (document) {
         if (_parentDocumentId) {
-            //
+            //:TODO: if subdocument, then show modal
+            // or if behavio type link, execute link action
         } else {
             $location.path($scope.genDocumentLink(document.id));
         }

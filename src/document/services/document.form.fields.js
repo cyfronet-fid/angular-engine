@@ -78,7 +78,9 @@ angular.module('engine.document')
 
         this.register(new DocumentField({visualClass: 'date', inputType: 'DATE'}, function (field, metric, ctx) {
             field.type = 'datepicker';
-
+            field.data.prepareValue = function (originalValue) {
+                return new Date(originalValue);
+            };
             return field;
         }));
 
@@ -196,7 +198,13 @@ angular.module('engine.document')
         }
 
 
-        return this.fieldCustomizer(formlyField, metric, ctx);
+        var ret = this.fieldCustomizer(formlyField, metric, ctx);
+
+        if(_.isFunction(ret.data.prepareValue)) {
+            ctx.document.metrics[metric.id] = ret.data.prepareValue(ctx.document.metrics[metric.id]);
+        }
+
+        return ret;
     };
 
     return DocumentField;
