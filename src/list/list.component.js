@@ -76,9 +76,19 @@ angular.module('engine.list')
         }
         return '/src/list/cell/text.tpl.html'
     };
-    $scope.genDocumentLink = function(document) {
-        return $scope.options.documentUrl.replace(':id', document);
+    $scope.onDocumentSelect = function(document) {
+        if(_parentDocumentId) {
+            //:TODO: if subdocument, then show modal
+            // or if behavio type link, execute link action
+        } else {
+            $location.path($scope.genDocumentLink(document.id));
+        }
     };
+
+    $scope.genDocumentLink = function (documentId) {
+        return $scope.options.documentUrl.replace(':id', documentId);
+    };
+
     $scope.onCreateDocument = function() {
         if($scope.options.subdocument == true)
             DocumentModal($scope.options, _parentDocumentId, function () {

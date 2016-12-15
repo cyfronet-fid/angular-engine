@@ -1954,9 +1954,18 @@ angular.module('engine.list').component('engineDocumentList', {
         }
         return '/src/list/cell/text.tpl.html';
     };
-    $scope.genDocumentLink = function (document) {
-        return $scope.options.documentUrl.replace(':id', document);
+    $scope.onDocumentSelect = function (document) {
+        if (_parentDocumentId) {
+            //
+        } else {
+            $location.path($scope.genDocumentLink(document.id));
+        }
     };
+
+    $scope.genDocumentLink = function (documentId) {
+        return $scope.options.documentUrl.replace(':id', documentId);
+    };
+
     $scope.onCreateDocument = function () {
         if ($scope.options.subdocument == true) DocumentModal($scope.options, _parentDocumentId, function () {
             $scope.documents = engineQuery($scope.query, _parentDocumentId);
@@ -2047,7 +2056,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name) | date}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"#{{ genDocumentLink(document_entry.document.id) }}\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
+  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"\" ng-click=\"onDocumentSelect(document_entry.document)\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name)}}");
