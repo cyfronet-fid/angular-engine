@@ -156,7 +156,7 @@ angular.module('engine.document')
     };
 
     DocumentForm.prototype.updateFields = function updateFields(metricList) {
-        this.fieldList = DocumentFieldFactory.makeFields(metricList, {document: this.document, options: this.documentOptions});
+        this.fieldList = DocumentFieldFactory.makeFields(metricList, {document: this.document, options: this.documentOptions, documentForm: this});
     };
 
     DocumentForm.prototype.loadMetrics = function loadMetrics() {

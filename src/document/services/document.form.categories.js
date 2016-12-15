@@ -23,7 +23,7 @@ angular.module('engine.document')
         DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory() {
             var formStepStructure = {
                 fieldGroup: null,
-                templateOptions: {},
+                templateOptions: {'disabled': true},
                 data: {hide: true},
                 wrapper: 'step'
             };

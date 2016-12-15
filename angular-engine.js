@@ -201,6 +201,8 @@ angular.module('engine.document').component('engineDocument', {
     this.postinitDocument = function postinitDocument() {
         self.documentForm.makeForm();
 
+        if (self.actionList.getSaveAction() == null) self.documentForm.setEditable(false);
+
         $scope.$watch('$ctrl.step', self.onStepChange);
     };
 
@@ -464,7 +466,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
     DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory() {
         var formStepStructure = {
             fieldGroup: null,
-            templateOptions: {},
+            templateOptions: { 'disabled': true },
             data: { hide: true },
             wrapper: 'step'
         };
@@ -719,6 +721,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             type: 'input',
             className: metric.visualClass.join(' '),
             data: {
+                form: ctx.documentForm,
                 categoryId: metric.categoryId,
                 id: metric.id //this is required for DocumentForm
             },
@@ -729,9 +732,11 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 placeholder: 'Enter ' + metric.label,
                 required: metric.required
             },
-            // expressionProperties: {
-            // 'templateOptions.disabled': self.isDisabled
-            // },
+            expressionProperties: {
+                'templateOptions.disabled': function templateOptionsDisabled($viewValue, $modelValue, scope) {
+                    return scope.options.data.form.disabled;
+                }
+            },
             // validators: {
             // },
             validation: {
@@ -911,7 +916,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
     };
 
     DocumentForm.prototype.updateFields = function updateFields(metricList) {
-        this.fieldList = DocumentFieldFactory.makeFields(metricList, { document: this.document, options: this.documentOptions });
+        this.fieldList = DocumentFieldFactory.makeFields(metricList, { document: this.document, options: this.documentOptions, documentForm: this });
     };
 
     DocumentForm.prototype.loadMetrics = function loadMetrics() {
