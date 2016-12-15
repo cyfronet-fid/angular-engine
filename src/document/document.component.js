@@ -81,6 +81,9 @@ angular.module('engine.document')
     this.postinitDocument = function postinitDocument() {
         self.documentForm.makeForm();
 
+        if(self.actionList.getSaveAction() == null)
+            self.documentForm.setEditable(false);
+
         $scope.$watch('$ctrl.step', self.onStepChange);
     };
 

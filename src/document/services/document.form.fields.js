@@ -157,6 +157,7 @@ angular.module('engine.document')
             type: 'input',
             className: metric.visualClass.join(' '),
             data: {
+                form: ctx.documentForm,
                 categoryId: metric.categoryId,
                 id: metric.id //this is required for DocumentForm
             },
@@ -167,9 +168,11 @@ angular.module('engine.document')
                 placeholder: 'Enter ' + metric.label,
                 required: metric.required
             },
-            // expressionProperties: {
-                // 'templateOptions.disabled': self.isDisabled
-            // },
+            expressionProperties: {
+                'templateOptions.disabled': function ($viewValue, $modelValue, scope) {
+                    return scope.options.data.form.disabled;
+                }
+            },
             // validators: {
             // },
             validation: {
