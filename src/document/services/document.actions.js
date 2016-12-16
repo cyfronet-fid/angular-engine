@@ -1,11 +1,15 @@
 angular.module('engine.document')
     .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log) {
-        function DocumentActionList(document, parentDocumentId, $scope) {
-            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.string.optional, $engineApiCheck.object.optional], arguments);
+        function DocumentActionList(document, parentDocument, $scope) {
+            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
+
+            if(parentDocument == null)
+                parentDocument = {};
 
             var self = this;
             this.$scope = $scope;
-            this.parentDocumentId = document.id ? null : parentDocumentId;
+            this.parentDocument = parentDocument;
+            this.parentDocumentId = document.id ? null : parentDocument.id;
             this.actions = [];
 
             this.markInit = null;
@@ -14,7 +18,7 @@ angular.module('engine.document')
                 engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
                     self.actions = [];
                     _.forEach(actions, function (action) {
-                        self.actions.push(new DocumentAction(action, self.document, self.parentDocumentId, self.$scope));
+                        self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope));
                     });
                 });
             };
@@ -59,14 +63,15 @@ angular.module('engine.document')
         return DocumentActionList;
     })
     .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q) {
-        function DocumentAction(engAction, document, parentDocumentId, $scope) {
-            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.string.optional, $engineApiCheck.object.optional], arguments);
+        function DocumentAction(engAction, document, parentDocument, $scope) {
+            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
             this.document = document;
             this.actionId = engAction.id;
             this.label = engAction.label;
             this.engAction = engAction;
             this.type = engAction.type;
-            this.parentDocumentId = parentDocumentId;
+            this.parentDocument = parentDocument;
+            this.parentDocumentId = parentDocument.id;
             this.$scope = $scope;
         }
 
@@ -74,6 +79,7 @@ angular.module('engine.document')
         DocumentAction.prototype.TYPE_UPDATE = 'UPDATE';
         DocumentAction.prototype.TYPE_LINK = 'LINK';
         DocumentAction.prototype.SAVE_ACTIONS = [DocumentAction.prototype.TYPE_CREATE, DocumentAction.prototype.TYPE_UPDATE];
+        DocumentAction.prototype.LINK_ACTIONS = [DocumentAction.prototype.TYPE_LINK];
 
         DocumentAction.prototype.call = function call() {
             var self = this;
@@ -106,8 +112,6 @@ angular.module('engine.document')
                         return;
                     }
                 }
-
-
             }
             return $q.all(promises).then(function(){
                 return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise
@@ -126,6 +130,10 @@ angular.module('engine.document')
 
         DocumentAction.prototype.isSave = function isSave() {
             return _.contains(this.SAVE_ACTIONS, this.type);
+        };
+
+        DocumentAction.prototype.isLink = function isLink() {
+            return _.contains(this.LINK_ACTIONS, this.type);
         };
 
         return DocumentAction;

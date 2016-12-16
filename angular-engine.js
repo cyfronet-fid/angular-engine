@@ -91,7 +91,7 @@ angular.module('engine.common').component('engineDocumentActions', {
         $scope.$watch('$ctrl.document', function (newDocument, oldDocument) {
             if (!_.isEmpty(newDocument) && newDocument != null) self.actionList.setDocument(newDocument);
         });
-        self.actionList = new DocumentActionList(self.document, self.documentParentId, self._documentScope);
+        self.actionList = new DocumentActionList(self.document, self.documentParent, self._documentScope);
     },
     bindings: {
         documentScope: '=',
@@ -101,7 +101,7 @@ angular.module('engine.common').component('engineDocumentActions', {
         step: '=',
         showValidationButton: '=',
         customButtons: '=',
-        documentParentId: '@'
+        documentParent: '='
     }
 });
 'use strict';
@@ -150,7 +150,7 @@ angular.module('engine.document').component('engineDocument', {
         showValidationButton: '=',
         documentId: '@',
         actions: '=',
-        parentDocumentId: '@'
+        parentDocument: '='
     }
 }).controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument, engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx, engineAction, engineMetricCategories, StepList, DocumentForm, DocumentActionList, $q, $log) {
     var self = this;
@@ -197,7 +197,7 @@ angular.module('engine.document').component('engineDocument', {
 
         // return chained promise, which will do all other common required operations:
         return $q.all(_actionsToPerform).then(function () {
-            self.actionList = new DocumentActionList(self.document, self.parentDocumentId, $scope);
+            self.actionList = new DocumentActionList(self.document, self.parentDocument, $scope);
             return self.actionList.$ready;
         }).then(function () {
             self.documentForm.init(self.document, self.options, self.stepList);
@@ -248,13 +248,13 @@ angular.module('engine.document').component('engineDocument', {
 'use strict';
 
 angular.module('engine.document').factory('DocumentModal', function ($resource, $uibModal) {
-    return function (_documentId, _documentOptions, parentDocumentId, callback) {
+    return function (_documentId, _documentOptions, parentDocument, callback) {
         var modalInstance = $uibModal.open({
             templateUrl: '/src/document/document-modal.tpl.html',
             controller: function controller($scope, documentId, documentOptions, engineActionsAvailable, StepList, $uibModalInstance) {
                 $scope.step = 0;
                 $scope.documentOptions = documentOptions;
-                $scope.parentDocumentId = parentDocumentId;
+                $scope.parentDocument = parentDocument;
                 $scope.$scope = $scope;
                 $scope.stepList = new StepList($scope.documentOptions.document.steps);
                 $scope.document = {};
@@ -316,12 +316,15 @@ angular.module('engine.document').controller('engineDocumentWrapperCtrl', functi
 'use strict';
 
 angular.module('engine.document').factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log) {
-    function DocumentActionList(document, parentDocumentId, $scope) {
-        $engineApiCheck([$engineApiCheck.object, $engineApiCheck.string.optional, $engineApiCheck.object.optional], arguments);
+    function DocumentActionList(document, parentDocument, $scope) {
+        $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
+
+        if (parentDocument == null) parentDocument = {};
 
         var self = this;
         this.$scope = $scope;
-        this.parentDocumentId = document.id ? null : parentDocumentId;
+        this.parentDocument = parentDocument;
+        this.parentDocumentId = document.id ? null : parentDocument.id;
         this.actions = [];
 
         this.markInit = null;
@@ -330,7 +333,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
             engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
                 self.actions = [];
                 _.forEach(actions, function (action) {
-                    self.actions.push(new DocumentAction(action, self.document, self.parentDocumentId, self.$scope));
+                    self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope));
                 });
             });
         };
@@ -372,14 +375,15 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
 
     return DocumentActionList;
 }).factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q) {
-    function DocumentAction(engAction, document, parentDocumentId, $scope) {
-        $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.string.optional, $engineApiCheck.object.optional], arguments);
+    function DocumentAction(engAction, document, parentDocument, $scope) {
+        $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
         this.document = document;
         this.actionId = engAction.id;
         this.label = engAction.label;
         this.engAction = engAction;
         this.type = engAction.type;
-        this.parentDocumentId = parentDocumentId;
+        this.parentDocument = parentDocument;
+        this.parentDocumentId = parentDocument.id;
         this.$scope = $scope;
     }
 
@@ -387,6 +391,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
     DocumentAction.prototype.TYPE_UPDATE = 'UPDATE';
     DocumentAction.prototype.TYPE_LINK = 'LINK';
     DocumentAction.prototype.SAVE_ACTIONS = [DocumentAction.prototype.TYPE_CREATE, DocumentAction.prototype.TYPE_UPDATE];
+    DocumentAction.prototype.LINK_ACTIONS = [DocumentAction.prototype.TYPE_LINK];
 
     DocumentAction.prototype.call = function call() {
         var self = this;
@@ -436,6 +441,10 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
 
     DocumentAction.prototype.isSave = function isSave() {
         return _.contains(this.SAVE_ACTIONS, this.type);
+    };
+
+    DocumentAction.prototype.isLink = function isLink() {
+        return _.contains(this.LINK_ACTIONS, this.type);
     };
 
     return DocumentAction;
@@ -1951,10 +1960,17 @@ angular.module('engine.list').component('engineDocumentList', {
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
-    $scope.engineAction = function (actionId, document) {
-        return engineAction(actionId, document).$promise.then(function (data) {
-            $scope.documents = engineQuery($scope.query);
-        });
+    $scope.engineAction = function (action, document) {
+
+        if (action.type == 'LINK') {
+            return engineAction(action.id, self.parentDocument).$promise.then(function (data) {
+                $scope.documents = engineQuery($scope.query);
+            }, undefined, document.id);
+        } else {
+            return engineAction(action.id, document).$promise.then(function (data) {
+                $scope.documents = engineQuery($scope.query);
+            });
+        }
     };
 
     if ($scope.columns === null || $scope.columns === undefined) {
@@ -1989,7 +2005,7 @@ angular.module('engine.list').component('engineDocumentList', {
             if (self.onSelectBehavior == 'LINK') {
                 var linkAction = engineActionUtils.getLinkAction(document.actions);
 
-                if (linkAction != null) $scope.engineAction(linkAction.id, document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
+                if (linkAction != null) $scope.engineAction(linkAction, document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
             } else {
                 DocumentModal(document.id, $scope.options, _parentDocumentId, function () {
                     $scope.documents = engineQuery($scope.query, _parentDocumentId);
@@ -2005,8 +2021,8 @@ angular.module('engine.list').component('engineDocumentList', {
     };
 
     $scope.onCreateDocument = function () {
-        if ($scope.options.subdocument == true) DocumentModal(undefined, $scope.options, _parentDocumentId, function () {
-            $scope.documents = engineQuery($scope.query, _parentDocumentId);
+        if ($scope.options.subdocument == true) DocumentModal(undefined, $scope.options, self.parentDocument, function () {
+            $scope.documents = engineQuery($scope.query, self.parentDocument);
         });else $location.path($scope.genDocumentLink('new'));
     };
     $scope.canCreateDocument = function () {
@@ -2043,7 +2059,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent-id=\"{{::parentDocumentId}}\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
+  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document=\"parentDocument\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent=\"parentDocument\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");
@@ -2100,7 +2116,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name)}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ $ctrl.listCaption || options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action.id, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\">create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n");
+  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ $ctrl.listCaption || options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\">create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.wrapper.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"$last\" query=\"query.id\" options=\"options\" list-caption=\"query.label\"></engine-document-list>");

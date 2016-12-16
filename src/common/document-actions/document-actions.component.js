@@ -23,7 +23,7 @@ angular.module('engine.common')
             if(!_.isEmpty(newDocument) && newDocument != null)
                 self.actionList.setDocument(newDocument);
         });
-        self.actionList = new DocumentActionList(self.document, self.documentParentId, self._documentScope);
+        self.actionList = new DocumentActionList(self.document, self.documentParent, self._documentScope);
     },
     bindings: {
         documentScope: '=',
@@ -33,6 +33,6 @@ angular.module('engine.common')
         step: '=',
         showValidationButton: '=',
         customButtons: '=',
-        documentParentId: '@'
+        documentParent: '='
     }
 });

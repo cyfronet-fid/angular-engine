@@ -4,11 +4,11 @@
 </div>
 <div class="modal-body">
     <div class="container-fluid">
-        <engine-document parent-document-id="{{::parentDocumentId}}" step-list="stepList" document="document" document-id="{{::documentId}}" step="step" options="documentOptions"></engine-document>
+        <engine-document parent-document="parentDocument" step-list="stepList" document="document" document-id="{{::documentId}}" step="step" options="documentOptions"></engine-document>
     </div>
 </div>
 <div class="modal-footer">
     <engine-document-actions show-validation-button="$ctrl.showValidationButton" custom-buttons="customButtons"
-                             document="document" document-scope="$scope" document-parent-id="{{::parentDocumentId}}"
+                             document="document" document-scope="$scope" document-parent="parentDocument"
                              steps="stepList" step="step" class="btn-group float-left"></engine-document-actions>
 </div>

@@ -40,10 +40,17 @@ angular.module('engine.list')
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
-    $scope.engineAction = function (actionId, document) {
-        return engineAction(actionId, document).$promise.then(function (data) {
-            $scope.documents = engineQuery($scope.query);
-        });
+    $scope.engineAction = function (action, document) {
+
+        if(action.type == 'LINK'){
+            return engineAction(action.id, self.parentDocument).$promise.then(function (data) {
+                $scope.documents = engineQuery($scope.query);
+            }, undefined, document.id);
+        } else {
+            return engineAction(action.id, document).$promise.then(function (data) {
+                $scope.documents = engineQuery($scope.query);
+            });
+        }
     };
 
     if($scope.columns === null || $scope.columns === undefined) {
@@ -83,7 +90,7 @@ angular.module('engine.list')
                 var linkAction = engineActionUtils.getLinkAction(document.actions);
 
                 if(linkAction != null)
-                    $scope.engineAction(linkAction.id, document);
+                    $scope.engineAction(linkAction, document);
                 else
                     $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
             } else {
@@ -102,8 +109,8 @@ angular.module('engine.list')
 
     $scope.onCreateDocument = function() {
         if($scope.options.subdocument == true)
-            DocumentModal(undefined, $scope.options, _parentDocumentId, function () {
-                $scope.documents = engineQuery($scope.query, _parentDocumentId);
+            DocumentModal(undefined, $scope.options, self.parentDocument, function () {
+                $scope.documents = engineQuery($scope.query, self.parentDocument);
             });
         else
             $location.path($scope.genDocumentLink('new'));
