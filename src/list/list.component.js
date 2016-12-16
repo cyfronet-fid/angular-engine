@@ -9,11 +9,12 @@ angular.module('engine.list')
         parentDocument: '=',
         showCreateButton: '=',
         listCaption: '=',
-        columns: '='
+        columns: '=',
+        onSelectBehavior: '@'
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
-                                        engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal) {
+                                        engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log) {
     var self = this;
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -40,7 +41,7 @@ angular.module('engine.list')
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
     $scope.engineAction = function (actionId, document) {
-        engineAction(actionId, document).$promise.then(function (data) {
+        return engineAction(actionId, document).$promise.then(function (data) {
             $scope.documents = engineQuery($scope.query);
         });
     };
@@ -78,8 +79,18 @@ angular.module('engine.list')
     };
     $scope.onDocumentSelect = function(document) {
         if(_parentDocumentId) {
-            //:TODO: if subdocument, then show modal
-            // or if behavio type link, execute link action
+            if(self.onSelectBehavior == 'LINK') {
+                var linkAction = engineActionUtils.getLinkAction(document.actions);
+
+                if(linkAction != null)
+                    $scope.engineAction(linkAction.id, document);
+                else
+                    $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
+            } else {
+                DocumentModal(document.id, $scope.options, _parentDocumentId, function () {
+                    $scope.documents = engineQuery($scope.query, _parentDocumentId);
+                });
+            }
         } else {
             $location.path($scope.genDocumentLink(document.id));
         }
@@ -91,7 +102,7 @@ angular.module('engine.list')
 
     $scope.onCreateDocument = function() {
         if($scope.options.subdocument == true)
-            DocumentModal($scope.options, _parentDocumentId, function () {
+            DocumentModal(undefined, $scope.options, _parentDocumentId, function () {
                 $scope.documents = engineQuery($scope.query, _parentDocumentId);
             });
         else

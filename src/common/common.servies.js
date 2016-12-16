@@ -13,10 +13,20 @@ angular.module('engine.common')
         }
     })
     .factory('engineActionUtils', function ($rootScope, ErrorEventCtx, ENGINE_SAVE_ACTIONS) {
+        var ENGINE_LINK_ACTION = 'LINK';
         var isSaveAction = function (action) {
             if (_.contains(ENGINE_SAVE_ACTIONS, action.type))
                 return true;
             return false;
+        };
+
+        var isLinkAction = function (action) {
+            return action.type == ENGINE_LINK_ACTION;
+        };
+
+
+        var getLinkAction = function (actions) {
+            return _.find(actions, isLinkAction);
         };
 
         var getCreateUpdateAction = function (actions) {
@@ -34,6 +44,8 @@ angular.module('engine.common')
 
         return {
             getCreateUpdateAction: getCreateUpdateAction,
-            isSaveAction: isSaveAction
+            isSaveAction: isSaveAction,
+            getLinkAction: getLinkAction,
+            isLinkAction: isLinkAction
         }
     });

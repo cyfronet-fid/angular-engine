@@ -36,9 +36,18 @@ angular.module('engine.common').factory('DocumentEventCtx', function () {
         this.errorMessage = errorMessage;
     };
 }).factory('engineActionUtils', function ($rootScope, ErrorEventCtx, ENGINE_SAVE_ACTIONS) {
+    var ENGINE_LINK_ACTION = 'LINK';
     var isSaveAction = function isSaveAction(action) {
         if (_.contains(ENGINE_SAVE_ACTIONS, action.type)) return true;
         return false;
+    };
+
+    var isLinkAction = function isLinkAction(action) {
+        return action.type == ENGINE_LINK_ACTION;
+    };
+
+    var getLinkAction = function getLinkAction(actions) {
+        return _.find(actions, isLinkAction);
     };
 
     var getCreateUpdateAction = function getCreateUpdateAction(actions) {
@@ -54,7 +63,9 @@ angular.module('engine.common').factory('DocumentEventCtx', function () {
 
     return {
         getCreateUpdateAction: getCreateUpdateAction,
-        isSaveAction: isSaveAction
+        isSaveAction: isSaveAction,
+        getLinkAction: getLinkAction,
+        isLinkAction: isLinkAction
     };
 });
 'use strict';
@@ -89,6 +100,7 @@ angular.module('engine.common').component('engineDocumentActions', {
         steps: '=',
         step: '=',
         showValidationButton: '=',
+        customButtons: '=',
         documentParentId: '@'
     }
 });
@@ -236,33 +248,38 @@ angular.module('engine.document').component('engineDocument', {
 'use strict';
 
 angular.module('engine.document').factory('DocumentModal', function ($resource, $uibModal) {
-    return function (_documentOptions, parentDocumentId, callback) {
+    return function (_documentId, _documentOptions, parentDocumentId, callback) {
         var modalInstance = $uibModal.open({
             templateUrl: '/src/document/document-modal.tpl.html',
-            controller: function controller($scope, documentOptions, engineActionsAvailable, StepList, $uibModalInstance) {
+            controller: function controller($scope, documentId, documentOptions, engineActionsAvailable, StepList, $uibModalInstance) {
                 $scope.step = 0;
                 $scope.documentOptions = documentOptions;
                 $scope.parentDocumentId = parentDocumentId;
                 $scope.$scope = $scope;
                 $scope.stepList = new StepList($scope.documentOptions.document.steps);
                 $scope.document = {};
-
-                // $scope.documentChange = function (newDocument) {
-                //     $scope.document = newDocument;
-                // };
-
-                $scope.engineAction = function (action) {
-                    $scope.$broadcast('engine.common.action.invoke', action, $scope.closeModal);
-                };
+                $scope.documentId = documentId;
 
                 $scope.closeModal = function () {
                     $uibModalInstance.close();
                 };
+
+                $scope.$on('engine.common.action.after', function (event, ctx) {
+                    if (ctx.result.type == 'REDIRECT') {
+                        event.preventDefault();
+                        $scope.closeModal();
+                    }
+                });
+
+                $scope.customButtons = [{ label: 'Cancel', 'action': $scope.closeModal }];
             },
             size: 'lg',
             resolve: {
                 documentOptions: function documentOptions() {
                     return _documentOptions;
+                },
+                documentId: function documentId() {
+                    return _documentId;
                 }
             }
         });
@@ -408,8 +425,10 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
         }).then(function (result) {
             $log.debug('engine.document.actions', 'action call returned', result);
             if (self.$scope) {
-                self.$scope.$broadcast('engine.common.action.after', { 'document': self.document, 'action': self, 'result': result });
-                self.$scope.$broadcast('engine.common.save.after', { 'document': self.document, 'action': self, 'result': result });
+                var ev1 = self.$scope.$broadcast('engine.common.action.after', { 'document': self.document, 'action': self, 'result': result });
+                var ev2 = self.$scope.$broadcast('engine.common.save.after', { 'document': self.document, 'action': self, 'result': result });
+
+                if (ev1.defaultPrevented || ev2.defaultPrevented) return result;
             }
             return DocumentActionProcess(self.document, result);
         });
@@ -444,9 +463,11 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
                     throw new Error(message);
                 }
 
-                $location.$$search = search;
-                $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
-                $location.$$compose();
+                if (documentOptions.subdocument == false) {
+                    $location.$$search = search;
+                    $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
+                    $location.$$compose();
+                }
 
                 return actionResponse;
             });
@@ -700,7 +721,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                     categoryId: metric.categoryId,
                     id: metric.id //this is required for DocumentForm
                 },
-                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '"></engine-document-list>',
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
                     document: ctx.document
@@ -1907,9 +1928,10 @@ angular.module('engine.list').component('engineDocumentList', {
         parentDocument: '=',
         showCreateButton: '=',
         listCaption: '=',
-        columns: '='
+        columns: '=',
+        onSelectBehavior: '@'
     }
-}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal) {
+}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log) {
     var self = this;
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -1930,7 +1952,7 @@ angular.module('engine.list').component('engineDocumentList', {
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
     $scope.engineAction = function (actionId, document) {
-        engineAction(actionId, document).$promise.then(function (data) {
+        return engineAction(actionId, document).$promise.then(function (data) {
             $scope.documents = engineQuery($scope.query);
         });
     };
@@ -1964,8 +1986,15 @@ angular.module('engine.list').component('engineDocumentList', {
     };
     $scope.onDocumentSelect = function (document) {
         if (_parentDocumentId) {
-            //:TODO: if subdocument, then show modal
-            // or if behavio type link, execute link action
+            if (self.onSelectBehavior == 'LINK') {
+                var linkAction = engineActionUtils.getLinkAction(document.actions);
+
+                if (linkAction != null) $scope.engineAction(linkAction.id, document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
+            } else {
+                DocumentModal(document.id, $scope.options, _parentDocumentId, function () {
+                    $scope.documents = engineQuery($scope.query, _parentDocumentId);
+                });
+            }
         } else {
             $location.path($scope.genDocumentLink(document.id));
         }
@@ -1976,7 +2005,7 @@ angular.module('engine.list').component('engineDocumentList', {
     };
 
     $scope.onCreateDocument = function () {
-        if ($scope.options.subdocument == true) DocumentModal($scope.options, _parentDocumentId, function () {
+        if ($scope.options.subdocument == true) DocumentModal(undefined, $scope.options, _parentDocumentId, function () {
             $scope.documents = engineQuery($scope.query, _parentDocumentId);
         });else $location.path($scope.genDocumentLink('new'));
     };
@@ -2008,13 +2037,13 @@ angular.module('engine.list').controller('engineListWrapperCtrl', function ($sco
 ;"use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step).name}}</button>\n\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>");
+  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step).name}}</button>\n\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>\n\n<button type=\"submit\" ng-repeat=\"button in $ctrl.customButtons\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"button.action()\" translate>{{button.label}}</button>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" step-list=\"stepList\" document=\"document\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\" ng-click=\"closeModal()\" translate>Cancel</button>\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\"\n                             document=\"document\" document-scope=\"$scope\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group\"></engine-document-actions>\n</div>");
+  $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document-id=\"{{::parentDocumentId}}\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent-id=\"{{::parentDocumentId}}\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>");

@@ -4,12 +4,11 @@
 </div>
 <div class="modal-body">
     <div class="container-fluid">
-        <engine-document parent-document-id="{{::parentDocumentId}}" step-list="stepList" document="document" step="step" options="documentOptions"></engine-document>
+        <engine-document parent-document-id="{{::parentDocumentId}}" step-list="stepList" document="document" document-id="{{::documentId}}" step="step" options="documentOptions"></engine-document>
     </div>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="closeModal()" translate>Cancel</button>
-    <engine-document-actions show-validation-button="$ctrl.showValidationButton"
-                             document="document" document-scope="$scope"
-                             steps="stepList" step="step" class="btn-group"></engine-document-actions>
+    <engine-document-actions show-validation-button="$ctrl.showValidationButton" custom-buttons="customButtons"
+                             document="document" document-scope="$scope" document-parent-id="{{::parentDocumentId}}"
+                             steps="stepList" step="step" class="btn-group float-left"></engine-document-actions>
 </div>

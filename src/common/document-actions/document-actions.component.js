@@ -32,6 +32,7 @@ angular.module('engine.common')
         steps: '=',
         step: '=',
         showValidationButton: '=',
+        customButtons: '=',
         documentParentId: '@'
     }
 });

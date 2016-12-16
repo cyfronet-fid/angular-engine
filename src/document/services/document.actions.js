@@ -114,8 +114,11 @@ angular.module('engine.document')
             }).then(function (result) {
                 $log.debug('engine.document.actions', 'action call returned', result);
                 if(self.$scope) {
-                    self.$scope.$broadcast('engine.common.action.after', {'document': self.document, 'action': self, 'result': result});
-                    self.$scope.$broadcast('engine.common.save.after', {'document': self.document, 'action': self, 'result': result});
+                    var ev1 = self.$scope.$broadcast('engine.common.action.after', {'document': self.document, 'action': self, 'result': result});
+                    var ev2 = self.$scope.$broadcast('engine.common.save.after', {'document': self.document, 'action': self, 'result': result});
+
+                    if(ev1.defaultPrevented || ev2.defaultPrevented)
+                        return result;
                 }
                 return DocumentActionProcess(self.document, result);
             });
@@ -154,10 +157,11 @@ angular.module('engine.document')
                 }
 
 
-
-                $location.$$search = search;
-                $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
-                $location.$$compose();
+                if(documentOptions.subdocument == false) {
+                    $location.$$search = search;
+                    $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
+                    $location.$$compose();
+                }
 
                 return actionResponse;
             });
