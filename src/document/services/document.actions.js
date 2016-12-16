@@ -5,7 +5,7 @@ angular.module('engine.document')
 
             var self = this;
             this.$scope = $scope;
-            this.parentDocumentId = parentDocumentId;
+            this.parentDocumentId = document.id ? null : parentDocumentId;
             this.actions = [];
 
             this.markInit = null;
@@ -32,7 +32,7 @@ angular.module('engine.document')
 
             var prevDoc = this.document;
             this.document = document;
-
+            this.parentDocumentId = document.id ? null : this.parentDocumentId;
             // if(!prevDoc && prevDoc != null && !_.isEmpty(prevDoc))
             this.markInit();
             // else
