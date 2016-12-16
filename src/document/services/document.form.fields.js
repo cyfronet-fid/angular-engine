@@ -27,6 +27,14 @@ angular.module('engine.document')
         this._fieldTypeList.push(documentField);
     };
 
+    /**
+     *
+     * @param metricList
+     * @param metric
+     * @param {object} ctx should contain following parameters:
+     *
+     * {document: model of the document, options: document options, documentForm: DocumentForm instance}
+     */
     DocumentFieldFactory.prototype.makeField = function makeField(metricList, metric, ctx) {
         for(var i = 0; i < this._fieldTypeList.length; ++i) {
             if(this._fieldTypeList[i].matches(metric))
@@ -40,12 +48,7 @@ angular.module('engine.document')
         return this._defaultField.makeField(metricList, metric, ctx);
     };
 
-    /**
-     *
-     * @param metricList
-     * @returns {Array}
-     */
-    DocumentFieldFactory.prototype.makeFields = function make(metricList, ctx) {
+    DocumentFieldFactory.prototype.makeFields = function makeFields(metricList, ctx) {
         var fields = [];
 
         _.forEach(metricList, function (metric) {
@@ -148,6 +151,15 @@ angular.module('engine.document')
         this.fieldCondition = ConditionBuilder(fieldCondition);
         this.fieldCustomizer = fieldBuilder;
     }
+
+    //make it class method, to not instantiate it for every field
+    DocumentField.onChange = function($viewValue, $modelValue, $scope) {
+        //emit reload request for dom element which wants to listen (eg. document)
+        $scope.$emit('document.form.requestReload');
+
+        $scope.options.data.form._onReload();
+    };
+
     DocumentField.prototype.matches = function matches(metric) {
         return this.fieldCondition(metric);
     };
@@ -193,13 +205,14 @@ angular.module('engine.document')
             }
         };
 
-        if (metric.reloadOnChange) {
-            //:TODO: make reload listener
+        if (metric.reloadOnChange == true) {
+            formlyField.templateOptions.onChange = DocumentField.onChange;
         }
 
 
         var ret = this.fieldCustomizer(formlyField, metric, ctx);
 
+        //if metric uses non standard JSON data type (eg. DATE, call it's prepare method, to preprocess data before loading)
         if(_.isFunction(ret.data.prepareValue)) {
             ctx.document.metrics[metric.id] = ret.data.prepareValue(ctx.document.metrics[metric.id]);
         }
