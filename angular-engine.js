@@ -457,10 +457,9 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
 
             //before redirecting, load document from engine to ascertain it's document type
             return engineDocument.get(actionResponse.redirectToDocument).$promise.then(function (data) {
-                var search = {};
 
                 if (document.id != null && document.id != actionResponse.redirectToDocument) {
-                    search.step = 0;
+                    $location.$$search.step = 0;
                 }
 
                 var documentOptions = $engine.getOptions(data.document.states.documentType);
@@ -474,7 +473,6 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
                 }
 
                 if (documentOptions.subdocument == false) {
-                    $location.$$search = search;
                     $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
                     $location.$$compose();
                 }
