@@ -89,7 +89,7 @@ angular.module('engine.common').component('engineDocumentActions', {
         };
 
         $scope.$watch('$ctrl.document', function (newDocument, oldDocument) {
-            if (!_.isEmpty(newDocument) && newDocument != null) self.actionList.setDocument(newDocument);
+            if (!_.isEmpty(newDocument) && newDocument != null) self.actionList._setDocument(newDocument);
         });
         self.actionList = new DocumentActionList(self.document, self.documentParent, self._documentScope);
     },
@@ -177,7 +177,7 @@ angular.module('engine.document').component('engineDocument', {
         var message = 'engineDocumentCtrl.initDocument called before all required dependencies were resolved, make ' + 'sure that iniDocument is called after everything is loaded';
 
         assert(self.stepList.$ready, message);
-        assert(self.documentForm.$ready, message);
+        // assert(self.documentForm.$ready, message);
 
         self.stepList.setCurrentStep(self.step);
 
@@ -202,7 +202,7 @@ angular.module('engine.document').component('engineDocument', {
         }).then(function () {
             self.documentForm.init(self.document, self.options, self.stepList);
             //load metrics to form
-            return self.documentForm.loadMetrics();
+            return self.documentForm.loadForm();
         });
     };
 
@@ -211,7 +211,6 @@ angular.module('engine.document').component('engineDocument', {
      * here all $watch, and other such methods should be defined
      */
     this.postinitDocument = function postinitDocument() {
-        self.documentForm.makeForm();
 
         if (self.actionList.getSaveAction() == null) self.documentForm.setEditable(false);
 
@@ -344,10 +343,10 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
             self.markInit = resolve;
         }).then(self.loadActions);
 
-        this.setDocument(document);
+        this._setDocument(document);
     }
 
-    DocumentActionList.prototype.setDocument = function setDocument(document) {
+    DocumentActionList.prototype._setDocument = function setDocument(document) {
         if (document == null || _.isEmpty(document) || document == this.document) return;
 
         var prevDoc = this.document;
@@ -356,7 +355,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
         // if(!prevDoc && prevDoc != null && !_.isEmpty(prevDoc))
         this.markInit();
         // else
-        if (this.$ready.$resolved) this.$ready = this.loadActions();
+        if (this.$ready.$$state.status === 0) this.$ready = this.loadActions();
     };
     DocumentActionList.prototype.getSaveAction = function getSaveAction() {
         return _.find(this.actions, function (action) {
@@ -638,6 +637,14 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this._fieldTypeList.push(documentField);
     };
 
+    /**
+     *
+     * @param metricList
+     * @param metric
+     * @param {object} ctx should contain following parameters:
+     *
+     * {document: model of the document, options: document options, documentForm: DocumentForm instance}
+     */
     DocumentFieldFactory.prototype.makeField = function makeField(metricList, metric, ctx) {
         for (var i = 0; i < this._fieldTypeList.length; ++i) {
             if (this._fieldTypeList[i].matches(metric)) return this._fieldTypeList[i].makeField(metricList, metric, ctx);
@@ -650,12 +657,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         return this._defaultField.makeField(metricList, metric, ctx);
     };
 
-    /**
-     *
-     * @param metricList
-     * @returns {Array}
-     */
-    DocumentFieldFactory.prototype.makeFields = function make(metricList, ctx) {
+    DocumentFieldFactory.prototype.makeFields = function makeFields(metricList, ctx) {
         var fields = [];
 
         _.forEach(metricList, function (metric) {
@@ -756,6 +758,15 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this.fieldCondition = ConditionBuilder(fieldCondition);
         this.fieldCustomizer = fieldBuilder;
     }
+
+    //make it class method, to not instantiate it for every field
+    DocumentField.onChange = function ($viewValue, $modelValue, $scope) {
+        //emit reload request for dom element which wants to listen (eg. document)
+        $scope.$emit('document.form.requestReload');
+
+        $scope.options.data.form._onReload();
+    };
+
     DocumentField.prototype.matches = function matches(metric) {
         return this.fieldCondition(metric);
     };
@@ -800,12 +811,13 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             }
         };
 
-        if (metric.reloadOnChange) {
-            //:TODO: make reload listener
+        if (metric.reloadOnChange == true) {
+            formlyField.templateOptions.onChange = DocumentField.onChange;
         }
 
         var ret = this.fieldCustomizer(formlyField, metric, ctx);
 
+        //if metric uses non standard JSON data type (eg. DATE, call it's prepare method, to preprocess data before loading)
         if (_.isFunction(ret.data.prepareValue)) {
             ctx.document.metrics[metric.id] = ret.data.prepareValue(ctx.document.metrics[metric.id]);
         }
@@ -817,7 +829,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 });
 'use strict';
 
-angular.module('engine.document').factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, DocumentCategoryFactory, $engineApiCheck, $log, DocumentValidator) {
+angular.module('engine.document').factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $q, DocumentCategoryFactory, $engineApiCheck, $log, DocumentValidator) {
     var _apiCheck = $engineApiCheck;
 
     function DocumentForm() {
@@ -836,6 +848,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         this.formlyFields = [];
         this.validator = null;
         this.currentStep = null;
+        this.categoriesDict = {};
         /**
          * this is for formly use, in here all formly state data is stored
          * @type {object}
@@ -846,32 +859,111 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
          * @type {{}}
          */
         // this.formlyOptions = {};
-
-        this.$ready = this.loadMetricCategories();
+        this.formLoaded = false;
+        this.markInit = null;
+        var self = this;
+        this.$ready = $q(function (resolve, reject) {
+            self.markInit = resolve;
+        }).then(function () {
+            return self._loadMetricCategories();
+        });
     }
 
-    DocumentForm.prototype.loadMetricCategories = function loadMetricCategories() {
+    DocumentForm.prototype.loadForm = function loadForm() {
+        var self = this;
+
+        return this.$ready.then(function () {
+            return self._loadMetrics();
+        }).then(function () {
+            self._makeForm();
+            self.formLoaded = true;
+        });
+    };
+
+    /**
+     * INTERNAL FUNCTION, as it is callback from form controls, it does not have to check state of the form
+     * IN FUTURE it may be made public, in which case check will have to be added in order to make sure, that
+     * initial form has been loaded
+     *
+     * @returns {Promise<U>|Promise<R>}
+     * @private
+     */
+    DocumentForm.prototype._reloadForm = function reloadForm() {
+        var self = this;
+
+        if (!this.formLoaded) {
+            $log.error('DocumentForm._reloadForm called without waiting for DocumentForm.loadForm');
+            throw new Error();
+        }
+
+        return engineMetric(this.document, function (metricList) {
+            metricList = metricList;
+            console.log('New loaded metrics: ', metricList);
+            var metricDict = _.indexBy(metricList, 'id');
+
+            var newMetrics = _.reject(metricList, function (metric) {
+                return metric.id in self.metricDict;
+            });
+
+            console.log('New metrics: ', newMetrics);
+
+            //remove metrics, which are not present in metricList
+            _.forEach(self.metricList, function (metric) {
+                if (!(metric.id in metricDict)) {
+                    console.log('Metric to remove: ', metric);
+
+                    var metricIndex = _.findIndex(self.categoriesDict[metric.categoryId].fieldGroup, function (field) {
+                        return field.data.id == metric.id;
+                    });
+
+                    self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
+                }
+            });
+
+            _.forEach(newMetrics, function (newMetric) {
+                console.log(self.categoriesDict[newMetric.categoryId]);
+                self.addMetric(newMetric);
+                var field = DocumentFieldFactory.makeField(self.metricList, newMetric, { document: self.document,
+                    options: self.documentOptions,
+                    documentForm: self });
+                self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 0, field);
+
+                self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, 'position');
+            });
+        }).$promise;
+    };
+
+    DocumentForm.prototype.addMetric = function addMetric(metric) {
+        if (metric.id in this.metricDict) return;
+
+        this.metricList.push(metric);
+        this.metricDict[metric.id] = metric;
+    };
+
+    DocumentForm.prototype._loadMetricCategories = function loadMetricCategories() {
         var self = this;
 
         return engineMetricCategories.then(function (metricCategories) {
             self.metricCategories = metricCategories;
         });
     };
-    DocumentForm.prototype.setDocument = function setDocument(document) {
+    DocumentForm.prototype._setDocument = function setDocument(document) {
         this.document = document;
     };
-    DocumentForm.prototype.setOptions = function setOptions(documentOptions) {
+    DocumentForm.prototype._setOptions = function setOptions(documentOptions) {
         this.documentOptions = documentOptions;
     };
-    DocumentForm.prototype.setSteps = function setSteps(steps) {
+    DocumentForm.prototype._setSteps = function setSteps(steps) {
         this.steps = steps;
     };
     DocumentForm.prototype.init = function init(document, options, steps) {
         _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);
 
-        this.setDocument(document);
-        this.setOptions(options);
-        this.setSteps(steps);
+        this._setDocument(document);
+        this._setOptions(options);
+        this._setSteps(steps);
+
+        this.markInit();
     };
 
     DocumentForm.prototype.setEditable = function setEditable(editable) {
@@ -892,7 +984,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         $log.debug('current fields to display in form', this.currentFormlyFields);
     };
 
-    DocumentForm.prototype.assertInit = function assertInit() {
+    DocumentForm.prototype._assertInit = function assertInit() {
         var message = ' is null! make sure to call DocumentForm.init(document, options, steps) before calling other methods';
 
         assert(this.document != null, 'DocumentForm.document' + message);
@@ -900,16 +992,20 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         assert(this.steps != null, 'DocumentForm.steps' + message);
     };
 
-    DocumentForm.prototype.makeForm = function makeForm() {
+    DocumentForm.prototype._onReload = function onReload() {
+        $log.debug('Form reload called');
+        this._reloadForm();
+    };
+
+    DocumentForm.prototype._makeForm = function makeForm() {
         var self = this;
 
-        console.log('DocumentForm.makeForm', this.fieldList);
-        this.assertInit();
+        console.log('DocumentForm._makeForm', this.fieldList);
+        this._assertInit();
 
-        assert(this.metricList.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetrics');
-        assert(this.metricCategories.$resolved == true, 'Called DocumentForm.makeForm() before calling DocumentForm.loadMetricCategories');
+        assert(this.metricList.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetrics');
+        assert(this.metricCategories.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetricCategories');
 
-        var _metricDict = {};
         var _categoriesToPostProcess = [];
 
         _.forEach(this.steps.getSteps(), function (step) {
@@ -937,7 +1033,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 
                 formMetricCategory.fieldGroup = parseMetricCategories(step, metricCategory.children);
 
-                _metricDict[metricCategory.id] = formMetricCategory;
+                self.categoriesDict[metricCategory.id] = formMetricCategory;
                 step.metrics[metricCategory.id] = formMetricCategory;
                 if (_.isFunction(formMetricCategory.data.$process)) _categoriesToPostProcess.push(formMetricCategory);
 
@@ -949,13 +1045,13 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 
         function connectFields(step) {
             _.forEach(self.fieldList, function (field) {
-                if (_metricDict[field.data.categoryId] === undefined) {
+                if (self.categoriesDict[field.data.categoryId] === undefined) {
                     $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!', 'field', field, 'categoryId', field.data.categoryId);
                     return;
                 }
                 if (step.metrics[field.data.categoryId] === undefined) return;
 
-                _metricDict[field.data.categoryId].fieldGroup.push(field);
+                self.categoriesDict[field.data.categoryId].fieldGroup.push(field);
                 step.fields[field.data.id] = field;
             });
         }
@@ -967,21 +1063,17 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         }
     };
 
-    DocumentForm.prototype.updateFields = function updateFields(metricList) {
+    DocumentForm.prototype._updateFields = function updateFields(metricList) {
         this.fieldList = DocumentFieldFactory.makeFields(metricList, { document: this.document, options: this.documentOptions, documentForm: this });
     };
 
-    DocumentForm.prototype.loadMetrics = function loadMetrics() {
+    DocumentForm.prototype._loadMetrics = function loadMetrics() {
         var self = this;
 
         return engineMetric(this.document, function (metricList) {
             self.metricList = metricList;
-
-            angular.forEach(self.metricList, function (metric) {
-                self.metricDict[metric.id] = metric;
-            });
-
-            self.updateFields(self.metricList);
+            self.metricDict = _.indexBy(self.metricList, 'id');
+            self._updateFields(self.metricList);
         }).$promise;
     };
 
@@ -1578,8 +1670,15 @@ angular.module('engine').factory('engineResolve', function () {
         }
     };
 }).service('engineMetric', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    var metricSorter = function metricSorter(data, headersGetter, status) {
+        var data = EngineInterceptor.response(data, headersGetter, status);
+        data = _.sortBy(data, 'position');
+
+        return data;
+    };
+
     var _query = $resource($engineConfig.baseUrl + '/metrics', {}, {
-        post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: true }
+        post: { method: 'POST', transformResponse: metricSorter, isArray: true }
     });
 
     return function (documentJSON, callback, errorCallback) {

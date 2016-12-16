@@ -37,8 +37,15 @@ angular.module('engine')
         }
     })
     .service('engineMetric', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+        var metricSorter = function (data, headersGetter, status) {
+            var data = EngineInterceptor.response(data, headersGetter, status);
+            data = _.sortBy(data, 'position');
+
+            return data;
+        };
+
         var _query = $resource($engineConfig.baseUrl + '/metrics', {}, {
-            post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: true}
+            post: {method: 'POST', transformResponse: metricSorter, isArray: true}
         });
 
         return function (documentJSON, callback, errorCallback) {

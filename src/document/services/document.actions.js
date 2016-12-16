@@ -27,10 +27,10 @@ angular.module('engine.document')
                 self.markInit = resolve;
             }).then(self.loadActions);
 
-            this.setDocument(document);
+            this._setDocument(document);
         }
 
-        DocumentActionList.prototype.setDocument = function setDocument(document) {
+        DocumentActionList.prototype._setDocument = function setDocument(document) {
             if(document == null || _.isEmpty(document) || document == this.document)
                 return;
 
@@ -40,7 +40,7 @@ angular.module('engine.document')
             // if(!prevDoc && prevDoc != null && !_.isEmpty(prevDoc))
             this.markInit();
             // else
-            if(this.$ready.$resolved)
+            if(this.$ready.$$state.status === 0)
                 this.$ready = this.loadActions();
         };
         DocumentActionList.prototype.getSaveAction = function getSaveAction() {

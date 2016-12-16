@@ -45,7 +45,7 @@ angular.module('engine.document')
                       'sure that iniDocument is called after everything is loaded';
 
         assert(self.stepList.$ready, message);
-        assert(self.documentForm.$ready, message);
+        // assert(self.documentForm.$ready, message);
 
         self.stepList.setCurrentStep(self.step);
 
@@ -70,7 +70,7 @@ angular.module('engine.document')
         }).then(function () {
             self.documentForm.init(self.document, self.options, self.stepList);
             //load metrics to form
-            return self.documentForm.loadMetrics();
+            return self.documentForm.loadForm();
         });
     };
 
@@ -79,7 +79,6 @@ angular.module('engine.document')
      * here all $watch, and other such methods should be defined
      */
     this.postinitDocument = function postinitDocument() {
-        self.documentForm.makeForm();
 
         if(self.actionList.getSaveAction() == null)
             self.documentForm.setEditable(false);

@@ -21,7 +21,7 @@ angular.module('engine.common')
 
         $scope.$watch('$ctrl.document', function (newDocument, oldDocument) {
             if(!_.isEmpty(newDocument) && newDocument != null)
-                self.actionList.setDocument(newDocument);
+                self.actionList._setDocument(newDocument);
         });
         self.actionList = new DocumentActionList(self.document, self.documentParent, self._documentScope);
     },
