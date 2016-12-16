@@ -69,7 +69,7 @@ angular.module('engine.document')
         }
 
         return engineMetric(this.document, function (metricList) {
-
+            metricList = metricList;
             console.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
 
@@ -102,6 +102,8 @@ angular.module('engine.document')
                                                                                         options: self.documentOptions,
                                                                                         documentForm: self});
                 self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 0, field);
+
+                self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, 'position');
             })
 
 

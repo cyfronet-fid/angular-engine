@@ -897,7 +897,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         }
 
         return engineMetric(this.document, function (metricList) {
-
+            metricList = metricList;
             console.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
 
@@ -927,6 +927,8 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
                     options: self.documentOptions,
                     documentForm: self });
                 self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 0, field);
+
+                self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, 'position');
             });
         }).$promise;
     };
@@ -1668,8 +1670,15 @@ angular.module('engine').factory('engineResolve', function () {
         }
     };
 }).service('engineMetric', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    var metricSorter = function metricSorter(data, headersGetter, status) {
+        var data = EngineInterceptor.response(data, headersGetter, status);
+        data = _.sortBy(data, 'position');
+
+        return data;
+    };
+
     var _query = $resource($engineConfig.baseUrl + '/metrics', {}, {
-        post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: true }
+        post: { method: 'POST', transformResponse: metricSorter, isArray: true }
     });
 
     return function (documentJSON, callback, errorCallback) {
