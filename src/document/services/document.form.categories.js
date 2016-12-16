@@ -36,9 +36,6 @@ angular.module('engine.document')
                 formlyCategory.templateOptions.wrapperClass = '';
                 formlyCategory.wrapper = 'row';
                 formlyCategory.data.$process = function () {
-                    $log.debug('calling $process on DocumentCategory', formlyCategory);
-
-
                     // TODO INCLUDE OPERATOR DEFINED WIDTHS
                     // _.find(formlyCategory.fieldGroup, function (field) {
                     //     return field.templateOptions.css == 'col-md-6';
@@ -51,6 +48,12 @@ angular.module('engine.document')
                         field.templateOptions.css = 'col-md-'+size;
                     })
                 };
+                return formlyCategory;
+            }));
+
+            this.register(new DocumentCategory('category', function (formlyCategory, metricCategory, ctx) {
+                formlyCategory.templateOptions.wrapperClass = 'text-box';
+                formlyCategory.wrapper = 'category';
                 return formlyCategory;
             }));
 
@@ -69,8 +72,8 @@ angular.module('engine.document')
             this.categoryCondition = ConditionBuilder(categoryCondition);
             this.categoryCustomizer = categoryBuilder;
 
-            this.categoryWrapper = 'category';
-            this.categoryWrapperCSS = 'text-box';
+            this.categoryWrapper = 'default';
+            this.categoryWrapperCSS = '';
         }
 
         DocumentCategory.prototype.matches = function matches(metricCategory) {

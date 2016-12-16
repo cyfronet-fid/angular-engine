@@ -522,8 +522,6 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
             formlyCategory.templateOptions.wrapperClass = '';
             formlyCategory.wrapper = 'row';
             formlyCategory.data.$process = function () {
-                $log.debug('calling $process on DocumentCategory', formlyCategory);
-
                 // TODO INCLUDE OPERATOR DEFINED WIDTHS
                 // _.find(formlyCategory.fieldGroup, function (field) {
                 //     return field.templateOptions.css == 'col-md-6';
@@ -536,6 +534,12 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
                     field.templateOptions.css = 'col-md-' + size;
                 });
             };
+            return formlyCategory;
+        }));
+
+        this.register(new DocumentCategory('category', function (formlyCategory, metricCategory, ctx) {
+            formlyCategory.templateOptions.wrapperClass = 'text-box';
+            formlyCategory.wrapper = 'category';
             return formlyCategory;
         }));
     };
@@ -553,8 +557,8 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
         this.categoryCondition = ConditionBuilder(categoryCondition);
         this.categoryCustomizer = categoryBuilder;
 
-        this.categoryWrapper = 'category';
-        this.categoryWrapperCSS = 'text-box';
+        this.categoryWrapper = 'default';
+        this.categoryWrapperCSS = '';
     }
 
     DocumentCategory.prototype.matches = function matches(metricCategory) {
@@ -955,6 +959,12 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
     };
     DocumentForm.prototype._setSteps = function setSteps(steps) {
         this.steps = steps;
+
+        _.forEach(this.steps.getSteps(), function (step) {
+            _.forEach(step.metricCategories, function (metricCategory) {
+                if (_.isArray(metricCategory.visualClass)) metricCategory.visualClass.push('category');else metricCategory.visualClass = ['category'];
+            });
+        });
     };
     DocumentForm.prototype.init = function init(document, options, steps) {
         _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);
@@ -1845,7 +1855,8 @@ angular.module('engine.formly').provider('$engineFormly', function () {
         category: '/src/formly/wrappers/templates/category.tpl.html',
         label: '/src/formly/wrappers/templates/label.tpl.html',
         hasError: '/src/formly/wrappers/templates/has-error.tpl.html',
-        step: '/src/formly/wrappers/templates/step.tpl.html'
+        step: '/src/formly/wrappers/templates/step.tpl.html',
+        default: '/src/formly/wrappers/templates/default.tpl.html'
     };
 
     this.templateUrls = _typeTemplateUrls;
@@ -2035,6 +2046,10 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly) {
         name: 'step',
         templateUrl: $engineFormly.wrapperUrls['step']
     });
+    formlyConfig.setWrapper({
+        name: 'default',
+        templateUrl: $engineFormly.wrapperUrls['default']
+    });
 });
 'use strict';
 
@@ -2207,6 +2222,9 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/wrappers/templates/default.tpl.html", "<div class=\"{{::options.to.categoryWrapperCSS}}\">\n    <formly-transclude></formly-transclude>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/has-error.tpl.html", "<div class=\"form-group {{::to.css}}\" ng-class=\"{'has-error': showError }\">\n  <formly-transclude></formly-transclude>\n  <div ng-if=\"showError\" class=\"error-messages\">\n    <div ng-repeat=\"(key, error) in fc.$error\" class=\"message help-block ng-binding ng-scope\" translate>{{options.validation.messages[key](fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n  <!-- after researching more about ng-messages integrate it\n  <div ng-messages=\"fc.$error\" ng-if=\"showError\" class=\"error-messages\">\n    <div ng-message=\"{{ ::name }}\" ng-repeat=\"(name, message) in ::options.validation.messages\" class=\"message help-block ng-binding ng-scope\" translate>{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>\n  </div>\n  -->\n</div>\n");

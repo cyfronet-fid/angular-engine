@@ -134,6 +134,15 @@ angular.module('engine.document')
     };
     DocumentForm.prototype._setSteps = function setSteps(steps) {
         this.steps = steps;
+
+        _.forEach(this.steps.getSteps(), function (step) {
+            _.forEach(step.metricCategories, function (metricCategory) {
+                if(_.isArray(metricCategory.visualClass))
+                    metricCategory.visualClass.push('category');
+                else
+                    metricCategory.visualClass = ['category'];
+            })
+        })
     };
     DocumentForm.prototype.init = function init(document, options, steps) {
         _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);

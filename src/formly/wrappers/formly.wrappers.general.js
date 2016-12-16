@@ -20,4 +20,8 @@ angular.module('engine.formly')
             name: 'step',
             templateUrl: $engineFormly.wrapperUrls['step']
         });
+        formlyConfig.setWrapper({
+            name: 'default',
+            templateUrl: $engineFormly.wrapperUrls['default']
+        });
     });

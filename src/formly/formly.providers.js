@@ -16,7 +16,8 @@ angular.module('engine.formly')
         category: '/src/formly/wrappers/templates/category.tpl.html',
         label: '/src/formly/wrappers/templates/label.tpl.html',
         hasError: '/src/formly/wrappers/templates/has-error.tpl.html',
-        step: '/src/formly/wrappers/templates/step.tpl.html'
+        step: '/src/formly/wrappers/templates/step.tpl.html',
+        default: '/src/formly/wrappers/templates/default.tpl.html'
     };
 
     this.templateUrls = _typeTemplateUrls;
