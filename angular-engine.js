@@ -12,6 +12,24 @@ angular.module('engine.document', ['ngRoute']);
 angular.module('engine.steps', ['ngRoute']);
 'use strict';
 
+/**
+ * @ngdoc overview
+ * @name engine
+ *
+ * @requires engine
+ * @requires engine.list
+ * @requires engine.document
+ * @requires engine.dashboard
+ * @requires engine.steps
+ *
+ * @description
+ * Base module for angular-engine front end package
+ *
+ * @example
+ * test
+ *
+ *
+ */
 angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']);
 ;'use strict';
 
@@ -1426,7 +1444,15 @@ angular.module('engine').provider('$engineConfig', function () {
         },
         resources: _resourcesCount
     };
-}).provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider) {
+})
+/**
+ * @ngdoc service
+ * @name engine.provider:$engineProvider
+ *
+ * @description
+ * Basic means of configuration
+ */
+.provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider) {
     var self = this;
 
     var dashboards = [];
@@ -1461,12 +1487,17 @@ angular.module('engine').provider('$engineConfig', function () {
     };
 
     /**
+     * @ngdoc method
+     * @name dashboard
+     * @methodOf engine.provider:$engineProvider
+     *
+     * @description
      * Register dashboard in angular-engine, angular URL will be generated queries to declared documents
      * will be displayed using column definitions in those declarations.
      *
      * @param {string} url Angular url to created dashboard
      * @param {Array} queries list of query objects
-     * @param {Object} options
+     * @param {Object} options Dashboard options
      */
     this.dashboard = function (url, queries, options) {
         var _options = {
@@ -1494,6 +1525,11 @@ angular.module('engine').provider('$engineConfig', function () {
     };
 
     /**
+     * @ngdoc method
+     * @name document
+     * @methodOf engine.provider:$engineProvider
+     *
+     * @description
      * Register document in angular-engine, angular URLs will be generated, and document will become available for
      * inclusion in other documents via ```queried_list``` metric
      *
@@ -1541,6 +1577,11 @@ angular.module('engine').provider('$engineConfig', function () {
     };
 
     /**
+     * @ngdoc
+     * @name subdocument
+     * @methodOf engine.provider:$engineProvider
+     *
+     * @description
      * Register subdocument in angular-engine, subdocument will become available for
      * inclusion in other documents via ```queried_list``` metric
      *
@@ -1550,7 +1591,9 @@ angular.module('engine').provider('$engineConfig', function () {
      * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
      * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
      * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
-     * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
+     * @param {Object} options Document options object conforming to format described below:
+     *
+     *
      */
     this.subdocument = function (documentModelType, query, options) {
         options = angular.merge(angular.copy(_defaultDocumentOptions), options);
@@ -1569,14 +1612,38 @@ angular.module('engine').provider('$engineConfig', function () {
 
     var _baseUrl = '';
 
+    /**
+     * @ngdoc method
+     * @name setBaseUrl
+     * @methodOf engine.provider:$engineProvider
+     *
+     * @description
+     * Sets base url (if engine backend is hosted on another host, or is available not from root of
+     * the application but from subdirectory (eg. /engine/...)
+     *
+     * Default is `''`, which is usually sufficient for standard deployments
+     *
+     * @param {String} url new url prefix which will be added to all engine backend calls
+     */
     this.setBaseUrl = function (url) {
         _baseUrl = url;
     };
 
     var _visibleDocumentFields = [{ name: 'id', caption: 'ID', type: 'link' }, { name: 'name', caption: 'Name' }];
 
-    this.setDocumentFields = function (document_fields) {
-        _visibleDocumentFields = document_fields;
+    /**
+     * @ngdoc method
+     * @name setDocumentFields
+     * @methodOf engine.provider:$engineProvider
+     *
+     * @description
+     * Sets default visible document fields
+     *
+     * @param {Array} documentFields array of new document fields, which will be added to document list
+     * views (apart from all metrics)
+     */
+    this.setDocumentFields = function (documentFields) {
+        _visibleDocumentFields = documentFields;
     };
 
     this.addDocumentFields = function (document_fields) {
@@ -1594,7 +1661,14 @@ angular.module('engine').provider('$engineConfig', function () {
         self._debug = false;
     };
 
-    this.$get = function ($engineFormly, engineMetricCategories) {
+    /**
+     * @ngdoc service
+     * @name engine.service:$engine
+     *
+     * @description
+     * Basic module
+     */
+    this.$get = function ($engineFormly) {
         var _engineProvider = self;
 
         return new function ($rootScope, $log) {

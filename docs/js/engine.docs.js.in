@@ -1,0 +1,21 @@
+'use strict';
+
+var ENGINE_VERSION = '@@__ENGINE_VERSION__';
+var ENGINE_BACKEND_VERSION = '@@__ENGINE_BACKEND_VERSION__';
+
+angular.module('docsApp').directive('engineVersion', function() {
+    return {
+        template: '{{version}}',
+        controller: function ($scope) {
+            $scope.version = ENGINE_VERSION;
+        }
+    };
+});
+angular.module('docsApp').directive('engineBackendVersion', function() {
+    return {
+        template: '{{backendVersion}}',
+        controller: function ($scope) {
+            $scope.backendVersion = ENGINE_BACKEND_VERSION;
+        }
+    };
+});

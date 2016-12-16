@@ -1,7 +1,7 @@
 module.exports = {
     paths: {
         public: '',
-        watched: ['src']
+        watched: ['src', 'docs', 'Gruntfile.js']
     },
     modules: {
         definition: false,
@@ -28,7 +28,7 @@ module.exports = {
         }
     },
     conventions: {
-        ignored: ['node_modules/**', 'bower_components/**']
+        ignored: ['node_modules/**', 'bower_components/**', 'src/engine.version.js.in', 'src/engine.version.js', 'docs/js/engine.docs.js.in', 'docs/js/engine.docs.js']
     },
     plugins: {
         //babel: {presets: ['es2015']},
@@ -38,6 +38,10 @@ module.exports = {
         // ng_templates: {
         //     module: 'engine.templates'
         // },
+        afterBrunch: [
+            // 'grunt ngdocs > /dev/null',
+            // 'grunt string-replace'
+        ],
         angularTemplate: {
             moduleName: 'engine',
             pathToSrc: function(x) { return '/'+x },

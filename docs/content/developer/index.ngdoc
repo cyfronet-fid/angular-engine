@@ -1,0 +1,16 @@
+@ngdoc overview
+@name developer
+@description
+
+<div class="alert alert-info">
+    This is documentation for angular-engine <strong engine-version></strong>.<br/>
+    Compatibile backend version of agreemount.engine: <strong engine-backend-version></strong>.
+</div>
+
+# Angular agreemount.engine Developers Guide
+
+<div class="alert alert-info">
+    This documentation has been generated for angular-engine <strong engine-version></strong>
+</div>
+
+Developer documentation has been pushed further down on the list of priorities. In the future it may change.

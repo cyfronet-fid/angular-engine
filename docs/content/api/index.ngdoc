@@ -1,0 +1,17 @@
+@ngdoc overview
+@name api
+@description
+
+<div class="alert alert-info">
+    This is documentation for angular-engine <strong engine-version></strong>.<br/>
+    Compatibile backend version of agreemount.engine: <strong engine-backend-version></strong>.
+</div>
+
+# Angular agreemount.engine API Docs
+Welcome to the Angular - agreemount.engine API docs page. These pages contain the AngularJS reference materials for version <strong engine-version></strong>.
+
+This is *end user* documentation, for development go {@link #/developer here}
+
+<div class="alert alert-info">
+    This package is work in progress, with frequent changes to the internal API. Public API changes with each
+</div>

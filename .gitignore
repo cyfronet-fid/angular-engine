@@ -55,3 +55,5 @@ fabric.properties
 /npm-debug.log
 /key.pem
 /cert.pem
+/build/
+/docs/js/engine.docs.js
