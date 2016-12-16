@@ -110,7 +110,7 @@ angular.module('engine.list')
     $scope.onCreateDocument = function() {
         if($scope.options.subdocument == true)
             DocumentModal(undefined, $scope.options, self.parentDocument, function () {
-                $scope.documents = engineQuery($scope.query, self.parentDocument);
+                $scope.documents = engineQuery($scope.query, self.parentDocument.id);
             });
         else
             $location.path($scope.genDocumentLink('new'));
