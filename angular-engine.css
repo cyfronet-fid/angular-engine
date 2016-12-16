@@ -13,3 +13,13 @@
     box-shadow: none;
     padding: 0px;
 }
+
+.eng-loading-box {
+    text-align: center;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.eng-loading-box i {
+    font-size: 20px;
+}

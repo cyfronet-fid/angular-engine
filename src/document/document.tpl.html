@@ -1,4 +1,8 @@
-<div>
+<div class="eng-loading-box" ng-show="$ctrl.$ready.$$state.status === 0">
+    <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+</div>
+
+<div ng-show="$ctrl.$ready.$$state.status === 1" ng-cloak>
     <form ng-submit="$ctrl.onSubmit()" name="$ctrl.documentForm.formlyState" novalidate>
         <formly-form model="$ctrl.document" fields="$ctrl.documentForm.formStructure" class="horizontal"
                      options="$ctrl.documentForm.formlyOptions" form="$ctrl.documentForm.formlyState">
@@ -8,4 +12,8 @@
                                      steps="$ctrl.stepList" step="$ctrl.step" class="btn-group"></engine-document-actions>
         </formly-form>
     </form>
+</div>
+
+<div ng-show="!$ctrl.$ready.$$state.status === 2" ng-cloak>
+    REJECTED
 </div>

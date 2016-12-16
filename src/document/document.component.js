@@ -113,7 +113,9 @@ angular.module('engine.document')
 
     });
 
-    $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(this.postinitDocument).then(function () {
+    this.$ready = $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(this.postinitDocument).then(function () {
         $log.debug('engineDocumentCtrl initialized: ', self);
+        console.log(self.$ready.$$state.status);
     });
+    console.log(this.$ready.$$state.status);
 });
