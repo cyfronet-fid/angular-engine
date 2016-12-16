@@ -31,6 +31,15 @@ angular.module('engine.formly')
         });
 
         formlyConfig.setType({
+                name: 'radioGroup',
+                templateUrl: $engineFormly.templateUrls['radioGroup'],
+                wrapper: ['engineLabel', 'engineHasError'],
+                defaultOptions: {
+                    noFormControl: false
+                }
+        });
+
+        formlyConfig.setType({
                 name: 'select',
                 templateUrl: $engineFormly.templateUrls['select'],
                 wrapper: ['engineLabel', 'engineHasError'],

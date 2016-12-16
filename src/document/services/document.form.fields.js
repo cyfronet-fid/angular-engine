@@ -70,7 +70,7 @@ angular.module('engine.document')
         }));
 
         this.register(new DocumentField('radioGroup', function (field, metric, ctx) {
-            field.type = 'radio';
+            field.type = 'radioGroup';
             field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
             return field;

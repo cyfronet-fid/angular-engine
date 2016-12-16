@@ -1,0 +1,12 @@
+<div>
+    <div class="pr-category btn-group row row-compensate">
+            <label class="btn btn-default" ng-repeat="(key, option) in to.options">
+                <input type="radio"
+                       id="{{id + '_'+ $index}}"
+                       tabindex="0"
+                       ng-value="option[to.valueProp || 'value']"
+                       ng-model="model[options.key]">
+                <span class="radio-desc" translate>{{option[to.labelProp || 'name']}}</span>
+            </label>
+    </div>
+</div>

@@ -680,7 +680,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         }));
 
         this.register(new DocumentField('radioGroup', function (field, metric, ctx) {
-            field.type = 'radio';
+            field.type = 'radioGroup';
             field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
             return field;
@@ -1737,6 +1737,7 @@ angular.module('engine.formly').provider('$engineFormly', function () {
         select: '/src/formly/types/templates/select.tpl.html',
         checkbox: '/src/formly/types/templates/checkbox.tpl.html',
         radio: '/src/formly/types/templates/radio.tpl.html',
+        radioGroup: '/src/formly/types/templates/radioGroup.tpl.html',
         textarea: '/src/formly/types/templates/textarea.tpl.html',
         datepicker: '/src/formly/types/templates/datepicker.tpl.html',
         multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html'
@@ -1848,6 +1849,15 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
     formlyConfig.setType({
         name: 'radio',
         templateUrl: $engineFormly.templateUrls['radio'],
+        wrapper: ['engineLabel', 'engineHasError'],
+        defaultOptions: {
+            noFormControl: false
+        }
+    });
+
+    formlyConfig.setType({
+        name: 'radioGroup',
+        templateUrl: $engineFormly.templateUrls['radioGroup'],
         wrapper: ['engineLabel', 'engineHasError'],
         defaultOptions: {
             noFormControl: false
@@ -2086,6 +2096,9 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/radio.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/types/templates/radioGroup.tpl.html", "<div>\n    <div class=\"pr-category btn-group row row-compensate\">\n            <label class=\"btn btn-default\" ng-repeat=\"(key, option) in to.options\">\n                <input type=\"radio\"\n                       id=\"{{id + '_'+ $index}}\"\n                       tabindex=\"0\"\n                       ng-value=\"option[to.valueProp || 'value']\"\n                       ng-model=\"model[options.key]\">\n                <span class=\"radio-desc\" translate>{{option[to.labelProp || 'name']}}</span>\n            </label>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/select.tpl.html", "<select class=\"form-control\" ng-model=\"model[options.key]\"></select>");

@@ -7,6 +7,7 @@ angular.module('engine.formly')
         select: '/src/formly/types/templates/select.tpl.html',
         checkbox: '/src/formly/types/templates/checkbox.tpl.html',
         radio: '/src/formly/types/templates/radio.tpl.html',
+        radioGroup: '/src/formly/types/templates/radioGroup.tpl.html',
         textarea: '/src/formly/types/templates/textarea.tpl.html',
         datepicker: '/src/formly/types/templates/datepicker.tpl.html',
         multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html'
