@@ -54,6 +54,7 @@ angular.module('engine.document')
             this.register(new DocumentCategory('category', function (formlyCategory, metricCategory, ctx) {
                 formlyCategory.templateOptions.wrapperClass = 'text-box';
                 formlyCategory.wrapper = 'category';
+
                 return formlyCategory;
             }));
 
@@ -80,6 +81,15 @@ angular.module('engine.document')
             return this.categoryCondition(metricCategory);
         };
 
+        DocumentCategory.hasMetrics = function hasMetrics(fieldGroup) {
+            return _.find(fieldGroup, function (field) {
+                if(field.model)
+                    return true;
+                if(field.fieldGroup != null)
+                    return DocumentCategory.hasMetrics(field.fieldGroup);
+            }) != null;
+        };
+
         DocumentCategory.prototype.makeCategory = function makeCategory(metricCategory, ctx) {
             //**IMPORTANT NOTE** metricCategory.children should not be parsed here
             //DocumentCategory is parsing only given category, taking care of category hierarchy is part
@@ -93,7 +103,9 @@ angular.module('engine.document')
                 },
                 fieldGroup: null,
                 wrapper: this.categoryWrapper,
-                data: {}
+                data: {
+                    hasMetrics: function(){return DocumentCategory.hasMetrics(formlyCategory.fieldGroup);}
+                }
             };
 
             return this.categoryCustomizer(formlyCategory, metricCategory, ctx);

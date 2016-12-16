@@ -540,6 +540,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
         this.register(new DocumentCategory('category', function (formlyCategory, metricCategory, ctx) {
             formlyCategory.templateOptions.wrapperClass = 'text-box';
             formlyCategory.wrapper = 'category';
+
             return formlyCategory;
         }));
     };
@@ -565,6 +566,13 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
         return this.categoryCondition(metricCategory);
     };
 
+    DocumentCategory.hasMetrics = function hasMetrics(fieldGroup) {
+        return _.find(fieldGroup, function (field) {
+            if (field.model) return true;
+            if (field.fieldGroup != null) return DocumentCategory.hasMetrics(field.fieldGroup);
+        }) != null;
+    };
+
     DocumentCategory.prototype.makeCategory = function makeCategory(metricCategory, ctx) {
         //**IMPORTANT NOTE** metricCategory.children should not be parsed here
         //DocumentCategory is parsing only given category, taking care of category hierarchy is part
@@ -578,7 +586,11 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
             },
             fieldGroup: null,
             wrapper: this.categoryWrapper,
-            data: {}
+            data: {
+                hasMetrics: function hasMetrics() {
+                    return DocumentCategory.hasMetrics(formlyCategory.fieldGroup);
+                }
+            }
         };
 
         return this.categoryCustomizer(formlyCategory, metricCategory, ctx);
@@ -2221,7 +2233,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/textarea.tpl.html", "<textarea class=\"form-control\" ng-model=\"model[options.key]\"></textarea>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
+  $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\" ng-show=\"options.data.hasMetrics()\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/default.tpl.html", "<div class=\"{{::options.to.categoryWrapperCSS}}\">\n    <formly-transclude></formly-transclude>\n</div>");
