@@ -57,3 +57,4 @@ fabric.properties
 /cert.pem
 /build/
 /docs/js/engine.docs.js
+/src/engine.version.js
