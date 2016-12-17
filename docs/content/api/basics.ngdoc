@@ -1,0 +1,6 @@
+@ngdoc overview
+@name Basics
+@description
+
+In order to integrate `angular-engine` with backend package agreemount.engine you need to write configuration in your
+`app.config` function.
