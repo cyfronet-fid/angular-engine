@@ -22,7 +22,7 @@ module.exports = function (grunt) {
     grunt.initConfig({
         ngdocs: {
             options: {
-                dest: 'build',
+                dest: 'build/<%= pkg.version %>',
                 startPage: '/public',
                 title: 'Angular Engine integration',
                 scripts: ['docs/js/engine.docs.js'],
@@ -69,6 +69,6 @@ module.exports = function (grunt) {
         clean: ['build']
     });
 
-    grunt.registerTask('default', ['clean', 'string-replace', 'ngdocs', 'connect']);
+    grunt.registerTask('default', ['clean', 'string-replace', 'ngdocs']);
 
 };
