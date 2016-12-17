@@ -15,3 +15,15 @@ This is *end user* documentation, for development go {@link #/developer here}
 <div class="alert alert-info">
     This package is work in progress, with frequent changes to the internal API. Public API changes with each
 </div>
+
+
+As of now `angular-engine` package is available only via bower, to install it type:
+
+<pre>
+bower install angular-engine
+</pre>
+
+As written above, this version of angular-engine works with agreemount.engine version <span engine-backend-version></span>
+or above, make sure to update your `pom.xml` accordingly.
+
+To get you started with configuring your application go {@link basics here}

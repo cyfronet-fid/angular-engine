@@ -23,19 +23,19 @@ module.exports = function (grunt) {
         ngdocs: {
             options: {
                 dest: 'build',
-                startPage: '/api',
+                startPage: '/public',
                 title: 'Angular Engine integration',
                 scripts: ['docs/js/engine.docs.js'],
                 html5Mode: false,
-                template: 'docs/templates/index.tpl.html'
+                template: 'docs/templates/index.tpl.html',
             },
-            api: {
-                src: ['src/engine.module.js', 'src/engine.provider.js', 'docs/content/api/index.ngdoc'],
+            public: {
+                src: ['src/engine.provider.js', 'docs/content/api/**.ngdoc'],
                 title: 'Public API',
                 api: false
             },
             developer: {
-                src: ['docs/content/developer/index.ngdoc', 'src/**.js'],
+                src: ['docs/content/developer/**.ngdoc', 'src/**.js'],
                 title: 'Developer Guide',
                 api: true
             }
