@@ -3,7 +3,7 @@ var fs = require('fs');
 module.exports = {
     paths: {
         public: '',
-        watched: ['src', 'docs/js/src']
+        watched: ['src', 'docs/js/src', 'docs/content', 'docs/templates']
     },
     modules: {
         definition: false,
