@@ -56,5 +56,7 @@ fabric.properties
 /key.pem
 /cert.pem
 /build/
+#/docs/js/engine.docs.js
+#/src/engine.version.js
+/docs/js/engine.docs.js.map
 /docs/js/engine.docs.js
-/src/engine.version.js

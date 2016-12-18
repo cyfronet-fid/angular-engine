@@ -1922,6 +1922,14 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
+var ENGINE_COMPILATION_DATE = '2016-12-18T21:59:02.565Z';
+var ENGINE_VERSION = '0.6.10';
+var ENGINE_BACKEND_VERSION = '1.0.80';
+
+angular.module('engine').value('version', ENGINE_VERSION);
+angular.module('engine').value('backendVersion', ENGINE_BACKEND_VERSION);
+'use strict';
+
 angular.module('engine.formly').provider('$engineFormly', function () {
     var self = this;
 

@@ -16,8 +16,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-ngdocs');
     grunt.loadNpmTasks('grunt-contrib-connect');
     grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-replace');
-    grunt.loadNpmTasks('grunt-string-replace');
 
     grunt.initConfig({
         ngdocs: {
@@ -40,35 +38,10 @@ module.exports = function (grunt) {
                 api: true
             }
         },
-        'string-replace': {
-            version: {
-                files: {
-                    'src/engine.version.js': 'src/engine.version.js.in',
-                    'docs/js/engine.docs.js': 'docs/js/engine.docs.js.in'
-                },
-                options: {
-                    replacements: [{
-                        pattern: /@@__ENGINE_VERSION__/g,
-                        replacement: '<%= pkg.version %>'
-                    },
-                        {
-                        pattern: /@@__ENGINE_BACKEND_VERSION__/g,
-                        replacement: '<%= metadata.engine_version %>'
-                    }]
-                }
-            }
-        },
         pkg: grunt.file.readJSON('bower.json'),
-        metadata: grunt.file.readJSON('metadata.json'),
-        connect: {
-            options: {
-                keepalive: true
-            },
-            server: {}
-        },
         clean: ['build']
     });
 
-    grunt.registerTask('default', ['clean', 'string-replace', 'ngdocs']);
+    grunt.registerTask('default', ['clean', 'ngdocs']);
 
 };

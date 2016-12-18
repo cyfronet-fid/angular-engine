@@ -22,8 +22,6 @@
     "grunt-contrib-clean": "0.4.1",
     "grunt-contrib-connect": "~0.3.0",
     "grunt-ngdocs": "^0.2.10",
-    "grunt-replace": "^1.0.1",
-    "grunt-string-replace": "^1.3.1",
     "http-server": "^0.9.0",
     "jasmine-core": "^2.4.1",
     "javascript-brunch": "^2.0.0",
@@ -35,6 +33,7 @@
     "ng-annotate-brunch": "~1.7.2",
     "ngdocs": "^0.1.0",
     "protractor": "^4.0.9",
+    "replacement-brunch": "^2.0.4",
     "uglify-js-brunch": "^2.0.0"
   },
   "scripts": {
