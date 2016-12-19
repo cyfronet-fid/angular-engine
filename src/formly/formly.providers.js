@@ -10,7 +10,9 @@ angular.module('engine.formly')
         radioGroup: '/src/formly/types/templates/radioGroup.tpl.html',
         textarea: '/src/formly/types/templates/textarea.tpl.html',
         datepicker: '/src/formly/types/templates/datepicker.tpl.html',
-        multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html'
+        multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html',
+        multiSelect: '/src/formly/types/templates/multiSelect.tpl.html',
+        multiSelectImage: '/src/formly/types/templates/multiSelectImage.tpl.html'
     };
     var _wrapperTemplateUrls = {
         category: '/src/formly/wrappers/templates/category.tpl.html',

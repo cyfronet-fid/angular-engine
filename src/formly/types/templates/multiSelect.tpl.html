@@ -1,0 +1,7 @@
+<div>
+    <div class="radio-box" ng-class="{'radio-box-last': $last, 'radio-box-first': $first, 'radio-box-active': model[options.key] == option.value}"
+         ng-repeat="option in to.options">
+        <input type="checkbox" checklist-model="model[options.key]" checklist-value="option.value">
+        <span class="radio-desc">{{::option.name}}</span>
+    </div>
+</div>

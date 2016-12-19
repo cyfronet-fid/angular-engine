@@ -38,6 +38,22 @@ angular.module('engine.formly')
                     noFormControl: false
                 }
         });
+        formlyConfig.setType({
+                name: 'multiSelect',
+                templateUrl: $engineFormly.templateUrls['multiSelect'],
+                wrapper: ['engineLabel', 'engineHasError'],
+                defaultOptions: {
+                    noFormControl: false
+                }
+        });
+        formlyConfig.setType({
+                name: 'multiSelectImage',
+                templateUrl: $engineFormly.templateUrls['multiSelectImage'],
+                wrapper: ['engineLabel', 'engineHasError'],
+                defaultOptions: {
+                    noFormControl: false
+                }
+        });
 
         formlyConfig.setType({
                 name: 'select',

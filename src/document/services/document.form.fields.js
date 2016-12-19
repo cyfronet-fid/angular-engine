@@ -65,8 +65,22 @@ angular.module('engine.document')
                 return field;
             }));
 
-            this.register(new DocumentField('select', function (field, metric, ctx) {
+            this.register(new DocumentField({visualClass: 'select', inputType: 'SELECT'}, function (field, metric, ctx) {
                 field.type = 'select';
+                field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+                return field;
+            }));
+
+            this.register(new DocumentField({visualClass: 'select', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
+                field.type = 'multiSelect';
+                field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+                return field;
+            }));
+
+            this.register(new DocumentField({visualClass: '@imgMultiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
+                field.type = 'multiSelectImage';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
                 return field;
