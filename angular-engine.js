@@ -25,13 +25,9 @@ angular.module('engine.steps', ['ngRoute']);
  * @description
  * Base module for angular-engine front end package
  *
- * @example
- * test
- *
- *
  */
 angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']);
-;'use strict';
+'use strict';
 
 angular.module('engine.formly', []);
 'use strict';
@@ -1536,14 +1532,130 @@ angular.module('engine').provider('$engineConfig', function () {
      * **NOTE** The only difference between this method and $engineProvider.subdocument(...) is the fact, that ngRoutes are
      * generated for each registered document.
      *
+     *
+     * <pre>
+     *   var app = angular.module('engine.config.example', ['engine']);
+     *             //angular-engine is entirely configured
+     *             //by $engineProvider, which means
+     *             //that it needs to be run in the configuration phase;
+     *             app.config(function($engineProvider) {
+     *                //To add document use .document
+     *                $engineProvider.document(
+     *                    //documentModelName, necessary to link frontend
+     *                    //document definitions to backend ones
+     *                    'openCall',
+     *                    //list url
+     *                    '/opencall',
+     *                    //document url, must contain :id tag
+     *                    '/opencall/:id',
+     *                    //list of queries displayed after navigating to list url
+     *                    ['MyOpenCalls'],
+     *                    //options
+     *                    {
+     *                        //json fulfilling requirements of
+     *                        //the agreemount.engine
+     *                        //for document creation / metrics querying
+     *                        documentJSON: {
+     *                            "states": {
+     *                                "documentType": "openCall"
+     *                            },
+     *                            "metrics": {}
+     *                        },
+     *                        //name of the resource, will be shown
+     *                        //in some labels by default
+     *                        //eg. CREATE <name> button, etc.
+     *                        name: 'OPENCALL',
+     *                        //specific options for list view
+     *                        list: {
+     *                            //columns visible in table view
+     *                            //for this document
+     *                            //if ommited all document metrics
+     *                            //will be shown (which in most cases
+     *                            //will clutter view to great extent)
+     *                            columns: [
+     *                                {name: 'id'},
+     *                                {name: 'name'},
+     *                                {name: 'author'},
+     *                                {name: 'beamlineChoice'},
+     *                                {name: 'states.documentState'},
+     *                            ],
+     *                            //Caption shown in list view, will be translated
+     *                            caption: 'OPENCALL LIST',
+     *                            //Create button label, will be translated
+     *                            createButtonLabel: 'createOpenCall'
+     *                        },
+     *                        //specific options for document view
+     *                        document: {
+     *                            //define form steps for this document
+     *                            steps: [
+     *                                {name: 'GENEAL',
+     *                                 categories: ['beamlineCategory',
+     *                                              'openCallForm']}
+     *                            ]
+     *                        },
+     *                        summary: false
+     *                });
+     *
+     *            });
+     * </pre>
+     *
      * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
+     *
      * @param {string} listUrl url to list, which will be added to ngRoute
      * example: ```/simple-document/:id```
+     *
      * @param {string} documentUrl url to document, which will be added to ngRoute, has to contain ```:id``` part
      * example: ```/simple-document/:id```
+     *
      * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
-     * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
-     * @param {object} options Document options object conforming to format set by ```_apiCheck.documentOptions```
+     * if argument is a string it will be treated as a group **query category** and list of queries will be generated from its children
+     *
+     * @param {object} options Document options object containing all (if not stated otherwise) below attributes:
+     *
+     * **documentJSON**: {Object}, json object, which will be send in requests to agreemount.engine when asking for
+     * metrics, actions, etc. Especially when document does not exist (before saving), make sure that this
+     * Object satisfies all backend constraints
+     *
+     * **name**: {String}, name of the document type, will be shown on different views, will be translated
+     *
+     * **list** {Object}, specific options for list view, must contain below attributes (if not stated otherwise)
+     *
+     *    * **columns**: {Array}, *Optional*, if not specified all document metrics will be displayed.
+     *      Every element in the array should be object containing 'name' attribute which corresponds to
+     *      either document property, or document metric. Dotted expression to access nested properties are allowed:
+     *      <pre>{name: 'state.documentState'}</pre>
+     *      additional properties which can be provided:
+     *
+     *      * **caption** {String} if set will be displayed in the column header row, will be translated
+     *
+     *      * **type** {String, one of: ['link', 'text', 'date']} specifies what type of data is stored in this
+     *      document field, will be formatted accordingly. 'link' field will be formatted as text, but will be wrapped
+     *      in `<a>` tag allowing navigation to the selected document.
+     *
+     *
+     *
+     *    * **caption**: {String}, *Optional* Caption displayed on top of the list view, will be translated
+     *
+     * **document** {Object}, specific options for document view must contain below attributes (if not stated otherwise)
+     *
+     *    * **steps** {Array}, Steps on the document form. At least one step must be specified. Every element
+     *    of the array must be {Object} containing following fields:
+     *
+     *      * **name** {String} Displayed field caption, will be translated
+     *      * **categories** {Array|String}, agreemount.engine metric-categories which will be displayed in this step.
+     *      If this field is a {String} it will be interpreted as metric-category containing children, in which case
+     *      those children will be actual categories diplayied in this step, if this field is an {Array} supplied
+     *      metric-categories will be used directly.
+     *
+     *    * **showValidationButton** {Boolean}, *Optional*, default `true` if true shows 'Validate' button at
+     *    the end of document form
+     *
+     *    * **summary** {Boolean}, *Optional*, default `true` if true adds additional step to document form, which
+     *    will contain non editable document summary. **(NOT IMPLEMENTED YET)**
+     *
+     * For example object see this method's description.
+     *
+     *
      */
     this.document = function (documentModelType, listUrl, documentUrl, query, options) {
         options = angular.merge(angular.copy(_defaultDocumentOptions), options);
@@ -1585,13 +1697,14 @@ angular.module('engine').provider('$engineConfig', function () {
      * Register subdocument in angular-engine, subdocument will become available for
      * inclusion in other documents via ```queried_list``` metric
      *
-     * **NOTE** The only difference between this method and $engineProvider.document(...) is the fact, that ngRoutes are
-     * **not** generated for each registered subdocument.
+     * **NOTE** The only difference between this method and {@link engine.privider:$engineProvider#methods_document $engineProvider.document(...)}
+     * is the fact, that ngRoutes are **not** generated for each registered subdocument.
      *
      * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
      * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
      * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
-     * @param {Object} options Document options object conforming to format described below:
+     * @param {Object} options Document options object conforming to format described in
+     * {@link engine.privider:$engineProvider#methods_document $engineProvider.document}
      *
      *
      */
@@ -1666,7 +1779,10 @@ angular.module('engine').provider('$engineConfig', function () {
      * @name engine.service:$engine
      *
      * @description
-     * Basic module
+     * Allows some lower level interaction with angular-engine.
+     * In normal setup calling eny of it's methods should not be required.
+     * (If you want to just use angular-engine see {@link engine.provider:$engineProvider $engineProvider}
+     *
      */
     this.$get = function ($engineFormly) {
         var _engineProvider = self;
@@ -1698,6 +1814,15 @@ angular.module('engine').provider('$engineConfig', function () {
                 return documents_d[documentModelId];
             };
 
+            /**
+             * @ngdoc method
+             * @name enableDebug
+             * @methodOf engine.service:$engine
+             *
+             * @description
+             * Enables debug output for application.
+             *
+             */
             this.enableDebug = function () {
                 _engineProvider._debug = true;
                 $rootScope.$on('engine.common.error', function (event, errorEvent) {
@@ -1705,18 +1830,32 @@ angular.module('engine').provider('$engineConfig', function () {
                 });
             };
 
+            /**
+             * @ngdoc method
+             * @name disableDebug
+             * @methodOf engine.service:$engine
+             *
+             * @description
+             * Disables debug output for application.
+             *
+             */
             this.disableDebug = function () {
                 _engineProvider._debug = false;
             };
 
             /**
+             * @ngdoc method
+             * @name pathToDocument
+             * @methodOf engine.service:$engine
+             *
+             * @description
              * Returns path to the document with given ```documentId``` and type included in
              * ```options.document.documentUrl```
              *
-             * @param options Options of the document (options with which document has been registrated using
+             * @param {Object} options Options of the document (options with which document has been registrated using
              * ```$engineProvider.document(...)```
-             * @param {object|string} documentId id of the document to which path should be generated
-             * @returns {string} angular URL to given document form
+             * @param {Object} documentId id of the document to which path should be generated
+             * @returns {String} angular URL to given document form
              */
             this.pathToDocument = function (options, documentId) {
                 _apiCheck([_apiCheck.documentOptions, _apiCheck.string.optional], arguments);
@@ -1922,8 +2061,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-18T21:59:02.565Z';
-var ENGINE_VERSION = '0.6.10';
+var ENGINE_COMPILATION_DATE = '2016-12-19T00:15:37.522Z';
+var ENGINE_VERSION = '0.6.11';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);

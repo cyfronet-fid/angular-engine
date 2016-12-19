@@ -2,5 +2,90 @@
 @name Basics
 @description
 
-In order to integrate `angular-engine` with backend package agreemount.engine you need to write configuration in your
-`app.config` function.
+# Let's do some integration!
+
+In order to integrate `angular-engine` with backend package agreemount.engine it needs to be configured.
+All configuration is done via {@link engine.provider:$engineProvider $engineProvider}.
+
+The main idea is to use declarative style to define documents which will be handled by the frontend.
+
+Most of the business rules are configured via backend configuration, but in order to properly render these documents
+in frontend you need to provide just a little bit more data, in order to make integration possible.
+
+## Basic resource types
+
+angular-engine lets you define 3 main types of resources which corresponds to appropriate agreemount.engine ones:
+
+* **Document**  - links to agreemount.engine documents. 
+  Created by {@link engine.provider:$engineProvider#methods_document $engineProvider.document}
+* **Subdocument** - links to agreemount.engine documents, but hints angular-engine, that this document will always be part
+  of some other document, and dedicated url should not be generated for it. 
+  Created by {@link engine.provider:$engineProvider#methods_subdocument $engineProvider.subdocument}
+* **Dashboard** - links to agreemount.engine query, allows displaying multiple different queries in a single view. 
+  Created by {@link engine.provider:$engineProvider#methods_dashboard $engineProvider.dashboard}
+
+## Note on translation
+
+All angular-engine texts loaded from agreemount.engine are translated by default, but it's in the hand of the
+developer to configure translation to work properly.
+
+Angular-engine uses [angular-translate](https://github.com/angular-translate/angular-translate) for translation,
+so you need to include it in your app dependencies and configure it in config phase.
+
+<pre>
+angular.module('app', ['pascalprecht.translate', 'engine'])    
+.config(function ($translateProvider) {
+     $translateProvider.useStaticFilesLoader({
+         prefix: '/data/locale-',
+         suffix: '.json'
+     });
+     $translateProvider.preferredLanguage('en');
+})
+</pre>
+
+
+@example
+<doc:example module="engine.config.example">
+    <doc:source>
+        <script>
+            var app = angular.module('engine.config.example', ['engine']);
+
+            //angular-engine is entirely configured by $engineProvider, which means
+            //that it needs to be run in the configuration phase;
+            app.config(function($engineProvider) {
+                //To add document use .document
+                $engineProvider.document('openCall', '/opencall', '/opencall/:id', ['MyOpenCalls'], {
+                    documentJSON: {
+                        "states": {
+                            "documentType": "openCall"
+                        },
+                        "metrics": {}
+                    },
+                    name: 'OPENCALL',
+                    list: {
+                        columns: [
+                            {name: 'id'},
+                            {name: 'name'},
+                            {name: 'author'},
+                            {name: 'beamlineChoice'},
+                            {name: 'states.documentState'},
+                        ],
+                        caption: 'OPENCALL LIST',
+                        createButtonLabel: 'createOpenCall'
+                    },
+                    document: {
+                        steps: [
+                            {name: 'GENEAL', categories: ['beamlineCategory', 'openCallForm']}
+                        ]
+                    },
+                    summary: false
+                });
+
+            });
+        </script>
+
+        <div>
+            <p>Here will be example using backend, but for now static text only</p>
+        </div>
+    </doc:source>
+</doc:example>

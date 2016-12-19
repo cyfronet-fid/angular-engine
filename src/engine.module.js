@@ -11,10 +11,6 @@
  * @description
  * Base module for angular-engine front end package
  *
- * @example
- * test
- *
- *
  */
 angular.module('engine',
     ['ngRoute',
@@ -28,4 +24,4 @@ angular.module('engine',
     'engine.steps',
     'ngMessages',
     'pascalprecht.translate',
-    'engine.document'])
+    'engine.document']);

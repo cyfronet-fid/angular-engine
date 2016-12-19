@@ -60,3 +60,5 @@ fabric.properties
 #/src/engine.version.js
 /docs/js/engine.docs.js.map
 /docs/js/engine.docs.js
+/docs/js/vendor.js
+/docs/js/vendor.js.map
