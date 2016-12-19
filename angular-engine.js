@@ -2061,8 +2061,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-19T00:15:37.522Z';
-var ENGINE_VERSION = '0.6.11';
+var ENGINE_COMPILATION_DATE = '2016-12-19T12:21:16.323Z';
+var ENGINE_VERSION = '0.6.12';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);

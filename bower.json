@@ -1,6 +1,6 @@
 {
   "name": "angular-engine",
-  "version": "0.6.11",
+  "version": "0.6.12",
   "authors": [
     "Michał Szostak <szostak.m.f@gmail.com>"
   ],
@@ -25,6 +25,8 @@
     "test",
     "tests",
     "src",
+    "docs",
+    "build",
     ".bowerrc",
     ".gitignore",
     ".jshintignore",
@@ -39,23 +41,23 @@
     "doc.conf.json"
   ],
   "dependencies": {
-    "angular": "^1.5.8",
+    "angular": "~1.5.8",
     "angular-bootstrap": "^2.2.0",
     "bootstrap": "^3.3.7",
-    "angular-route": "^1.5.8",
-    "angular-resource": "^1.5.8",
-    "angular-animate": "^1.5.8",
+    "angular-route": "~1.5.8",
+    "angular-resource": "~1.5.8",
+    "angular-animate": "~1.5.8",
     "angular-formly": "^8.4.0",
     "api-check": "^7.5.5",
     "underscore": "^1.8.3",
     "angular-translate": "^2.13.1",
-    "angular-messages": "1.5.8",
+    "angular-messages": "~1.5.8",
     "assert": "^0.1.0"
   },
   "devDependencies": {
-    "angular-mocks": "^1.5.8"
+    "angular-mocks": "~1.5.8"
   },
   "resolutions": {
-    "angular": "1.5.8"
+    "angular": "~1.5.8"
   }
 }

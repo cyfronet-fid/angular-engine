@@ -23,9 +23,10 @@ module.exports = function (grunt) {
                 dest: 'build/<%= pkg.version %>',
                 startPage: '/public',
                 title: 'Angular Engine integration',
-                scripts: ['docs/js/engine.docs.js', 'angular-engine.js'],
+                scripts: ['docs/js/vendor.js', 'docs/js/engine.docs.js', 'angular-engine.js'],
                 html5Mode: false,
                 template: 'docs/templates/index.tpl.html',
+                navTemplate: 'docs/templates/navbar.tpl.html'
             },
             public: {
                 src: ['src/engine.provider.js', 'docs/content/api/**.ngdoc'],
