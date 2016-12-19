@@ -18,6 +18,8 @@ angular.module('engine',
     'formly',
     'engine.formly',
     'ui.bootstrap',
+    //required for supporting multiselect metrics
+    'checklist-model',
     'engine.common',
     'engine.list',
     'engine.dashboard',

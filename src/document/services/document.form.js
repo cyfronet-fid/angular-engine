@@ -202,10 +202,12 @@ angular.module('engine.document')
             formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
 
             self.formStructure.push(formStepStructure);
+        });
+        _.forEach(this.steps.getSteps(), function (step) {
             connectFields(step);
         });
 
-        postprocess();
+            postprocess();
 
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 

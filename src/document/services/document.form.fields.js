@@ -36,7 +36,7 @@ angular.module('engine.document')
      * {document: model of the document, options: document options, documentForm: DocumentForm instance}
      */
     DocumentFieldFactory.prototype.makeField = function makeField(metricList, metric, ctx) {
-        for(var i = 0; i < this._fieldTypeList.length; ++i) {
+        for(var i = this._fieldTypeList.length-1; i >= 0; --i) {
             if(this._fieldTypeList[i].matches(metric))
                 return this._fieldTypeList[i].makeField(metricList, metric, ctx);
         }
@@ -124,6 +124,7 @@ angular.module('engine.document')
         this.register(new DocumentField({inputType: 'QUERIED_LIST'}, function (field, metric, ctx) {
             field = {
                 data: {
+                    isMetric: true,
                     categoryId: metric.categoryId,
                     id: metric.id //this is required for DocumentForm
                 },
@@ -171,6 +172,7 @@ angular.module('engine.document')
             type: 'input',
             className: metric.visualClass.join(' '),
             data: {
+                isMetric: true,
                 form: ctx.documentForm,
                 categoryId: metric.categoryId,
                 id: metric.id //this is required for DocumentForm

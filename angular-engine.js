@@ -26,7 +26,9 @@ angular.module('engine.steps', ['ngRoute']);
  * Base module for angular-engine front end package
  *
  */
-angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']);
+angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap',
+//required for supporting multiselect metrics
+'checklist-model', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']);
 'use strict';
 
 angular.module('engine.formly', []);
@@ -511,7 +513,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
     };
 
     DocumentCategoryFactory.prototype.makeCategory = function makeCategory(category, ctx) {
-        for (var i = 0; i < this._categoryTypeList.length; ++i) {
+        for (var i = this._categoryTypeList.length - 1; i >= 0; --i) {
             if (this._categoryTypeList[i].matches(category)) return this._categoryTypeList[i].makeCategory(category, ctx);
         }
 
@@ -580,7 +582,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
 
     DocumentCategory.hasMetrics = function hasMetrics(fieldGroup) {
         return _.find(fieldGroup, function (field) {
-            if (field.model) return true;
+            if (field.data.isMetric) return true;
             if (field.fieldGroup != null) return DocumentCategory.hasMetrics(field.fieldGroup);
         }) != null;
     };
@@ -674,7 +676,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
      * {document: model of the document, options: document options, documentForm: DocumentForm instance}
      */
     DocumentFieldFactory.prototype.makeField = function makeField(metricList, metric, ctx) {
-        for (var i = 0; i < this._fieldTypeList.length; ++i) {
+        for (var i = this._fieldTypeList.length - 1; i >= 0; --i) {
             if (this._fieldTypeList[i].matches(metric)) return this._fieldTypeList[i].makeField(metricList, metric, ctx);
         }
         if (!this.allowDefaultField) {
@@ -759,6 +761,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
             field = {
                 data: {
+                    isMetric: true,
                     categoryId: metric.categoryId,
                     id: metric.id //this is required for DocumentForm
                 },
@@ -806,6 +809,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             type: 'input',
             className: metric.visualClass.join(' '),
             data: {
+                isMetric: true,
                 form: ctx.documentForm,
                 categoryId: metric.categoryId,
                 id: metric.id //this is required for DocumentForm
@@ -1047,6 +1051,8 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
             formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
 
             self.formStructure.push(formStepStructure);
+        });
+        _.forEach(this.steps.getSteps(), function (step) {
             connectFields(step);
         });
 
@@ -2061,8 +2067,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-19T12:21:16.323Z';
-var ENGINE_VERSION = '0.6.12';
+var ENGINE_COMPILATION_DATE = '2016-12-19T14:58:15.108Z';
+var ENGINE_VERSION = '0.6.13';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);

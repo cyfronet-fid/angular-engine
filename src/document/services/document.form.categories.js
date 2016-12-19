@@ -12,7 +12,7 @@ angular.module('engine.document')
         };
 
         DocumentCategoryFactory.prototype.makeCategory = function makeCategory(category, ctx) {
-            for (var i = 0; i < this._categoryTypeList.length; ++i) {
+            for (var i = this._categoryTypeList.length-1; i >= 0; --i) {
                 if (this._categoryTypeList[i].matches(category))
                     return this._categoryTypeList[i].makeCategory(category, ctx);
             }
@@ -83,7 +83,7 @@ angular.module('engine.document')
 
         DocumentCategory.hasMetrics = function hasMetrics(fieldGroup) {
             return _.find(fieldGroup, function (field) {
-                if(field.model)
+                if(field.data.isMetric)
                     return true;
                 if(field.fieldGroup != null)
                     return DocumentCategory.hasMetrics(field.fieldGroup);
