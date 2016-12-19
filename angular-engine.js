@@ -948,7 +948,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
                     if (metricIndex == -1) return;
 
                     console.log('Metric to remove: ', metric, 'index: ', metricIndex);
-
+                    delete self.metricDict[metric.id];
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
                 }
             });
@@ -2068,7 +2068,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-19T15:53:44.227Z';
+var ENGINE_COMPILATION_DATE = '2016-12-19T16:01:17.979Z';
 var ENGINE_VERSION = '0.6.14';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 

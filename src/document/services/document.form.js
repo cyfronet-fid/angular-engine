@@ -78,8 +78,6 @@ angular.module('engine.document')
 
             console.log('New metrics: ', newMetrics);
 
-
-
             //remove metrics, which are not present in metricList
             _.forEach(self.metricList, function (metric) {
                 if(!(metric.id in metricDict)) {
@@ -91,7 +89,7 @@ angular.module('engine.document')
                         return;
 
                     console.log('Metric to remove: ', metric, 'index: ', metricIndex);
-
+                    delete self.metricDict[metric.id];
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
                 }
             });
