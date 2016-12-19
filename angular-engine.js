@@ -929,7 +929,6 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         }
 
         return engineMetric(this.document, function (metricList) {
-            metricList = metricList;
             console.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
 
@@ -942,11 +941,13 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
             //remove metrics, which are not present in metricList
             _.forEach(self.metricList, function (metric) {
                 if (!(metric.id in metricDict)) {
-                    console.log('Metric to remove: ', metric);
 
                     var metricIndex = _.findIndex(self.categoriesDict[metric.categoryId].fieldGroup, function (field) {
                         return field.data.id == metric.id;
                     });
+                    if (metricIndex == -1) return;
+
+                    console.log('Metric to remove: ', metric, 'index: ', metricIndex);
 
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
                 }
@@ -2067,8 +2068,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-19T14:58:15.108Z';
-var ENGINE_VERSION = '0.6.13';
+var ENGINE_COMPILATION_DATE = '2016-12-19T15:53:44.227Z';
+var ENGINE_VERSION = '0.6.14';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);

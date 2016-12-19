@@ -69,7 +69,6 @@ angular.module('engine.document')
         }
 
         return engineMetric(this.document, function (metricList) {
-            metricList = metricList;
             console.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
 
@@ -84,11 +83,14 @@ angular.module('engine.document')
             //remove metrics, which are not present in metricList
             _.forEach(self.metricList, function (metric) {
                 if(!(metric.id in metricDict)) {
-                    console.log('Metric to remove: ', metric);
 
                     var metricIndex = _.findIndex(self.categoriesDict[metric.categoryId].fieldGroup, function (field) {
                         return field.data.id == metric.id;
                     });
+                    if(metricIndex == -1)
+                        return;
+
+                    console.log('Metric to remove: ', metric, 'index: ', metricIndex);
 
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
                 }
