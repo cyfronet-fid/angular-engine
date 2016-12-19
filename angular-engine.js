@@ -748,10 +748,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
             return {
-                data: {
-                    categoryId: metric.categoryId,
-                    id: metric.id //this is required for DocumentForm
-                },
+                data: field.data,
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
                 templateOptions: { ngModel: ctx.document, options: ctx.options }
                 // expressionProperties: {'templateOptions.disabled': false}
@@ -760,11 +757,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
             field = {
-                data: {
-                    isMetric: true,
-                    categoryId: metric.categoryId,
-                    id: metric.id //this is required for DocumentForm
-                },
+                data: field.data,
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
@@ -809,6 +802,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             type: 'input',
             className: metric.visualClass.join(' '),
             data: {
+                position: metric.position,
                 isMetric: true,
                 form: ctx.documentForm,
                 categoryId: metric.categoryId,
@@ -826,10 +820,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                     return scope.options.data.form.disabled;
                 }
             },
-            // validators: {
-            // },
             validation: {
-                // show: true,
                 messages: {
                     required: function required(viewValue, modelValue, scope) {
                         if (scope.to.serverErrors == null || _.isEmpty(scope.to.serverErrors)) return scope.to.label + "_required";
@@ -1067,7 +1058,6 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 
         function parseMetricCategories(step, metricCategories) {
             var formCategories = [];
-
             _.forEach(metricCategories, function (metricCategory) {
 
                 var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, { document: self.document });
@@ -1926,7 +1916,14 @@ angular.module('engine').factory('engineResolve', function () {
 
         return _query.post(documentJSON, callback, errorCallback);
     };
-}).service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log, engineResourceLoader) {
+}).service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log) {
+    var categorySorter = function categorySorter(data, headersGetter, status) {
+        var data = EngineInterceptor.response(data, headersGetter, status);
+        // data = _.sortBy(data, 'position');
+
+        return data;
+    };
+
     var _query = $resource($engineConfig.baseUrl + '/metric-categories', {}, {
         get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
     });
@@ -2068,8 +2065,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-19T16:01:17.979Z';
-var ENGINE_VERSION = '0.6.14';
+var ENGINE_COMPILATION_DATE = '2016-12-19T17:26:10.768Z';
+var ENGINE_VERSION = '0.6.15';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);

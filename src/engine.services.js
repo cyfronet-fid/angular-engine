@@ -54,7 +54,14 @@ angular.module('engine')
             return _query.post(documentJSON, callback, errorCallback);
         }
     })
-    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log, engineResourceLoader) {
+    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log) {
+        var categorySorter = function (data, headersGetter, status) {
+            var data = EngineInterceptor.response(data, headersGetter, status);
+            // data = _.sortBy(data, 'position');
+
+            return data;
+        };
+
         var _query = $resource($engineConfig.baseUrl + '/metric-categories', {}, {
             get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
         });

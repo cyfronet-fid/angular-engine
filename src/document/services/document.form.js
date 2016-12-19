@@ -207,7 +207,7 @@ angular.module('engine.document')
             connectFields(step);
         });
 
-            postprocess();
+        postprocess();
 
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
@@ -217,7 +217,6 @@ angular.module('engine.document')
 
         function parseMetricCategories(step, metricCategories) {
             var formCategories = [];
-
             _.forEach(metricCategories, function (metricCategory) {
 
                 var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, {document: self.document});
