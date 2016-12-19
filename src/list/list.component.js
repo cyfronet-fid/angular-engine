@@ -80,7 +80,9 @@ angular.module('engine.list')
 
         if(column.type) {
             if(column.type == 'date')
-                return '/src/list/cell/date.tpl.html'
+                return '/src/list/cell/date.tpl.html';
+            else if(column.type == 'array')
+                return '/src/list/cell/array.tpl.html';
         }
         return '/src/list/cell/text.tpl.html'
     };

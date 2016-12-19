@@ -2079,8 +2079,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-19T18:55:53.876Z';
-var ENGINE_VERSION = '0.6.16';
+var ENGINE_COMPILATION_DATE = '2016-12-19T19:17:53.085Z';
+var ENGINE_VERSION = '0.6.17';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2389,7 +2389,7 @@ angular.module('engine.list').component('engineDocumentList', {
         }
 
         if (column.type) {
-            if (column.type == 'date') return '/src/list/cell/date.tpl.html';
+            if (column.type == 'date') return '/src/list/cell/date.tpl.html';else if (column.type == 'array') return '/src/list/cell/array.tpl.html';
         }
         return '/src/list/cell/text.tpl.html';
     };
@@ -2510,6 +2510,9 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/step.tpl.html", "<div ng-hide=\"options.data.hide\">\n    <formly-transclude></formly-transclude>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/list/cell/array.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name).join(', ')}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name) | date}}");
