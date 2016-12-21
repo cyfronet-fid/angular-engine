@@ -1,10 +1,13 @@
 #!/bin/bash
-
 # simple script generating all documentation versions
 export PATH=node_modules/.bin:$PATH
 
-first_documented_version='v0.6.11'
+npm install
+
+first_documented_version='v0.6.12'
 start_documenting=0
+
+npm install
 
 for git_tag in `git tag --sort=v:refname`
 do
