@@ -393,10 +393,10 @@ angular.module('engine')
          * (If you want to just use angular-engine see {@link engine.provider:$engineProvider $engineProvider}
          *
          */
-        this.$get = function ($engineFormly) {
+        this.$get = function ($engineFormly, engineDocument, $rootScope, $log) {
             var _engineProvider = self;
 
-            return new function ($rootScope, $log) {
+            return new function () {
                 var self = this;
                 this.apiCheck = _apiCheck;
                 this.formly = $engineFormly;
@@ -475,8 +475,61 @@ angular.module('engine')
                         return options.document.documentUrl.replace(':id', 'new');
                     }
                     return options.document.url.replace(':id', documentId);
-                }
+                };
+
+                /**
+                 * @ngdoc method
+                 * @name registerResourceProcessor
+                 * @methodOf engine.service:$engine
+                 *
+                 * @description
+                 * **NOT IMPLEMENTED YET**
+                 */
+                this.registerResourceProcessor = function () {
+
+                };
+
+                /**
+                 * @ngdoc method
+                 * @name registerDocumentProcessor
+                 * @methodOf engine.service:$engine
+                 *
+                 * @description
+                 * Registers processor function for documents, it's called every time document is loaded from backend:
+                 * (form, query (not yet implemented)). Additional fields added to document can be accessed via
+                 * components, and referenced by list display configuration {@link engine.privider:$engineProvider#methods_document}
+                 *
+                 * @param {Function} processor function transforming document data, and returning promise or
+                 * processed data
+                 *
+                 * Function stub (static transformation):
+                 * <pre>
+                 * function processor(data) {
+                 * return data;
+                 * }
+                 * </pre>
+                 *
+                 * Function stub (async transformation):
+                 * <pre>
+                 * function processor(document) {
+                 *
+                 * return $http.get('/restful/service').then(
+                 *     function(response){
+                 *         document.$ext = 'some data';
+                 *         return document;
+                 *     });
+                 * }
+                 * </pre>
+                 *
+                 * **NOTE** if document / resource processor intends to add extra data
+                 * to resource convention is to add it to `$ext` field (this field will
+                 * be stripped before sending it in the http request)
+                 *
+                 */
+                this.registerDocumentProcessor = function (processor) {
+                    engineDocument.response_processors.push(processor);
+                };
             };
         };
 
-    })
+    });

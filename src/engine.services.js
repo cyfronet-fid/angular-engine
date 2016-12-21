@@ -6,6 +6,29 @@ angular.module('engine')
             return str.split('.').reduce(index, baseObject);
         };
     })
+    .factory('$engResource', function ($resource, $engineConfig) {
+
+        var engResource = function (options) {
+            var defaults = {
+                browse:  { method: 'GET',   transformResponse: transformResponse },
+                query:   { method: 'GET',   transformResponse: transformResponse, isArray: true },
+                get:     { method: 'GET',   transformResponse: transformResponse },
+                create:  { method: 'POST',  transformRequest: transformRequest },
+                update:  { method: 'PATCH', transformRequest: transformRequest },
+                destroy: { method: 'DELETE' }
+            };
+
+            angular.extend(defaults, options.methods);
+
+            var resource = $resource($engineConfig.baseUrl + options.url, options.params, defaults);
+
+            return resource;
+        };
+
+        return engResource;
+    })
+
+
     .service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
         var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&attachAvailableActions=true&documentId=:documentId',
@@ -137,7 +160,7 @@ angular.module('engine')
             return _action.post({actionId: actionId, documentId: parentDocumentId || document.id}, document, callback, errorCallback);
         }
     })
-    .service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    .service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $http) {
         var _document = $resource('', {documentId: '@documentId'},
             {
                 getDocument: {url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
@@ -146,12 +169,40 @@ angular.module('engine')
                               method: 'POST', transformResponse: EngineInterceptor.response}
             });
 
+        var request_processors = [];
+        var response_processors = [];
+
         return {
+            request_processors: request_processors,
+            response_processors: response_processors,
             get: function (documentId, callback, errorCallback) {
                 $engineApiCheck([$engineApiCheck.string, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments, errorCallback);
 
+                var res = {$resolved: 0};
+
+                var q = $http.post($engineConfig.baseUrl + '/document/getwithextradata?documentId='+documentId+'&attachAvailableActions=true', null)
+                    .then(function (response) {
+                        return response.data;
+                    })
+                    .then(EngineInterceptor.response)
+                    .then(function (data) {
+                        res = angular.merge(res, data);
+                        return res.document;
+                    });
+
                 //null is passed explicitly to POST data, to ensure engine compatibility
-                return _document.getDocument({documentId: documentId}, null, callback, errorCallback);
+                // var res = _document.getDocument({documentId: documentId}, null);
+
+                _.forEach(response_processors, function (processor) {
+                    q = q.then(processor);
+                });
+                q = q.then(function (data) {
+                    res.document = data;
+                    res.$resolved = 1;
+                    return res;
+                }).then(callback, errorCallback);
+                res.$promise = q;
+                return res;
             },
             /**
              * Validates given document, sending it to agreemount.engine backend

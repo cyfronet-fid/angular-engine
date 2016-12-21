@@ -13,4 +13,18 @@
     This documentation has been generated for angular-engine <strong engine-version></strong>
 </div>
 
-Developer documentation has been pushed further down on the list of priorities. In the future it may change.
+# Basic topics:
+
+## Creating External Component
+
+TODO
+
+## Adding new metric types (general ones)
+
+TODO
+
+## Processing Resources / Documents
+
+TODO,
+
+For now see {@link engine.privider:$engineProvider#methods_registerDocumentProcessor}
