@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # simple script generating all documentation versions
+export PATH=node_modules/.bin:$PATH
 
 first_documented_version='v0.6.11'
 start_documenting=0
@@ -12,10 +13,19 @@ do
         then
             continue;
         else
+        	grunt clean
             start_documenting=1;
     	fi;
     fi;
+    git checkout angular-engine.js
 	git checkout $git_tag
-	grunt clean
+	if [ $? -ne 0 ]; then
+        echo "Could not change branch, exiting."
+        exit 1;
+	fi;
 	brunch build
 done
+
+# revert to master
+git checkout angular-engine.js
+git checkout master
