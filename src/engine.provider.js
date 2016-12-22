@@ -302,14 +302,14 @@ angular.module('engine')
          * Register subdocument in angular-engine, subdocument will become available for
          * inclusion in other documents via ```queried_list``` metric
          *
-         * **NOTE** The only difference between this method and {@link engine.privider:$engineProvider#methods_document $engineProvider.document(...)}
+         * **NOTE** The only difference between this method and {@link engine.provider:$engineProvider#methods_document $engineProvider.document(...)}
          * is the fact, that ngRoutes are **not** generated for each registered subdocument.
          *
          * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
          * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
          * if argument is a string it will be treated as a group **metric category** and list of queries will be generated from its children
          * @param {Object} options Document options object conforming to format described in
-         * {@link engine.privider:$engineProvider#methods_document $engineProvider.document}
+         * {@link engine.provider:$engineProvider#methods_document $engineProvider.document}
          *
          *
          */
@@ -497,7 +497,7 @@ angular.module('engine')
                  * @description
                  * Registers processor function for documents, it's called every time document is loaded from backend:
                  * (form, query (not yet implemented)). Additional fields added to document can be accessed via
-                 * components, and referenced by list display configuration {@link engine.privider:$engineProvider#methods_document}
+                 * components, and referenced by list display configuration {@link engine.provider:$engineProvider#methods_document}
                  *
                  * @param {Function} processor function transforming document data, and returning promise or
                  * processed data

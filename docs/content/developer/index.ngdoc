@@ -27,4 +27,4 @@ TODO
 
 TODO,
 
-For now see {@link engine.privider:$engineProvider#methods_registerDocumentProcessor}
+For now see {@link engine.service:$engine#methods_registerdocumentprocessor}
