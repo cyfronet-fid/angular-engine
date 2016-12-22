@@ -27,30 +27,29 @@ Document preprocessing is done by leveraging {@link engine.service:$engine#metho
 @example
 <example module="engine.document_processor.example">
  <file name="index.html">
-     <textarea ng-model="text" r-autogrow class="input-block-level"></textarea>
-     <pre>{{text}}</pre>
+     <p>Demo will be available when agreemount.engine backend is integrated into documentation server</p>
  </file>
  <file name="script.js">
-            var app = angular.module('engine.document_processor.example', []);
-            
-            /*//processors have to be added to $engine service, so 
-            //the best place to register them is in app.run() block.
-            app.run(function($engine) {
-                $engine.registerDocumentProcessor(function(document){
-                    //if we return promise, all further document processing will
-                    //wait until it finishes
-                    return $http.get('/api/user/'+document.author).then(function(response){
-                        //add $ext field if it does not exist,
-                        //it is customary to put custom resource elements in $ext dict.
-                        document.$ext = document.$ext || {}; 
-                        
-                        document.$ext.author = {'login': response.data.login, 'email': response.data.email};
-                        
-                        //promise must return document, so the other chained promises can
-                        //receive it
-                        return document;
-                    })
-                });
-            });*/     
+    var app = angular.module('engine.document_processor.example', ['engine']);
+    
+    //processors have to be added to $engine service, so 
+    //the best place to register them is in app.run() block.
+    app.run(function($engine) {
+        $engine.registerDocumentProcessor(function(document){
+            //if we return promise, all further document processing will
+            //wait until it finishes
+            return $http.get('/api/user/'+document.author).then(function(response){
+                //add $ext field if it does not exist,
+                //it is customary to put custom resource elements in $ext dict.
+                document.$ext = document.$ext || {}; 
+                
+                document.$ext.author = {'login': response.data.login, 'email': response.data.email};
+                
+                //promise must return document, so the other chained promises can
+                //receive it
+                return document;
+            })
+        });
+    });     
  </file>
 </example>

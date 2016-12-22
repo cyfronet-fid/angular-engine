@@ -36,7 +36,8 @@ Npm packages required in global scope (npm install -g):
 
 ### Developing
 
-Either ensure that `brunch watch` is called and actively watches file changes, or
+Either ensure that `brunch watch` (or `brunch watch --server` if you also want to host angular-engine.js locally)
+is called and actively watches file changes, or
 don't forget calling `brunch build` after making changes and before commiting.
 
 Brunch is also responsible for compiling documentation, so you can also see changes
@@ -60,6 +61,8 @@ In order to run the application locally type following (on the https server):
 ```
 npm start
 ```
+If you run `brunch watch --server` above command is not required, as it is
+implicitly called by brunch.
 
 ##Testing
 

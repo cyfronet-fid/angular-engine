@@ -17,7 +17,7 @@
 
 ## Creating External Component
 
-TODO
+See {@link external-component External Components}
 
 ## Adding new metric types (general ones)
 
@@ -25,6 +25,4 @@ TODO
 
 ## Processing Resources / Documents
 
-TODO,
-
-For now see {@link engine.service:$engine#methods_registerdocumentprocessor}
+See {@link document-preprocessing Document Preprocessing}

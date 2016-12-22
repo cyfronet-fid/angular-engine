@@ -17,6 +17,9 @@ module.exports = {
     npm: {
         enabled: false
     },
+    server: {
+        command: 'http-server . --ssl -a localhost -p 8000 -C cert.pem'
+    },
     files: {
         templates: {
             joinTo: {
