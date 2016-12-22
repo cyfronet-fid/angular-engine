@@ -81,11 +81,15 @@ angular.module('app', ['pascalprecht.translate', 'engine'])
                     summary: false
                 });
 
+            })
+            .controller('ctrl', function($scope, $engine){
+                $scope.document_options = $engine.getOptions('openCall');
             });
         </script>
 
-        <div>
-            <p>Here will be example using backend, but for now static text only</p>
+        <div ng-controller="ctrl">
+            <p>Document options:</p>
+            <pre>{{document_options | json}}</pre>
         </div>
     </doc:source>
 </doc:example>

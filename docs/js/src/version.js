@@ -22,11 +22,11 @@ angular.module('docsApp').directive('engineBackendVersion', function() {
 });
 angular.module('docsApp').component('engineVersionSelector', {
     template:
-    '<div class="btn-group" uib-dropdown is-open="status.isopen">'+
-    '<button id="single-button" type="button" class="btn btn-primary" uib-dropdown-toggle>'+
+    '<div class="btn-group pull-right">'+
+    '<a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href>' +
     'Current: <span engine-version></span> <span class="caret"></span>'+
-    '</button>'+
-    '<ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">'+
+    '</a>' +
+    '<ul class="dropdown-menu" role="menu" aria-labelledby="single-button">'+
     '<li role="menuitem" ng-repeat="version in versions"><a href="../{{::version}}/">{{::version}}</a></li>'+
     '</ul>'+
     '</div>',

@@ -1,0 +1,56 @@
+@ngdoc overview
+@name document-preprocessing
+@description
+
+# Document Preprocessing
+
+<div class="alert alert-info">
+    This feature has been introduced in version <b>0.6.18</b>
+</div>
+
+## Overview
+
+Document preprocessing (and postprocessing) is the most common usage of {@link resource-preprocessing resource preprocessing}.
+It allows developer to tap into document loading pipeline and alter document before passing it further into angular-engine.
+
+The most common use case is to add additional fields to the document, which should be displayed by angular-engine (in document header, or as a column in list view). 
+One of such cases is to provide additional information concerning author of the document. 
+
+Because agreemount.engine stores author of the document as a simple ID, storing additional user information (login, password, email, etc) is responsibility
+of the application using it. As such creating a generic API for retrieving user data is not easily implemented (without imposing additional constraints on the
+parent application)
+
+Document preprocessing is done by leveraging {@link engine.service:$engine#methods_registerDocumentProcessor $engine.registerDocumentProcessor}.
+
+## Example - User Data
+
+@example
+<example module="engine.document_processor.example">
+ <file name="index.html">
+     <textarea ng-model="text" r-autogrow class="input-block-level"></textarea>
+     <pre>{{text}}</pre>
+ </file>
+ <file name="script.js">
+            var app = angular.module('engine.document_processor.example', []);
+            
+            /*//processors have to be added to $engine service, so 
+            //the best place to register them is in app.run() block.
+            app.run(function($engine) {
+                $engine.registerDocumentProcessor(function(document){
+                    //if we return promise, all further document processing will
+                    //wait until it finishes
+                    return $http.get('/api/user/'+document.author).then(function(response){
+                        //add $ext field if it does not exist,
+                        //it is customary to put custom resource elements in $ext dict.
+                        document.$ext = document.$ext || {}; 
+                        
+                        document.$ext.author = {'login': response.data.login, 'email': response.data.email};
+                        
+                        //promise must return document, so the other chained promises can
+                        //receive it
+                        return document;
+                    })
+                });
+            });*/     
+ </file>
+</example>

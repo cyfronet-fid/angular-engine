@@ -3,6 +3,7 @@ var deasync = require('deasync');
 var cp = require('child_process');
 var exec = deasync(cp.exec);
 
+var engine_docs = 'build/'+JSON.parse(fs.readFileSync('bower.json', 'utf8')).version+'/js/engine.docs.js';
 
 module.exports = {
     paths: {
@@ -25,12 +26,15 @@ module.exports = {
         javascripts: {
             joinTo: {
                 'angular-engine.js': ['src/**.js', 'src/templates.js'],
-                'docs/js/engine.docs.js': ['docs/js/src/**.js'],
+
                 'docs/js/vendor.js': /^bower_components/
             },
             order: {
                 before: [
                     'src/**.module.js'
+                ],
+                after: [
+                    'docs/js/src/init.js'
                 ]
             }
         }
@@ -40,7 +44,9 @@ module.exports = {
     },
     plugins: {
         afterBrunch: [
-            'node_modules/.bin/grunt ngdocs > /dev/null'
+            'node_modules/.bin/grunt ngdocs > /dev/null',
+            // 'cp docs/js/docs.js build/'+JSON.parse(fs.readFileSync('bower.json', 'utf8')).version+'/js/docs.js',
+            'cp bower_components/angular-animate/angular-animate.min.js build/'+JSON.parse(fs.readFileSync('bower.json', 'utf8')).version+'/js/angular-animate.min.js'
         ],
         angularTemplate: {
             moduleName: 'engine',
@@ -97,3 +103,4 @@ module.exports = {
         }
     }
 };
+module.exports.files.javascripts.joinTo[engine_docs] = ['docs/js/src/**.js'];

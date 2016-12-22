@@ -1,0 +1,7 @@
+@ngdoc overview
+@name external-component
+@description
+
+# External Components
+
+External components are angular components which correspond to metrics defined in agreemount.engine

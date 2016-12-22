@@ -412,6 +412,11 @@ angular.module('engine')
                 this.visibleDocumentFields = _visibleDocumentFields;
 
                 /**
+                 * @ngdoc method
+                 * @name getOptions
+                 * @methodOf engine.service:$engine
+                 *
+                 * @description
                  * Returns document options defined via ```document()``` method
                  *
                  * @param {string} documentModelId Document model ID (same as the one registered with ```.document``` and ```.subdocument``` methods)

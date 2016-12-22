@@ -1814,6 +1814,11 @@ angular.module('engine').provider('$engineConfig', function () {
             this.visibleDocumentFields = _visibleDocumentFields;
 
             /**
+             * @ngdoc method
+             * @name getOptions
+             * @methodOf engine.service:$engine
+             *
+             * @description
              * Returns document options defined via ```document()``` method
              *
              * @param {string} documentModelId Document model ID (same as the one registered with ```.document``` and ```.subdocument``` methods)
@@ -2175,7 +2180,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-22T15:09:28.474Z';
+var ENGINE_COMPILATION_DATE = '2016-12-22T21:54:33.330Z';
 var ENGINE_VERSION = '0.6.18';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
