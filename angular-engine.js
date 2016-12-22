@@ -1795,10 +1795,10 @@ angular.module('engine').provider('$engineConfig', function () {
      * (If you want to just use angular-engine see {@link engine.provider:$engineProvider $engineProvider}
      *
      */
-    this.$get = function ($engineFormly) {
+    this.$get = function ($engineFormly, engineDocument, $rootScope, $log) {
         var _engineProvider = self;
 
-        return new function ($rootScope, $log) {
+        return new function () {
             var self = this;
             this.apiCheck = _apiCheck;
             this.formly = $engineFormly;
@@ -1876,10 +1876,61 @@ angular.module('engine').provider('$engineConfig', function () {
                 }
                 return options.document.url.replace(':id', documentId);
             };
+
+            /**
+             * @ngdoc method
+             * @name registerResourceProcessor
+             * @methodOf engine.service:$engine
+             *
+             * @description
+             * **NOT IMPLEMENTED YET**
+             */
+            this.registerResourceProcessor = function () {};
+
+            /**
+             * @ngdoc method
+             * @name registerDocumentProcessor
+             * @methodOf engine.service:$engine
+             *
+             * @description
+             * Registers processor function for documents, it's called every time document is loaded from backend:
+             * (form, query (not yet implemented)). Additional fields added to document can be accessed via
+             * components, and referenced by list display configuration {@link engine.privider:$engineProvider#methods_document}
+             *
+             * @param {Function} processor function transforming document data, and returning promise or
+             * processed data
+             *
+             * Function stub (static transformation):
+             * <pre>
+             * function processor(data) {
+             * return data;
+             * }
+             * </pre>
+             *
+             * Function stub (async transformation):
+             * <pre>
+             * function processor(document) {
+             *
+             * return $http.get('/restful/service').then(
+             *     function(response){
+             *         document.$ext = 'some data';
+             *         return document;
+             *     });
+             * }
+             * </pre>
+             *
+             * **NOTE** if document / resource processor intends to add extra data
+             * to resource convention is to add it to `$ext` field (this field will
+             * be stripped before sending it in the http request)
+             *
+             */
+            this.registerDocumentProcessor = function (processor) {
+                engineDocument.response_processors.push(processor);
+            };
         }();
     };
 });
-;'use strict';
+'use strict';
 
 angular.module('engine').factory('engineResolve', function () {
     function index(obj, i) {
@@ -1889,6 +1940,26 @@ angular.module('engine').factory('engineResolve', function () {
     return function (baseObject, str) {
         return str.split('.').reduce(index, baseObject);
     };
+}).factory('$engResource', function ($resource, $engineConfig) {
+
+    var engResource = function engResource(options) {
+        var defaults = {
+            browse: { method: 'GET', transformResponse: transformResponse },
+            query: { method: 'GET', transformResponse: transformResponse, isArray: true },
+            get: { method: 'GET', transformResponse: transformResponse },
+            create: { method: 'POST', transformRequest: transformRequest },
+            update: { method: 'PATCH', transformRequest: transformRequest },
+            destroy: { method: 'DELETE' }
+        };
+
+        angular.extend(defaults, options.methods);
+
+        var resource = $resource($engineConfig.baseUrl + options.url, options.params, defaults);
+
+        return resource;
+    };
+
+    return engResource;
 }).service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
     var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&attachAvailableActions=true&documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
@@ -2009,7 +2080,7 @@ angular.module('engine').factory('engineResolve', function () {
 
         return _action.post({ actionId: actionId, documentId: parentDocumentId || document.id }, document, callback, errorCallback);
     };
-}).service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+}).service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $http) {
     var _document = $resource('', { documentId: '@documentId' }, {
         getDocument: { url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
             method: 'POST', transformResponse: EngineInterceptor.response },
@@ -2017,12 +2088,37 @@ angular.module('engine').factory('engineResolve', function () {
             method: 'POST', transformResponse: EngineInterceptor.response }
     });
 
+    var request_processors = [];
+    var response_processors = [];
+
     return {
+        request_processors: request_processors,
+        response_processors: response_processors,
         get: function get(documentId, callback, errorCallback) {
             $engineApiCheck([$engineApiCheck.string, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments, errorCallback);
 
+            var res = { $resolved: 0 };
+
+            var q = $http.post($engineConfig.baseUrl + '/document/getwithextradata?documentId=' + documentId + '&attachAvailableActions=true', null).then(function (response) {
+                return response.data;
+            }).then(EngineInterceptor.response).then(function (data) {
+                res = angular.merge(res, data);
+                return res.document;
+            });
+
             //null is passed explicitly to POST data, to ensure engine compatibility
-            return _document.getDocument({ documentId: documentId }, null, callback, errorCallback);
+            // var res = _document.getDocument({documentId: documentId}, null);
+
+            _.forEach(response_processors, function (processor) {
+                q = q.then(processor);
+            });
+            q = q.then(function (data) {
+                res.document = data;
+                res.$resolved = 1;
+                return res;
+            }).then(callback, errorCallback);
+            res.$promise = q;
+            return res;
         },
         /**
          * Validates given document, sending it to agreemount.engine backend
@@ -2079,8 +2175,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-19T19:17:53.085Z';
-var ENGINE_VERSION = '0.6.17';
+var ENGINE_COMPILATION_DATE = '2016-12-21T17:04:52.928Z';
+var ENGINE_VERSION = '0.6.18';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
