@@ -763,7 +763,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
             return {
                 data: field.data,
-                template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
+                template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" metric="options.data.metric" errors="fc.$error" ' + 'class="' + metric.visualClass.join(' ') + '" ' + 'ng-disabled="options.data.form.disabled" ' + 'formly-options="options" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
                 templateOptions: { ngModel: ctx.document, options: ctx.options }
                 // expressionProperties: {'templateOptions.disabled': false}
             };
@@ -816,6 +816,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             type: 'input',
             className: metric.visualClass.join(' '),
             data: {
+                'metric': metric,
                 position: metric.position,
                 isMetric: true,
                 form: ctx.documentForm,
@@ -2180,8 +2181,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-22T22:19:30.900Z';
-var ENGINE_VERSION = '0.6.18';
+var ENGINE_COMPILATION_DATE = '2016-12-23T12:26:16.364Z';
+var ENGINE_VERSION = '0.6.19';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);

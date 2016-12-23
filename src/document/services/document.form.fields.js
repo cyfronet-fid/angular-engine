@@ -125,7 +125,10 @@ angular.module('engine.document')
             return {
                 data: field.data,
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' +
-                'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
+                'options="options.templateOptions.options" metric="options.data.metric" errors="fc.$error" '+
+                'class="' + metric.visualClass.join(' ') + '" ' +
+                'ng-disabled="options.data.form.disabled" '+
+                'formly-options="options" '+
                 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
                 templateOptions: {ngModel: ctx.document, options: ctx.options}
                 // expressionProperties: {'templateOptions.disabled': false}
@@ -179,6 +182,7 @@ angular.module('engine.document')
                 type: 'input',
                 className: metric.visualClass.join(' '),
                 data: {
+                    'metric': metric,
                     position: metric.position,
                     isMetric: true,
                     form: ctx.documentForm,
