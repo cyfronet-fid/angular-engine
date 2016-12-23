@@ -5,3 +5,172 @@
 # External Components
 
 External components are angular components which correspond to metrics defined in agreemount.engine
+
+External component is a normal component from the standpoint of the application (it's declared
+by standard `.component` method. Engine integration is done in `metrics.yml` file, where external
+metric corresponding to declared component must be defined.
+
+## Sample YAML file declaring extarnal component metric:
+
+<pre>
+   - !com.agreemount.bean.metric.ExternalMetric
+     id: teamMembership
+     label: Team membership
+     categoryId: documentationSettings
+     required: false
+     position: 7
+     description: add members of proposal
+     externalType: sample-external-component  # this is tag which will be 
+                                              # injected into final template,
+                                              # it corresponds to external 
+                                              # component named teamMembers
+</pre>
+
+From javascript / frontend standpoint component is just a normal component which must be registered in the
+application. All data concering metric, form, and document are passed via bindings. Your custom component
+can define only binding required by your comonent's functionality.
+
+## Minimal external component declaration
+
+<pre>
+    angular.module('app').component('sampleExternalComponent', {
+      templateUrl: 'sampleExternalComponent.template.html',
+      controller: function () {
+      
+      },
+      bindings: {
+        ngModel: '=',
+        options: '=',
+        formlyOptions: '=',
+        ngDisabled: '=',
+        errors: '=',
+        metric: '=',
+        metricId: '@'
+      }
+    });
+</pre>
+
+## Bindings
+
+There is a couple of objects which are passed to external component via bindings.
+Here is a list with a description:
+
+* **`ngModel`** - current document, you can access other metrics, as well as other document fields, such as author, name, creation date or state.
+* **`options`** - current document options. It will be the same optionas as the ones specified while registering document in angular-engine (see 
+  {@link engine.provider:$engineProvider#methods_document $engineProvider.document(...))})
+* **`ngDisabled`** - true if current control should be disabled, false otherwise
+* **`metricId`** - id of the external metric, can be used to insert values into `ngModel.metrics[metricId]`
+* **`metric`** - Object containing all raw data of the metric, in the format received from agreemount.engine
+* **`errors`** - Object containing errors for current control
+* **`formlyOptions`** - Additional 'bag' property, it contains ALL data used to create this field in front end, use it with caution,
+  as the stability of fields in this object is **not guaranteed** (may change between versions of angular-engine), if
+  possible use other bindings to access necessary data.
+
+## Events
+
+Apart of bindings which can be accessed inside of component, it can also receive events dispatched from document.
+Those events can be used to perform some additional work before actions are performed on the document.
+Events which can be listened to are as follows:
+
+* **`engine.common.action.before`** executed before any action is executed, context object contains: 
+  ```
+  {
+    document: //document on which action is performed
+    action:   //action object which is executed
+    promises: //promises list which has to be fulfilled 
+              //before action is executed, event handler can insert it's own
+              //promise here, if it needs to perform async 
+              //operation(s) before document is saved
+  }   
+  ```
+  calling event.preventDefault() will cause an action to be prevented.
+* **`engine.common.save.before`** executed before any save action (CREATE, UPDATE), apart of this works the same as `engine.common.action.before`
+* **`engine.common.action.after`** executed after any action, context object contains 
+  ```
+  {
+    document: //document on which action is performed
+    action:   //action object which is executed
+    result:   //result of the action, as passed by agreemount.engine
+  }   
+  ```
+  calling event.preventDefault() has no effect here;
+* `engine.common.save.after`** executed after any save action (CREATE, UPDATE), apart of this works the same as `engine.common.action.after`
+* **`engine.common.action.error`** executed if error occurs during any action execution, context object is the same as `engine.common.action.after`
+  calling event.preventDefault() has no effect here;
+* **`engine.common.save.error`** executed if error occurs during any save action (CREATE, UPDATE) execution, context object is the same as `engine.common.action.after`
+  calling event.preventDefault() has no effect here;
+
+
+@example
+
+<example module="engine.external.example">
+ <file name="index.html">
+     <p>Demo will be available when agreemount.engine backend is integrated into documentation server</p>
+ </file>
+ <file name="metrics.html">
+# This is in fact YML file
+# metric which corresponds to external component
+   - !com.agreemount.bean.metric.ExternalMetric
+     id: teamMembership
+     label: Team membership
+     categoryId: documentationSettings
+     required: false
+     position: 7
+     description: add members of proposal
+     externalType: team-members  # this is tag which will be injected into final template, it corresponds to external component named teamMembers
+ </file>
+ <file name="script.js">
+angular.module('teammembers').component('teamMembers', {
+  templateUrl: 'js/teamMembers/teamMembers.template.html',
+  controller: ['$scope', '$uibModal', '$q', 'User', 'core.team',
+      function TeamMembersController($scope, $uibModal, $q, User, Team) {
+        // engine bindings
+
+        $scope.$on('engine.common.action.before', function (event, context) {
+          console.log('engine.common.action.before', event, context);
+          //if there is a need to stop action (exception / error)
+          //it can be done via .preventDefault()
+          //event.preventDefault();
+        });
+
+        $scope.$on('engine.common.save.before', function (event, context) {
+          console.log('engine.common.save.before', event, context);
+
+          var savePromise = save();
+          //if this event has some async operation which has to be completed
+          //before action can proceed, promise must be pushed into
+          //context.promises array
+          context.promises.push(savePromise);
+        });
+
+        $scope.$on('engine.common.action.after', function (event, context) {
+          console.log('engine.common.action.after', event, context);
+        });
+
+        $scope.$on('engine.common.save.after', function (event, context) {
+          console.log('engine.common.save.after', event, context);
+        });
+
+        $scope.$on('engine.common.action.error', function (event, context) {
+          console.log('engine.common.action.error', event, context);
+        });
+
+        $scope.$on('engine.common.save.error', function (event, context) {
+          console.log('engine.common.action.error', event, context);
+        });
+
+        _.defer(init);
+  }],
+  bindings: {
+    ngModel: '=',
+    options: '=',
+    formlyOptions: '=',
+    ngDisabled: '=',
+    errors: '=',
+    metric: '=',
+    metricId: '@'
+  }
+});
+
+ </file>
+</example>
