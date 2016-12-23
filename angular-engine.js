@@ -443,7 +443,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
             }
         }
         return $q.all(promises).then(function () {
-            return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise;
+            if (self.isLink()) return engActionResource.invoke(self.actionId, self.parentDocument, self.document.id).$promise;else return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise;
         }).then(function (result) {
             $log.debug('engine.document.actions', 'action call returned', result);
             if (self.$scope) {
@@ -2181,8 +2181,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-23T12:26:16.364Z';
-var ENGINE_VERSION = '0.6.19';
+var ENGINE_COMPILATION_DATE = '2016-12-23T17:11:08.482Z';
+var ENGINE_VERSION = '0.6.20';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2458,7 +2458,7 @@ angular.module('engine.list').component('engineDocumentList', {
     $scope.engineAction = function (action, document) {
 
         if (action.type == 'LINK') {
-            return engineAction(action.id, self.parentDocument).$promise.then(function (data) {
+            return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
                 $scope.documents = engineQuery($scope.query);
             }, undefined, document.id);
         } else {
@@ -2495,19 +2495,19 @@ angular.module('engine.list').component('engineDocumentList', {
         }
         return '/src/list/cell/text.tpl.html';
     };
-    $scope.onDocumentSelect = function (document) {
+    $scope.onDocumentSelect = function (documentEntry) {
         if (_parentDocumentId) {
             if (self.onSelectBehavior == 'LINK') {
-                var linkAction = engineActionUtils.getLinkAction(document.actions);
+                var linkAction = engineActionUtils.getLinkAction(documentEntry.actions);
 
-                if (linkAction != null) $scope.engineAction(linkAction, document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
+                if (linkAction != null) $scope.engineAction(linkAction, documentEntry.document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
             } else {
-                DocumentModal(document.id, $scope.options, _parentDocumentId, function () {
+                DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
                     $scope.documents = engineQuery($scope.query, _parentDocumentId);
                 });
             }
         } else {
-            $location.path($scope.genDocumentLink(document.id));
+            $location.path($scope.genDocumentLink(documentEntry.document.id));
         }
     };
 
@@ -2620,7 +2620,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name) | date}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"\" ng-click=\"onDocumentSelect(document_entry.document)\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
+  $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"\" ng-click=\"onDocumentSelect(document_entry)\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name)}}");

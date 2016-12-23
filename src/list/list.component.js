@@ -43,7 +43,7 @@ angular.module('engine.list')
     $scope.engineAction = function (action, document) {
 
         if(action.type == 'LINK'){
-            return engineAction(action.id, self.parentDocument).$promise.then(function (data) {
+            return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
                 $scope.documents = engineQuery($scope.query);
             }, undefined, document.id);
         } else {
@@ -86,22 +86,22 @@ angular.module('engine.list')
         }
         return '/src/list/cell/text.tpl.html'
     };
-    $scope.onDocumentSelect = function(document) {
+    $scope.onDocumentSelect = function(documentEntry) {
         if(_parentDocumentId) {
             if(self.onSelectBehavior == 'LINK') {
-                var linkAction = engineActionUtils.getLinkAction(document.actions);
+                var linkAction = engineActionUtils.getLinkAction(documentEntry.actions);
 
                 if(linkAction != null)
-                    $scope.engineAction(linkAction, document);
+                    $scope.engineAction(linkAction, documentEntry.document);
                 else
                     $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
             } else {
-                DocumentModal(document.id, $scope.options, _parentDocumentId, function () {
+                DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
                     $scope.documents = engineQuery($scope.query, _parentDocumentId);
                 });
             }
         } else {
-            $location.path($scope.genDocumentLink(document.id));
+            $location.path($scope.genDocumentLink(documentEntry.document.id));
         }
     };
 

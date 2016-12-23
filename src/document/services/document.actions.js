@@ -114,7 +114,10 @@ angular.module('engine.document')
                 }
             }
             return $q.all(promises).then(function(){
-                return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise
+                if(self.isLink())
+                    return engActionResource.invoke(self.actionId, self.parentDocument, self.document.id).$promise;
+                else
+                    return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise;
             }).then(function (result) {
                 $log.debug('engine.document.actions', 'action call returned', result);
                 if(self.$scope) {
