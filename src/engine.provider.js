@@ -66,7 +66,7 @@ angular.module('engine')
                 caption: _apiCheck.string,
                 templateUrl: _apiCheck.string,
                 createButtonLabel: _apiCheck.string.optional,
-                customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.func})).optional
+                customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional
             }),
             document: _apiCheck.shape({
                 templateUrl: _apiCheck.string,
@@ -120,7 +120,7 @@ angular.module('engine')
                     documentModelId: _apiCheck.string,
                     columns: _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, label: _apiCheck.string})).optional,
                     showCreateButton: _apiCheck.bool.optional,
-                    customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.func})).optional
+                    customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional
                 }),
                 _apiCheck.shape({templateUrl: _apiCheck.string}))], [url, queries, options]);
 
@@ -249,8 +249,17 @@ angular.module('engine')
          *      * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
          *      the view. Object must have following fields:
          *        * **label** {String} button's label
-         *        * **callback** {Function} function which will be called after button is clicked, documentOptions are passed
-         *        as an argument to callback
+         *        * **callback** {String|Function} function which will be called after button is clicked, documentOptions are passed
+         *        as an argument to callback. If argument is a {String} it will be treated as angular service and injected.
+         *        be sure to define this service to return function.
+         *
+         *        Example:
+         *
+         *        .factory('uploadProposalCalled', function ($log) {
+         *              return function uploadProposalCalled(documentOptions) {
+         *                  $log.debug('uploadProposalCalled', documentOptions);
+         *              };
+         *        })
          *
          *    * **caption**: {String}, *Optional* Caption displayed on top of the list view, will be translated
          *

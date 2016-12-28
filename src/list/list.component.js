@@ -15,7 +15,8 @@ angular.module('engine.list')
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
-                                        engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log) {
+                                        engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log,
+                                        $injector) {
     var self = this;
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -36,6 +37,20 @@ angular.module('engine.list')
 
     $scope.query = self.query || $scope.options.query;
     $scope.customButtons = self.customButtons || self.options.customButtons;
+
+    /**
+     * If inject all custom buttons callback which were defined as strings
+     */
+    _.forEach($scope.customButtons, function (customButton) {
+        if(_.isString(customButton.callback)) {
+            var callbackName = customButton.callback;
+            customButton.callback = function (documentOptions) {
+                $injector.invoke([callbackName, function (callback) {
+                    callback(documentOptions);
+                }]);
+            }
+        }
+    });
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
     $scope.documents = engineQuery($scope.query, _parentDocumentId);

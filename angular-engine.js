@@ -1487,7 +1487,7 @@ angular.module('engine').provider('$engineConfig', function () {
             caption: _apiCheck.string,
             templateUrl: _apiCheck.string,
             createButtonLabel: _apiCheck.string.optional,
-            customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({ 'label': _apiCheck.string, 'callback': _apiCheck.func })).optional
+            customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({ 'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string]) })).optional
         }),
         document: _apiCheck.shape({
             templateUrl: _apiCheck.string,
@@ -1538,7 +1538,7 @@ angular.module('engine').provider('$engineConfig', function () {
             documentModelId: _apiCheck.string,
             columns: _apiCheck.arrayOf(_apiCheck.shape({ name: _apiCheck.string, label: _apiCheck.string })).optional,
             showCreateButton: _apiCheck.bool.optional,
-            customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({ 'label': _apiCheck.string, 'callback': _apiCheck.func })).optional
+            customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({ 'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string]) })).optional
         }), _apiCheck.shape({ templateUrl: _apiCheck.string }))], [url, queries, options]);
 
         options.queries = queries;
@@ -2207,8 +2207,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-28T13:37:50.330Z';
-var ENGINE_VERSION = '0.6.21';
+var ENGINE_COMPILATION_DATE = '2016-12-28T14:24:43.202Z';
+var ENGINE_VERSION = '0.6.22';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2462,7 +2462,7 @@ angular.module('engine.list').component('engineDocumentList', {
         customButtons: '=',
         onSelectBehavior: '@'
     }
-}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log) {
+}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log, $injector) {
     var self = this;
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -2477,6 +2477,20 @@ angular.module('engine.list').component('engineDocumentList', {
 
     $scope.query = self.query || $scope.options.query;
     $scope.customButtons = self.customButtons || self.options.customButtons;
+
+    /**
+     * If inject all custom buttons callback which were defined as strings
+     */
+    _.forEach($scope.customButtons, function (customButton) {
+        if (_.isString(customButton.callback)) {
+            var callbackName = customButton.callback;
+            customButton.callback = function (documentOptions) {
+                $injector.invoke([callbackName, function (callback) {
+                    callback(documentOptions);
+                }]);
+            };
+        }
+    });
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
     $scope.documents = engineQuery($scope.query, _parentDocumentId);
