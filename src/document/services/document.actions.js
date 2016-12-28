@@ -1,6 +1,6 @@
 angular.module('engine.document')
-    .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log) {
-        function DocumentActionList(document, parentDocument, $scope) {
+    .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log, $http) {
+        function DocumentActionList(actions, document, parentDocument, $scope) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
 
             if(parentDocument == null)
@@ -29,6 +29,17 @@ angular.module('engine.document')
 
             this._setDocument(document);
         }
+        DocumentActionList.get = function (document, parentDocument, $scope) {
+            var res = new DocumentActionList(document, parentDocument, $scope);
+
+            $http.get($engineConfig.baseUrl + '/action/available?documentId='+document.id).then(function (response) {
+                var data = response.data.data;
+
+                return data;
+            });
+
+            return res;
+        };
 
         DocumentActionList.prototype._setDocument = function setDocument(document) {
             if(document == null || _.isEmpty(document) || document == this.document)

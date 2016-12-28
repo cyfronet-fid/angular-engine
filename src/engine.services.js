@@ -6,9 +6,9 @@ angular.module('engine')
             return str.split('.').reduce(index, baseObject);
         };
     })
-    .factory('$engResource', function ($resource, $engineConfig) {
+    .factory('$engResource', function ($engineConfig) {
 
-        var engResource = function (options) {
+        var engResource = function () {
             var defaults = {
                 browse:  { method: 'GET',   transformResponse: transformResponse },
                 query:   { method: 'GET',   transformResponse: transformResponse, isArray: true },

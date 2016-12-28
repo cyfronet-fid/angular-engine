@@ -65,7 +65,8 @@ angular.module('engine')
             list: _apiCheck.shape({
                 caption: _apiCheck.string,
                 templateUrl: _apiCheck.string,
-                createButtonLabel: _apiCheck.string.optional
+                createButtonLabel: _apiCheck.string.optional,
+                customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.func})).optional
             }),
             document: _apiCheck.shape({
                 templateUrl: _apiCheck.string,
@@ -83,6 +84,14 @@ angular.module('engine')
                 showValidationButton: true
             }
         };
+
+        function prepareDocumentOptions(options) {
+            if(options.list.customButtons == null)
+                options.list.customButtons = [];
+
+            if(!_.isArray(options.list.customButtons))
+                options.list.customButtons = [options.list.customButtons];
+        }
 
         /**
          * @ngdoc method
@@ -110,7 +119,8 @@ angular.module('engine')
                     label: _apiCheck.string,
                     documentModelId: _apiCheck.string,
                     columns: _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, label: _apiCheck.string})).optional,
-                    showCreateButton: _apiCheck.bool.optional
+                    showCreateButton: _apiCheck.bool.optional,
+                    customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.func})).optional
                 }),
                 _apiCheck.shape({templateUrl: _apiCheck.string}))], [url, queries, options]);
 
@@ -236,7 +246,11 @@ angular.module('engine')
          *      document field, will be formatted accordingly. 'link' field will be formatted as text, but will be wrapped
          *      in `<a>` tag allowing navigation to the selected document.
          *
-         *
+         *      * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
+         *      the view. Object must have following fields:
+         *        * **label** {String} button's label
+         *        * **callback** {Function} function which will be called after button is clicked, documentOptions are passed
+         *        as an argument to callback
          *
          *    * **caption**: {String}, *Optional* Caption displayed on top of the list view, will be translated
          *
@@ -268,6 +282,8 @@ angular.module('engine')
                 _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
 
             assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
+
+            prepareDocumentOptions(options);
 
             options.documentModelType = documentModelType;
             options.listUrl = listUrl;
@@ -319,6 +335,7 @@ angular.module('engine')
             _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, query, options]);
 
             assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
+            prepareDocumentOptions(options);
 
             options.query = query;
             options.subdocument = true;

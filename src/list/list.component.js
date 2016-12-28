@@ -10,6 +10,7 @@ angular.module('engine.list')
         showCreateButton: '=',
         listCaption: '=',
         columns: '=',
+        customButtons: '=',
         onSelectBehavior: '@'
     }
 })
@@ -34,6 +35,7 @@ angular.module('engine.list')
 
 
     $scope.query = self.query || $scope.options.query;
+    $scope.customButtons = self.customButtons || self.options.customButtons;
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
     $scope.documents = engineQuery($scope.query, _parentDocumentId);

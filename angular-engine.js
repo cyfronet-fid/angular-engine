@@ -332,8 +332,8 @@ angular.module('engine.document').controller('engineDocumentWrapperCtrl', functi
 });
 'use strict';
 
-angular.module('engine.document').factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log) {
-    function DocumentActionList(document, parentDocument, $scope) {
+angular.module('engine.document').factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log, $http) {
+    function DocumentActionList(actions, document, parentDocument, $scope) {
         $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
 
         if (parentDocument == null) parentDocument = {};
@@ -361,6 +361,17 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
 
         this._setDocument(document);
     }
+    DocumentActionList.get = function (document, parentDocument, $scope) {
+        var res = new DocumentActionList(document, parentDocument, $scope);
+
+        $http.get($engineConfig.baseUrl + '/action/available?documentId=' + document.id).then(function (response) {
+            var data = response.data.data;
+
+            return data;
+        });
+
+        return res;
+    };
 
     DocumentActionList.prototype._setDocument = function setDocument(document) {
         if (document == null || _.isEmpty(document) || document == this.document) return;
@@ -1475,7 +1486,8 @@ angular.module('engine').provider('$engineConfig', function () {
         list: _apiCheck.shape({
             caption: _apiCheck.string,
             templateUrl: _apiCheck.string,
-            createButtonLabel: _apiCheck.string.optional
+            createButtonLabel: _apiCheck.string.optional,
+            customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({ 'label': _apiCheck.string, 'callback': _apiCheck.func })).optional
         }),
         document: _apiCheck.shape({
             templateUrl: _apiCheck.string,
@@ -1493,6 +1505,12 @@ angular.module('engine').provider('$engineConfig', function () {
             showValidationButton: true
         }
     };
+
+    function prepareDocumentOptions(options) {
+        if (options.list.customButtons == null) options.list.customButtons = [];
+
+        if (!_.isArray(options.list.customButtons)) options.list.customButtons = [options.list.customButtons];
+    }
 
     /**
      * @ngdoc method
@@ -1519,7 +1537,8 @@ angular.module('engine').provider('$engineConfig', function () {
             label: _apiCheck.string,
             documentModelId: _apiCheck.string,
             columns: _apiCheck.arrayOf(_apiCheck.shape({ name: _apiCheck.string, label: _apiCheck.string })).optional,
-            showCreateButton: _apiCheck.bool.optional
+            showCreateButton: _apiCheck.bool.optional,
+            customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({ 'label': _apiCheck.string, 'callback': _apiCheck.func })).optional
         }), _apiCheck.shape({ templateUrl: _apiCheck.string }))], [url, queries, options]);
 
         options.queries = queries;
@@ -1644,7 +1663,11 @@ angular.module('engine').provider('$engineConfig', function () {
      *      document field, will be formatted accordingly. 'link' field will be formatted as text, but will be wrapped
      *      in `<a>` tag allowing navigation to the selected document.
      *
-     *
+     *      * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
+     *      the view. Object must have following fields:
+     *        * **label** {String} button's label
+     *        * **callback** {Function} function which will be called after button is clicked, documentOptions are passed
+     *        as an argument to callback
      *
      *    * **caption**: {String}, *Optional* Caption displayed on top of the list view, will be translated
      *
@@ -1675,6 +1698,8 @@ angular.module('engine').provider('$engineConfig', function () {
         _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
 
         assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
+
+        prepareDocumentOptions(options);
 
         options.documentModelType = documentModelType;
         options.listUrl = listUrl;
@@ -1726,6 +1751,7 @@ angular.module('engine').provider('$engineConfig', function () {
         _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, query, options]);
 
         assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
+        prepareDocumentOptions(options);
 
         options.query = query;
         options.subdocument = true;
@@ -1946,9 +1972,9 @@ angular.module('engine').factory('engineResolve', function () {
     return function (baseObject, str) {
         return str.split('.').reduce(index, baseObject);
     };
-}).factory('$engResource', function ($resource, $engineConfig) {
+}).factory('$engResource', function ($engineConfig) {
 
-    var engResource = function engResource(options) {
+    var engResource = function engResource() {
         var defaults = {
             browse: { method: 'GET', transformResponse: transformResponse },
             query: { method: 'GET', transformResponse: transformResponse, isArray: true },
@@ -2181,8 +2207,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-23T17:11:08.482Z';
-var ENGINE_VERSION = '0.6.20';
+var ENGINE_COMPILATION_DATE = '2016-12-28T13:37:50.330Z';
+var ENGINE_VERSION = '0.6.21';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2433,6 +2459,7 @@ angular.module('engine.list').component('engineDocumentList', {
         showCreateButton: '=',
         listCaption: '=',
         columns: '=',
+        customButtons: '=',
         onSelectBehavior: '@'
     }
 }).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log) {
@@ -2449,6 +2476,7 @@ angular.module('engine.list').component('engineDocumentList', {
     $scope.columns = this.columns || $scope.options.list.columns;
 
     $scope.query = self.query || $scope.options.query;
+    $scope.customButtons = self.customButtons || self.options.customButtons;
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
     $scope.documents = engineQuery($scope.query, _parentDocumentId);
@@ -2551,7 +2579,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step).name}}</button>\n\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>\n\n<button type=\"submit\" ng-repeat=\"button in $ctrl.customButtons\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"button.action()\" translate>{{button.label}}</button>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
+  $templateCache.put("/src/dashboard/dashboard.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"query.showCreateButton\" columns=\"query.columns\" custom-buttons=\"query.customButtons\"\n                      query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\" list-caption=\"query.label\"></engine-document-list>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\">CREATE {{options.name}}</h4>\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document=\"parentDocument\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent=\"parentDocument\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
@@ -2626,7 +2654,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/text.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name)}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.tpl.html", "<h1>{{ $ctrl.listCaption || options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved\" ng-cloak>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\">create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n");
+  $templateCache.put("/src/list/list.tpl.html", "<h1 translate>{{ $ctrl.listCaption || options.list.caption }}</h1>\n\n<div class=\"text-box\">\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved\" ng-cloak>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\">{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\">{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\">No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\">create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.wrapper.tpl.html", "<engine-document-list ng-repeat=\"query in queries\" show-create-button=\"$last\" query=\"query.id\" options=\"options\" list-caption=\"query.label\"></engine-document-list>");

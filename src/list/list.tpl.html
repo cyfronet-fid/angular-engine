@@ -1,4 +1,4 @@
-<h1>{{ $ctrl.listCaption || options.list.caption }}</h1>
+<h1 translate>{{ $ctrl.listCaption || options.list.caption }}</h1>
 
 <div class="text-box">
     <div class="eng-loading-box" ng-show="!documents.$resolved">
@@ -28,4 +28,7 @@
 <a href="" ng-if="$ctrl._showCreateButton && canCreateDocument()" ng-click="onCreateDocument()" class="btn btn-primary">
     <span ng-if="!$ctrl.options.list.createButtonLabel">create {{options.name}}</span>
     <span ng-if="$ctrl.options.list.createButtonLabel">{{$ctrl.options.list.createButtonLabel | translate}}</span>
+</a>
+<a href="" ng-click="customButton.callback($ctrl.options)" class="btn btn-primary" ng-repeat="customButton in customButtons">
+    <span>{{customButton.label | translate}}</span>
 </a>
