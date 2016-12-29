@@ -419,7 +419,7 @@ angular.module('engine')
          * (If you want to just use angular-engine see {@link engine.provider:$engineProvider $engineProvider}
          *
          */
-        this.$get = function ($engineFormly, engineDocument, $rootScope, $log) {
+        this.$get = function ($engineFormly, engineDocument, $rootScope, $log, engineQuery) {
             var _engineProvider = self;
 
             return new function () {
@@ -559,6 +559,7 @@ angular.module('engine')
                  */
                 this.registerDocumentProcessor = function (processor) {
                     engineDocument.response_processors.push(processor);
+                    engineQuery.response_processors.push(processor);
                 };
             };
         };

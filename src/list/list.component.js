@@ -53,7 +53,7 @@ angular.module('engine.list')
     });
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
-    $scope.documents = engineQuery($scope.query, _parentDocumentId);
+    $scope.documents = engineQuery.get($scope.query, _parentDocumentId);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
@@ -61,11 +61,11 @@ angular.module('engine.list')
 
         if(action.type == 'LINK'){
             return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
-                $scope.documents = engineQuery($scope.query);
+                $scope.documents = engineQuery.get($scope.query);
             }, undefined, document.id);
         } else {
             return engineAction(action.id, document).$promise.then(function (data) {
-                $scope.documents = engineQuery($scope.query);
+                $scope.documents = engineQuery.get($scope.query);
             });
         }
     };
@@ -114,7 +114,7 @@ angular.module('engine.list')
                     $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
             } else {
                 DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
-                    $scope.documents = engineQuery($scope.query, _parentDocumentId);
+                    $scope.documents = engineQuery.get($scope.query, _parentDocumentId);
                 });
             }
         } else {
@@ -129,7 +129,7 @@ angular.module('engine.list')
     $scope.onCreateDocument = function() {
         if($scope.options.subdocument == true)
             DocumentModal(undefined, $scope.options, self.parentDocument, function () {
-                $scope.documents = engineQuery($scope.query, self.parentDocument.id);
+                $scope.documents = engineQuery.get($scope.query, self.parentDocument.id);
             });
         else
             $location.path($scope.genDocumentLink('new'));

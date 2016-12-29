@@ -792,7 +792,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
             field = {
                 data: field.data,
-                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
                     document: ctx.document
@@ -1854,7 +1854,7 @@ angular.module('engine').provider('$engineConfig', function () {
      * (If you want to just use angular-engine see {@link engine.provider:$engineProvider $engineProvider}
      *
      */
-    this.$get = function ($engineFormly, engineDocument, $rootScope, $log) {
+    this.$get = function ($engineFormly, engineDocument, $rootScope, $log, engineQuery) {
         var _engineProvider = self;
 
         return new function () {
@@ -1990,6 +1990,7 @@ angular.module('engine').provider('$engineConfig', function () {
              */
             this.registerDocumentProcessor = function (processor) {
                 engineDocument.response_processors.push(processor);
+                engineQuery.response_processors.push(processor);
             };
         }();
     };
@@ -2024,17 +2025,49 @@ angular.module('engine').factory('engineResolve', function () {
     };
 
     return engResource;
-}).service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+}).service('engineQuery', function ($engineConfig, $engineApiCheck, $http, EngineInterceptor, $q) {
 
-    var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&attachAvailableActions=true&documentId=:documentId', { query_id: '@query', documentId: '@documentId' }, {
-        get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true }
-    });
+    var request_processors = [];
+    var response_processors = [];
 
-    return function (query, parentDocumentId, callback, errorCallback) {
-        $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
-        return _query.get({ query: query, documentId: parentDocumentId }, callback, errorCallback);
+    return {
+        request_processors: request_processors,
+        response_processors: response_processors,
+        get: function get(query, parentDocumentId, callback, errorCallback) {
+            $engineApiCheck.throw([apiCheck.string, apiCheck.string.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
+
+            parentDocumentId = parentDocumentId != null ? parentDocumentId : '';
+
+            var res = { $resolved: 0 };
+
+            var q = $http.get($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId + '&attachAvailableActions=true').then(function (response) {
+                return response.data;
+            }).then(EngineInterceptor.response).then(function (data) {
+                res = angular.merge(res, data);
+                return res;
+            });
+
+            _.forEach(response_processors, function (processor) {
+                var processingQueue = [];
+                q = q.then(function (documents) {
+                    _.forEach(documents, function (document, index) {
+                        if (!_.isNaN(parseInt(index))) processingQueue.push($q.when(processor(document.document)));
+                    });
+
+                    return $q.all(processingQueue).then(function () {
+                        return documents;
+                    });
+                });
+            });
+            q = q.then(function (data) {
+                res.$resolved = 1;
+                return res;
+            }).then(callback, errorCallback);
+            res.$promise = q;
+            return res;
+        }
     };
-}).service('engineDashboard', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineQuery) {
+}).service('engineDashboard', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
     var _queryCategory = $resource($engineConfig.baseUrl + '/query?queryCategoryId=:queryCategoryId', { queryCategoryId: '@queryCategoryId' }, { get: { method: 'GET', transformResponse: EngineInterceptor.response, isArray: true } });
 
@@ -2239,8 +2272,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-29T13:57:03.476Z';
-var ENGINE_VERSION = '0.6.24';
+var ENGINE_COMPILATION_DATE = '2016-12-29T16:57:07.745Z';
+var ENGINE_VERSION = '0.6.26';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2526,7 +2559,7 @@ angular.module('engine.list').component('engineDocumentList', {
     });
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
-    $scope.documents = engineQuery($scope.query, _parentDocumentId);
+    $scope.documents = engineQuery.get($scope.query, _parentDocumentId);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
@@ -2534,11 +2567,11 @@ angular.module('engine.list').component('engineDocumentList', {
 
         if (action.type == 'LINK') {
             return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
-                $scope.documents = engineQuery($scope.query);
+                $scope.documents = engineQuery.get($scope.query);
             }, undefined, document.id);
         } else {
             return engineAction(action.id, document).$promise.then(function (data) {
-                $scope.documents = engineQuery($scope.query);
+                $scope.documents = engineQuery.get($scope.query);
             });
         }
     };
@@ -2578,7 +2611,7 @@ angular.module('engine.list').component('engineDocumentList', {
                 if (linkAction != null) $scope.engineAction(linkAction, documentEntry.document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
             } else {
                 DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
-                    $scope.documents = engineQuery($scope.query, _parentDocumentId);
+                    $scope.documents = engineQuery.get($scope.query, _parentDocumentId);
                 });
             }
         } else {
@@ -2592,7 +2625,7 @@ angular.module('engine.list').component('engineDocumentList', {
 
     $scope.onCreateDocument = function () {
         if ($scope.options.subdocument == true) DocumentModal(undefined, $scope.options, self.parentDocument, function () {
-            $scope.documents = engineQuery($scope.query, self.parentDocument.id);
+            $scope.documents = engineQuery.get($scope.query, self.parentDocument.id);
         });else $location.path($scope.genDocumentLink('new'));
     };
     $scope.canCreateDocument = function () {

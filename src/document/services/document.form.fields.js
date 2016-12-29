@@ -138,7 +138,9 @@ angular.module('engine.document')
         this.register(new DocumentField({inputType: 'QUERIED_LIST'}, function (field, metric, ctx) {
             field = {
                 data: field.data,
-                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" '+
+                'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
+                ' list-caption="\''+metric.label+'\'"'+
                 ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="'+metric.onSelectBehavior+'"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),

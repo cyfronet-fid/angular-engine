@@ -29,19 +29,54 @@ angular.module('engine')
     })
 
 
-    .service('engineQuery', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
+    .service('engineQuery', function ($engineConfig, $engineApiCheck, $http, EngineInterceptor, $q) {
 
-        var _query = $resource($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=:query&attachAvailableActions=true&documentId=:documentId',
-            {query_id: '@query', documentId: '@documentId'}, {
-                get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}
-            });
+        var request_processors = [];
+        var response_processors = [];
 
-        return function (query, parentDocumentId, callback, errorCallback) {
-            $engineApiCheck([apiCheck.string, apiCheck.func.optional, apiCheck.func.optional], arguments);
-            return _query.get({query: query, documentId: parentDocumentId}, callback, errorCallback);
+        return {
+            request_processors: request_processors,
+            response_processors: response_processors,
+            get: function (query, parentDocumentId, callback, errorCallback) {
+                $engineApiCheck.throw([apiCheck.string, apiCheck.string.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
+
+                parentDocumentId = parentDocumentId != null ? parentDocumentId : '';
+
+                var res = {$resolved: 0};
+
+                var q = $http.get($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId + '&attachAvailableActions=true')
+                    .then(function (response) {
+                        return response.data;
+                    })
+                    .then(EngineInterceptor.response)
+                    .then(function (data) {
+                        res = angular.merge(res, data);
+                        return res;
+                    });
+
+                _.forEach(response_processors, function (processor) {
+                    var processingQueue = [];
+                    q = q.then(function (documents) {
+                        _.forEach(documents, function (document, index) {
+                            if(!_.isNaN(parseInt(index)))
+                                processingQueue.push($q.when(processor(document.document)));
+                        });
+
+                        return $q.all(processingQueue).then(function () {
+                            return documents;
+                        });
+                    });
+                });
+                q = q.then(function (data) {
+                    res.$resolved = 1;
+                    return res;
+                }).then(callback, errorCallback);
+                res.$promise = q;
+                return res;
+            }
         }
     })
-    .service('engineDashboard', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, engineQuery) {
+    .service('engineDashboard', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
 
         var _queryCategory = $resource($engineConfig.baseUrl + '/query?queryCategoryId=:queryCategoryId', {queryCategoryId: '@queryCategoryId'},
             {get: {method: 'GET', transformResponse: EngineInterceptor.response, isArray: true}});
