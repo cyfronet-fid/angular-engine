@@ -9,7 +9,7 @@ angular.module('engine.document')
             var self = this;
             this.$scope = $scope;
             this.parentDocument = parentDocument;
-            this.parentDocumentId = document.id ? null : parentDocument.id;
+            this.parentDocumentId = document.id != null ? null : parentDocument.id;
             this.actions = [];
 
             this.markInit = null;

@@ -1,2 +1,4 @@
-<engine-document-list ng-repeat="query in queries" show-create-button="query.showCreateButton" columns="query.columns" custom-buttons="query.customButtons"
+<div class="text-box">
+<engine-document-list ng-repeat="query in queries" show-create-button="query.showCreateButton" columns="query.columns"
                       query="query.queryId" options="$engine.getOptions(query.documentModelId)" list-caption="query.label"></engine-document-list>
+</div>

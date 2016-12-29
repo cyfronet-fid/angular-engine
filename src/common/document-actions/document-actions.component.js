@@ -23,7 +23,7 @@ angular.module('engine.common')
             if(!_.isEmpty(newDocument) && newDocument != null)
                 self.actionList._setDocument(newDocument);
         });
-        self.actionList = new DocumentActionList(self.document, self.documentParent, self._documentScope);
+        self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
     },
     bindings: {
         documentScope: '=',

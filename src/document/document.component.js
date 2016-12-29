@@ -65,7 +65,7 @@ angular.module('engine.document')
 
         // return chained promise, which will do all other common required operations:
         return $q.all(_actionsToPerform).then(function () {
-            self.actionList = new DocumentActionList(self.document, self.parentDocument, $scope);
+            self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
             return self.actionList.$ready;
         }).then(function () {
             self.documentForm.init(self.document, self.options, self.stepList);
