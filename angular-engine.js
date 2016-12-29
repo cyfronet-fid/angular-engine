@@ -614,14 +614,16 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
                 wrapperClass: this.categoryWrapperCSS,
                 label: metricCategory.label,
                 visualClass: metricCategory.visualClass,
-                css: metricCategory.visualClass.join(' ')
+                css: metricCategory.visualClass == null ? '' : metricCategory.visualClass.join(' ')
             },
             fieldGroup: null,
             wrapper: this.categoryWrapper,
             data: {
                 hasMetrics: function hasMetrics() {
                     return DocumentCategory.hasMetrics(formlyCategory.fieldGroup);
-                }
+                },
+                position: metricCategory.position,
+                metricCategory: metricCategory
             }
         };
 
@@ -847,7 +849,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 description: metric.description,
                 placeholder: 'Enter ' + metric.label,
                 required: metric.required,
-                css: metric.visualClass.join(' '),
+                css: metric.visualClass == null ? '' : metric.visualClass.join(' '),
                 visualClass: metric.visualClass
             },
             expressionProperties: {
@@ -987,7 +989,9 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
                     documentForm: self });
                 self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 0, field);
 
-                self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, 'position');
+                self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, function (metric) {
+                    return metric.data.position;
+                });
             });
         }).$promise;
     };
@@ -1085,6 +1089,8 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 
         postprocess();
 
+        reorderFields();
+
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
         console.debug('DocumentForm form structure', self.formStructure);
@@ -1125,6 +1131,14 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         function postprocess() {
             _.forEach(_categoriesToPostProcess, function (entry) {
                 entry.data.$process();
+            });
+        }
+
+        function reorderFields() {
+            _.forEach(self.categoriesDict, function (metricCategory) {
+                metricCategory.fieldGroup = _.sortBy(metricCategory.fieldGroup, function (field) {
+                    return field.data.position;
+                });
             });
         }
     };
@@ -2225,8 +2239,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2016-12-29T12:16:34.607Z';
-var ENGINE_VERSION = '0.6.22';
+var ENGINE_COMPILATION_DATE = '2016-12-29T13:25:32.848Z';
+var ENGINE_VERSION = '0.6.24';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);

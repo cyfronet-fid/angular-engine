@@ -195,7 +195,7 @@ angular.module('engine.document')
                     description: metric.description,
                     placeholder: 'Enter ' + metric.label,
                     required: metric.required,
-                    css: metric.visualClass.join(' '),
+                    css: metric.visualClass == null ? '' : metric.visualClass.join(' '),
                     visualClass: metric.visualClass
                 },
                 expressionProperties: {

@@ -107,12 +107,14 @@ angular.module('engine.document')
                     wrapperClass: this.categoryWrapperCSS,
                     label: metricCategory.label,
                     visualClass: metricCategory.visualClass,
-                    css: metricCategory.visualClass.join(' ')
+                    css: metricCategory.visualClass == null ? '' : metricCategory.visualClass.join(' ')
                 },
                 fieldGroup: null,
                 wrapper: this.categoryWrapper,
                 data: {
-                    hasMetrics: function(){return DocumentCategory.hasMetrics(formlyCategory.fieldGroup);}
+                    hasMetrics: function(){return DocumentCategory.hasMetrics(formlyCategory.fieldGroup);},
+                    position: metricCategory.position,
+                    metricCategory: metricCategory
                 }
             };
 

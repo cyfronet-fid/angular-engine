@@ -103,7 +103,9 @@ angular.module('engine.document')
                                                                                         documentForm: self});
                 self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 0, field);
 
-                self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, 'position');
+                self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, function (metric) {
+                    return metric.data.position;
+                });
             })
 
 
@@ -209,6 +211,8 @@ angular.module('engine.document')
 
         postprocess();
 
+        reorderFields();
+
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
         console.debug('DocumentForm form structure', self.formStructure);
@@ -253,6 +257,14 @@ angular.module('engine.document')
             _.forEach(_categoriesToPostProcess, function (entry) {
                 entry.data.$process();
             })
+        }
+
+        function reorderFields() {
+            _.forEach(self.categoriesDict, function (metricCategory) {
+                metricCategory.fieldGroup = _.sortBy(metricCategory.fieldGroup, function (field) {
+                    return field.data.position;
+                });
+            });
         }
     };
 
