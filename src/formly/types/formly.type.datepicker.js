@@ -52,7 +52,8 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
                 datepickerOptions: {
                     format: 'dd-MM-yyyy',
                     initDate: new Date()
-                }
+                },
+                css: ''
             }
         },
         controller: function ($scope) {

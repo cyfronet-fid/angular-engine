@@ -194,7 +194,9 @@ angular.module('engine.document')
                     label: metric.label,
                     description: metric.description,
                     placeholder: 'Enter ' + metric.label,
-                    required: metric.required
+                    required: metric.required,
+                    css: metric.visualClass.join(' '),
+                    visualClass: metric.visualClass
                 },
                 expressionProperties: {
                     'templateOptions.disabled': function ($viewValue, $modelValue, scope) {
