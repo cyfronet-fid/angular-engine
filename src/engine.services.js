@@ -37,14 +37,17 @@ angular.module('engine')
         return {
             request_processors: request_processors,
             response_processors: response_processors,
-            get: function (query, parentDocumentId, callback, errorCallback) {
-                $engineApiCheck.throw([apiCheck.string, apiCheck.string.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
+            get: function (query, parentDocument, callback, errorCallback) {
+                $engineApiCheck.throw([apiCheck.string, apiCheck.object.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-                parentDocumentId = parentDocumentId != null ? parentDocumentId : '';
+                var parentDocumentId = parentDocument != null && parentDocument.id != null ? parentDocument.id : '';
 
                 var res = {$resolved: 0};
 
-                var q = $http.get($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId + '&attachAvailableActions=true')
+                var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query +
+                                   '&attachAvailableActions=true&documentId=' +
+                                   parentDocumentId + '&attachAvailableActions=true',
+                                   parentDocument)
                     .then(function (response) {
                         return response.data;
                     })

@@ -53,7 +53,8 @@ angular.module('engine.list')
     });
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
-    $scope.documents = engineQuery.get($scope.query, _parentDocumentId);
+
+    $scope.documents = engineQuery.get($scope.query, this.parentDocument);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 

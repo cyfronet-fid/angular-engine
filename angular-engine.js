@@ -2033,14 +2033,14 @@ angular.module('engine').factory('engineResolve', function () {
     return {
         request_processors: request_processors,
         response_processors: response_processors,
-        get: function get(query, parentDocumentId, callback, errorCallback) {
-            $engineApiCheck.throw([apiCheck.string, apiCheck.string.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
+        get: function get(query, parentDocument, callback, errorCallback) {
+            $engineApiCheck.throw([apiCheck.string, apiCheck.object.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-            parentDocumentId = parentDocumentId != null ? parentDocumentId : '';
+            var parentDocumentId = parentDocument != null && parentDocument.id != null ? parentDocument.id : '';
 
             var res = { $resolved: 0 };
 
-            var q = $http.get($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId + '&attachAvailableActions=true').then(function (response) {
+            var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId + '&attachAvailableActions=true', parentDocument).then(function (response) {
                 return response.data;
             }).then(EngineInterceptor.response).then(function (data) {
                 res = angular.merge(res, data);
@@ -2272,7 +2272,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-03T12:17:34.224Z';
+var ENGINE_COMPILATION_DATE = '2017-01-03T12:22:06.418Z';
 var ENGINE_VERSION = '0.6.27';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
@@ -2559,7 +2559,8 @@ angular.module('engine.list').component('engineDocumentList', {
     });
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
-    $scope.documents = engineQuery.get($scope.query, _parentDocumentId);
+
+    $scope.documents = engineQuery.get($scope.query, this.parentDocument);
 
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
