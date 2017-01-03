@@ -194,11 +194,17 @@ angular.module('engine.document')
                 templateOptions: {
                     type: 'text',
                     label: metric.label,
+                    metricId: metric.id,
                     description: metric.description,
                     placeholder: 'Enter ' + metric.label,
                     required: metric.required,
                     css: metric.visualClass == null ? '' : metric.visualClass.join(' '),
                     visualClass: metric.visualClass
+                },
+                ngModelAttrs: {
+                    metricId: {
+                        attribute: 'metric-id'
+                    }
                 },
                 expressionProperties: {
                     'templateOptions.disabled': function ($viewValue, $modelValue, scope) {
