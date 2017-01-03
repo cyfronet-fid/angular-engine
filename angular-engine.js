@@ -845,7 +845,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 label: metric.label,
                 metricId: metric.id,
                 description: metric.description,
-                placeholder: 'Enter ' + metric.label,
+                placeholder: 'Enter missing value',
                 required: metric.required,
                 visualClass: metric.visualClass
             },
@@ -2274,8 +2274,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-03T16:17:30.260Z';
-var ENGINE_VERSION = '0.6.30';
+var ENGINE_COMPILATION_DATE = '2017-01-03T16:27:37.246Z';
+var ENGINE_VERSION = '0.6.31';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
