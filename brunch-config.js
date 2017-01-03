@@ -18,7 +18,7 @@ module.exports = {
         enabled: false
     },
     server: {
-        command: 'http-server . --ssl -a localhost -p 8000 -C cert.pem'
+        command: 'node_modules/.bin/http-server . --ssl -a localhost -p 8000 -C cert.pem'
     },
     files: {
         templates: {
