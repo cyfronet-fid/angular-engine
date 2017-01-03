@@ -196,7 +196,7 @@ angular.module('engine.document')
                     label: metric.label,
                     metricId: metric.id,
                     description: metric.description,
-                    placeholder: 'Enter ' + metric.label,
+                    placeholder: 'Enter missing value',
                     required: metric.required,
                     visualClass: metric.visualClass
                 },
