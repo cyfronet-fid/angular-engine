@@ -12,7 +12,8 @@ angular.module('engine.formly')
         datepicker: '/src/formly/types/templates/datepicker.tpl.html',
         multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html',
         multiSelect: '/src/formly/types/templates/multiSelect.tpl.html',
-        multiSelectImage: '/src/formly/types/templates/multiSelectImage.tpl.html'
+        multiSelectImage: '/src/formly/types/templates/multiSelectImage.tpl.html',
+        multiSelectVertical: '/src/formly/types/templates/multiSelectVertical.tpl.html'
     };
     var _wrapperTemplateUrls = {
         category: '/src/formly/wrappers/templates/category.tpl.html',

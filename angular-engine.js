@@ -675,7 +675,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
     DocumentFieldFactory.prototype._engineOptionsToFormly = function _engineOptionsToFormly(engineOptions) {
         var r = [];
         _.forEach(engineOptions, function (option) {
-            r.push({ name: option.value, value: option.value });
+            r.push({ name: option.value, value: option.value, extraField: true });
         });
         return r;
     };
@@ -735,9 +735,38 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             return field;
         }));
 
+        this.register(new DocumentField({ visualClass: '@verticalMultiSelect', inputType: 'MULTISELECT' }, function (field, metric, ctx) {
+            field.type = 'multiSelectVertical';
+            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+            return field;
+        }));
+
         this.register(new DocumentField({ visualClass: '@imgMultiSelect', inputType: 'MULTISELECT' }, function (field, metric, ctx) {
             field.type = 'multiSelectImage';
-            field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+            // field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+            var cols = metric.cols || 2;
+            field.templateOptions.cols = [];
+            field.templateOptions.colClass = 'col-md-' + 12 / cols;
+            field.templateOptions.optionsPerCol = Math.ceil(metric.options.length / cols);
+
+            for (var i = 0; i < cols; ++i) {
+                var col = [];
+                field.templateOptions.cols.push(col);
+                for (var j = 0; j < field.templateOptions.optionsPerCol && i * field.templateOptions.optionsPerCol + j < metric.options.length; ++j) {
+                    var cm = metric.options[i * field.templateOptions.optionsPerCol + j];
+                    col.push({ value: cm.value, css: cm.visualClass != null ? cm.visualClass.join(' ') : '', label: cm.value });
+                }
+            }
+            if (field.model[field.key] == null) field.model[field.key] = [];
+
+            field.data.addRemoveModel = function (element) {
+                if (_.contains(field.model[field.key], element)) field.model[field.key].splice(field.model[field.key].indexOf(element), 1);else field.model[field.key].push(element);
+            };
+
+            field.data.isActive = function (element) {
+                return _.contains(field.model[field.key], element);
+            };
 
             return field;
         }));
@@ -2318,8 +2347,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-05T15:27:21.085Z';
-var ENGINE_VERSION = '0.6.35';
+var ENGINE_COMPILATION_DATE = '2017-01-05T17:36:19.204Z';
+var ENGINE_VERSION = '0.6.36';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2339,7 +2368,8 @@ angular.module('engine.formly').provider('$engineFormly', function () {
         datepicker: '/src/formly/types/templates/datepicker.tpl.html',
         multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html',
         multiSelect: '/src/formly/types/templates/multiSelect.tpl.html',
-        multiSelectImage: '/src/formly/types/templates/multiSelectImage.tpl.html'
+        multiSelectImage: '/src/formly/types/templates/multiSelectImage.tpl.html',
+        multiSelectVertical: '/src/formly/types/templates/multiSelectVertical.tpl.html'
     };
     var _wrapperTemplateUrls = {
         category: '/src/formly/wrappers/templates/category.tpl.html',
@@ -2476,6 +2506,14 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
     formlyConfig.setType({
         name: 'multiSelectImage',
         templateUrl: $engineFormly.templateUrls['multiSelectImage'],
+        wrapper: ['engineLabel', 'engineHasError'],
+        defaultOptions: {
+            noFormControl: false
+        }
+    });
+    formlyConfig.setType({
+        name: 'multiSelectVertical',
+        templateUrl: $engineFormly.templateUrls['multiSelectVertical'],
         wrapper: ['engineLabel', 'engineHasError'],
         defaultOptions: {
             noFormControl: false
@@ -2685,7 +2723,7 @@ angular.module('engine.list').component('engineDocumentList', {
 
     $scope.onCreateDocument = function () {
         if ($scope.options.subdocument == true) DocumentModal(undefined, $scope.options, self.parentDocument, function () {
-            $scope.documents = engineQuery.get($scope.query, self.parentDocument.id);
+            $scope.documents = engineQuery.get($scope.query, self.parentDocument);
         });else $location.path($scope.genDocumentLink('new'));
     };
     $scope.canCreateDocument = function () {
@@ -2749,7 +2787,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiSelect.tpl.html", "<div>\n    <div class=\"radio-box\" ng-class=\"{'radio-box-last': $last, 'radio-box-first': $first, 'radio-box-active': model[options.key] == option.value}\"\n         ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <span class=\"radio-desc\">{{::option.name}}</span>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/multiSelectImage.tpl.html", "<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>");
+  $templateCache.put("/src/formly/types/templates/multiSelectImage.tpl.html", "<!--<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>-->\n\n<div class=\"text-box\">\n    <div class=\"content\">\n        <div class=\"row\">\n            <div ng-repeat=\"col in options.templateOptions.cols\" class=\"{{::options.templateOptions.colClass}}\">\n               <div class=\"alert alert-proposal {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}\"\n                     role=\"alert\" ng-repeat=\"element in col\"\n                     ng-click=\"options.data.addRemoveModel(element.value)\">\n                    <span>{{::element.label}}</span>\n                    <i class=\"fa fa-check-circle\" aria-hidden=\"true\"></i>\n                </div>\n            </div>\n        </div>\n    </div>\n</div>\n");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/types/templates/multiSelectVertical.tpl.html", "<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/radio.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");

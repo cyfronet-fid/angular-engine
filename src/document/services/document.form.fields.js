@@ -18,7 +18,7 @@ angular.module('engine.document')
         DocumentFieldFactory.prototype._engineOptionsToFormly = function _engineOptionsToFormly(engineOptions) {
             var r = [];
             _.forEach(engineOptions, function (option) {
-                r.push({name: option.value, value: option.value})
+                r.push({name: option.value, value: option.value, extraField: true});
             });
             return r;
         };
@@ -79,9 +79,42 @@ angular.module('engine.document')
                 return field;
             }));
 
+            this.register(new DocumentField({visualClass: '@verticalMultiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
+                field.type = 'multiSelectVertical';
+                field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+                return field;
+            }));
+
             this.register(new DocumentField({visualClass: '@imgMultiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelectImage';
-                field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+                // field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+                var cols = metric.cols || 2;
+                field.templateOptions.cols = [];
+                field.templateOptions.colClass = 'col-md-'+(12 / cols);
+                field.templateOptions.optionsPerCol = Math.ceil(metric.options.length / cols);
+
+                for(var i=0; i<cols; ++i) {
+                    var col = [];
+                    field.templateOptions.cols.push(col);
+                    for(var j=0; j<field.templateOptions.optionsPerCol && i*field.templateOptions.optionsPerCol + j < metric.options.length; ++j) {
+                        var cm = metric.options[i*field.templateOptions.optionsPerCol + j];
+                        col.push({value: cm.value, css: cm.visualClass != null ? cm.visualClass.join(' ') : '', label: cm.value});
+                    }
+                }
+                if(field.model[field.key] == null)
+                    field.model[field.key] = [];
+
+                field.data.addRemoveModel = function(element) {
+                    if(_.contains(field.model[field.key], element))
+                        field.model[field.key].splice(field.model[field.key].indexOf(element), 1);
+                    else
+                        field.model[field.key].push(element)
+                };
+
+                field.data.isActive = function(element) {
+                    return _.contains(field.model[field.key], element)
+                };
 
                 return field;
             }));

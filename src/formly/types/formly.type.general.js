@@ -54,6 +54,14 @@ angular.module('engine.formly')
                     noFormControl: false
                 }
         });
+        formlyConfig.setType({
+                name: 'multiSelectVertical',
+                templateUrl: $engineFormly.templateUrls['multiSelectVertical'],
+                wrapper: ['engineLabel', 'engineHasError'],
+                defaultOptions: {
+                    noFormControl: false
+                }
+        });
 
         formlyConfig.setType({
                 name: 'select',

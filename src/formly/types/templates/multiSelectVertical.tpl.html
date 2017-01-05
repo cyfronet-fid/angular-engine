@@ -1,0 +1,8 @@
+<div>
+    <div ng-repeat="option in to.options">
+        <input type="checkbox" id="{{id}}_{{::option.value}}" checklist-model="model[options.key]" checklist-value="option.value">
+        <label class="" style="top: -3px; position: relative;" for="{{id}}_{{::option.value}}">
+            <span class="" >{{::option.name}}</span>
+        </label>
+    </div>
+</div>
