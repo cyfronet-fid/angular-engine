@@ -848,6 +848,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 isMetric: true,
                 form: ctx.documentForm,
                 categoryId: metric.categoryId,
+                unit: metric.unit,
                 id: metric.id //this is required for DocumentForm
             },
             templateOptions: {
@@ -882,6 +883,8 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 }
             }
         };
+
+        if (metric.unit != null) formlyField.wrapper = 'unit';
 
         if (metric.reloadOnChange == true) {
             formlyField.templateOptions.onChange = DocumentField.onChange;
@@ -2315,8 +2318,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-05T15:08:41.635Z';
-var ENGINE_VERSION = '0.6.34';
+var ENGINE_COMPILATION_DATE = '2017-01-05T15:27:21.085Z';
+var ENGINE_VERSION = '0.6.35';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2343,6 +2346,7 @@ angular.module('engine.formly').provider('$engineFormly', function () {
         label: '/src/formly/wrappers/templates/label.tpl.html',
         hasError: '/src/formly/wrappers/templates/has-error.tpl.html',
         step: '/src/formly/wrappers/templates/step.tpl.html',
+        unit: '/src/formly/wrappers/templates/unit.tpl.html',
         default: '/src/formly/wrappers/templates/default.tpl.html'
     };
 
@@ -2559,6 +2563,10 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly) {
         templateUrl: $engineFormly.wrapperUrls['step']
     });
     formlyConfig.setWrapper({
+        name: 'unit',
+        templateUrl: $engineFormly.wrapperUrls['unit']
+    });
+    formlyConfig.setWrapper({
         name: 'default',
         templateUrl: $engineFormly.wrapperUrls['default']
     });
@@ -2772,6 +2780,9 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/step.tpl.html", "<div ng-hide=\"options.data.hide\">\n    <formly-transclude></formly-transclude>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/wrappers/templates/unit.tpl.html", "<div class=\"input-group\">\n    <formly-transclude></formly-transclude>\n    <span class=\"input-group-addon\" >{{::options.data.unit}}</span>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/array.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name).join(', ')}}");

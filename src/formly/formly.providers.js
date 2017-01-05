@@ -19,6 +19,7 @@ angular.module('engine.formly')
         label: '/src/formly/wrappers/templates/label.tpl.html',
         hasError: '/src/formly/wrappers/templates/has-error.tpl.html',
         step: '/src/formly/wrappers/templates/step.tpl.html',
+        unit: '/src/formly/wrappers/templates/unit.tpl.html',
         default: '/src/formly/wrappers/templates/default.tpl.html'
     };
 

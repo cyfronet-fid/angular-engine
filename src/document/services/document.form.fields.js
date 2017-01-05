@@ -199,6 +199,7 @@ angular.module('engine.document')
                     isMetric: true,
                     form: ctx.documentForm,
                     categoryId: metric.categoryId,
+                    unit: metric.unit,
                     id: metric.id //this is required for DocumentForm
                 },
                 templateOptions: {
@@ -234,6 +235,9 @@ angular.module('engine.document')
                     }
                 }
             };
+
+            if(metric.unit != null)
+                formlyField.wrapper = 'unit';
 
             if (metric.reloadOnChange == true) {
                 formlyField.templateOptions.onChange = DocumentField.onChange;
