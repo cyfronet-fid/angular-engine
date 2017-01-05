@@ -7,7 +7,7 @@
     <div ng-if="documents.$resolved" ng-cloak>
         <table class="proposal-list">
             <tr>
-                <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;" ng-repeat="column in columns">{{column.caption || column.name}}</th>
+                <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;" ng-repeat="column in columns" translate>{{column.caption || column.name}}</th>
                 <th class="text-right"></th>
             </tr>
             <tr ng-repeat="document_entry in documents">
