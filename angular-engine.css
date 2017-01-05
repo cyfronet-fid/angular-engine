@@ -9,9 +9,10 @@
 .modal-body .text-box {
     background-color: transparent;
     border-radius: 0px;
-    margin-bottom: 0px;
+    margin-bottom: 25px;
     box-shadow: none;
-    padding: 0px;
+    padding: 0px 0px 15px 0px;
+    border-bottom: rgba(144, 150, 160, 0.5) solid 2px;
 }
 
 .eng-loading-box {
