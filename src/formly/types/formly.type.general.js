@@ -103,5 +103,13 @@ angular.module('engine.formly')
                 // }
             // })
         });
+        // formlyConfig.setType({
+        //         name: 'number',
+        //         templateUrl: $engineFormly.templateUrls['number'],
+        //         wrapper: ['engineLabel', 'engineHasError'],
+        //         defaultOptions: function(options) {
+        //             return options;
+        //         }
+        // });
     });
 

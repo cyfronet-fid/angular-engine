@@ -765,7 +765,17 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ inputType: 'NUMBER' }, function (field, metric, ctx) {
             field.type = 'input';
+            field.templateOptions.type = 'text';
+            field.templateOptions.numberConvert = 'true';
+            // field.ngModelAttrs = {
+            //     numberConvert: {attribute: 'number-convert'}
+            // };
 
+            field.data.prepareValue = function (value) {
+                var parsedValue = parseInt(value);
+
+                return _.isNaN(parsedValue) ? value : parsedValue;
+            };
             return field;
         }));
 
@@ -888,6 +898,30 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
     };
 
     return DocumentField;
+}).directive('numberConvert', function () {
+    return {
+        restrict: 'A',
+        require: 'ngModel',
+        scope: {
+            model: '=ngModel'
+        },
+        link: function link(scope, element, attrs, ngModelCtrl) {
+            if (scope.model && typeof scope.model == 'string') {
+                if (!scope.model.match(/^\d+$/)) scope.model = val;else {
+                    var pv = parseInt(scope.model, 10);
+                    if (!_.isNaN(pv)) scope.model = pv;
+                }
+            }
+            scope.$watch('model', function (val, old) {
+                if (typeof val == 'string') {
+                    if (!val.match(/^\d+$/)) scope.model = val;else {
+                        var pv = parseInt(val, 10);
+                        if (!_.isNaN(pv)) scope.model = pv;else scope.model = val;
+                    }
+                }
+            });
+        }
+    };
 });
 'use strict';
 
@@ -1092,6 +1126,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         postprocess();
 
         reorderFields();
+        setDefaultValues();
 
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
@@ -1133,6 +1168,12 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         function postprocess() {
             _.forEach(_categoriesToPostProcess, function (entry) {
                 entry.data.$process();
+            });
+        }
+
+        function setDefaultValues() {
+            _.forEach(self.metricDict, function (metric, metricId) {
+                if (metric.defaultValue != null && self.document.metrics[metricId] == null) self.document.metrics[metricId] = metric.defaultValue;
             });
         }
 
@@ -2274,8 +2315,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-05T12:19:26.051Z';
-var ENGINE_VERSION = '0.6.33';
+var ENGINE_COMPILATION_DATE = '2017-01-05T15:08:41.635Z';
+var ENGINE_VERSION = '0.6.34';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2475,6 +2516,14 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
         // }
         // })
     });
+    // formlyConfig.setType({
+    //         name: 'number',
+    //         templateUrl: $engineFormly.templateUrls['number'],
+    //         wrapper: ['engineLabel', 'engineHasError'],
+    //         defaultOptions: function(options) {
+    //             return options;
+    //         }
+    // });
 });
 'use strict';
 

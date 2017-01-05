@@ -109,7 +109,17 @@ angular.module('engine.document')
 
             this.register(new DocumentField({inputType: 'NUMBER'}, function (field, metric, ctx) {
                 field.type = 'input';
+                field.templateOptions.type = 'text';
+                field.templateOptions.numberConvert = 'true';
+                // field.ngModelAttrs = {
+                //     numberConvert: {attribute: 'number-convert'}
+                // };
 
+                field.data.prepareValue = function(value) {
+                    var parsedValue = parseInt(value);
+
+                    return _.isNaN(parsedValue) ? value : parsedValue;
+                };
                 return field;
             }));
 
@@ -241,4 +251,36 @@ angular.module('engine.document')
         };
 
         return DocumentField;
+    }).directive('numberConvert', function () {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            scope: {
+                model: '=ngModel'
+            },
+            link: function (scope, element, attrs, ngModelCtrl) {
+                if (scope.model && typeof scope.model == 'string') {
+                    if(!scope.model.match(/^\d+$/))
+                        scope.model = val;
+                    else {
+                        var pv = parseInt(scope.model, 10);
+                        if(!_.isNaN(pv))
+                            scope.model = pv;
+                    }
+                }
+                scope.$watch('model', function(val, old) {
+                    if (typeof val == 'string') {
+                        if(!val.match(/^\d+$/))
+                            scope.model = val;
+                        else {
+                            var pv = parseInt(val, 10);
+                            if(!_.isNaN(pv))
+                                scope.model = pv;
+                            else
+                                scope.model = val;
+                        }
+                    }
+                });
+            }
+        };
     });

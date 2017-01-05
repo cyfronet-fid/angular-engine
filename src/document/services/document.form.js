@@ -212,6 +212,7 @@ angular.module('engine.document')
         postprocess();
 
         reorderFields();
+        setDefaultValues();
 
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
@@ -256,6 +257,13 @@ angular.module('engine.document')
         function postprocess() {
             _.forEach(_categoriesToPostProcess, function (entry) {
                 entry.data.$process();
+            })
+        }
+
+        function setDefaultValues() {
+            _.forEach(self.metricDict, function (metric, metricId) {
+                if(metric.defaultValue != null && self.document.metrics[metricId] == null)
+                    self.document.metrics[metricId] = metric.defaultValue;
             })
         }
 
