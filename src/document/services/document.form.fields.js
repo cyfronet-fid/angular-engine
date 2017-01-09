@@ -129,8 +129,12 @@ angular.module('engine.document')
             this.register(new DocumentField({visualClass: 'date', inputType: 'DATE'}, function (field, metric, ctx) {
                 field.type = 'datepicker';
                 field.data.prepareValue = function (originalValue) {
+                    if(originalValue == null)
+                        return originalValue;
                     return new Date(originalValue);
                 };
+                // field.data.onChangeHandlers = [];
+                field.templateOptions.onBlur = undefined;
                 return field;
             }));
 
@@ -281,8 +285,8 @@ angular.module('engine.document')
                     messages: {
                         server: function (viewValue, modelValue, scope) {
                             return _.isArray(scope.to.serverErrors) && scope.to.serverErrors.length > 0 ? scope.to.serverErrors[0] : '';
-                        },
-                        date: 'to.label+"_date"'
+                        }
+                        //date: 'to.label+"_date"'
                     }
                 }
             };

@@ -51,25 +51,23 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
             templateOptions: {
                 datepickerOptions: {
                     format: 'dd-MM-yyyy',
-                    initDate: new Date()
+                    initDate: new Date(),
+                    allowInvalid: true
                 },
                 css: ''
             }
         },
         controller: function ($scope) {
             $scope.openedDatePopUp = false;
-
-
             $scope.today = function () {
-                $scope.model[$scope.options.key] = $filter('date')(new Date(),'yyyy-MM-dd');
+                $scope.model[$scope.options.key] = new Date();
             };
-
             $scope.openPopUp = function ($event) {
                 $event.preventDefault();
                 $event.stopPropagation();
                 $scope.openedDatePopUp = true;
             };
-
+            //
             $scope.dateOptions = {
                 formatYear: 'yy',
                 startingDay: 1

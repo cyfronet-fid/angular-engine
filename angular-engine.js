@@ -792,8 +792,11 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this.register(new DocumentField({ visualClass: 'date', inputType: 'DATE' }, function (field, metric, ctx) {
             field.type = 'datepicker';
             field.data.prepareValue = function (originalValue) {
+                if (originalValue == null) return originalValue;
                 return new Date(originalValue);
             };
+            // field.data.onChangeHandlers = [];
+            field.templateOptions.onBlur = undefined;
             return field;
         }));
 
@@ -934,8 +937,8 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 messages: {
                     server: function server(viewValue, modelValue, scope) {
                         return _.isArray(scope.to.serverErrors) && scope.to.serverErrors.length > 0 ? scope.to.serverErrors[0] : '';
-                    },
-                    date: 'to.label+"_date"'
+                    }
+                    //date: 'to.label+"_date"'
                 }
             }
         };
@@ -2437,8 +2440,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-09T12:56:33.269Z';
-var ENGINE_VERSION = '0.6.37';
+var ENGINE_COMPILATION_DATE = '2017-01-09T14:22:10.341Z';
+var ENGINE_VERSION = '0.6.38';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2516,24 +2519,23 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
             templateOptions: {
                 datepickerOptions: {
                     format: 'dd-MM-yyyy',
-                    initDate: new Date()
+                    initDate: new Date(),
+                    allowInvalid: true
                 },
                 css: ''
             }
         },
         controller: function controller($scope) {
             $scope.openedDatePopUp = false;
-
             $scope.today = function () {
-                $scope.model[$scope.options.key] = $filter('date')(new Date(), 'yyyy-MM-dd');
+                $scope.model[$scope.options.key] = new Date();
             };
-
             $scope.openPopUp = function ($event) {
                 $event.preventDefault();
                 $event.stopPropagation();
                 $scope.openedDatePopUp = true;
             };
-
+            //
             $scope.dateOptions = {
                 formatYear: 'yy',
                 startingDay: 1
@@ -2865,7 +2867,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/datepicker.tpl.html", "<p class=\"input-group input-group-datepicker\">\n    <input id=\"{{::id}}\"\n           name=\"{{::id}}\"\n           ng-model=\"model[options.key]\"\n           class=\"form-control datepicker\"\n           type=\"text\"\n           uib-datepicker-popup=\"{{to.datepickerOptions.format || 'yyyy-MM-dd'}}\"\n           is-open=\"openedDatePopUp\"\n           show-button-bar=\"false\"\n           datepicker-options=\"to.datepickerOptions || todayMinValueDateOptions\"\n           ng-click=\"openPopUp($event)\"/>\n    <span class=\"input-group-btn\">\n        <button type=\"button\" class=\"btn btn-default\" ng-click=\"openPopUp($event)\">\n            <i class=\"glyphicon glyphicon-calendar\"></i>\n        </button>\n    </span>\n</p>");
+  $templateCache.put("/src/formly/types/templates/datepicker.tpl.html", "<p class=\"input-group input-group-datepicker\">\n    <input id=\"{{::id}}\"\n           name=\"{{::id}}\"\n           ng-model=\"model[options.key]\"\n           class=\"form-control datepicker\"\n           type=\"text\"\n           uib-datepicker-popup=\"{{to.datepickerOptions.format || 'yyyy-MM-dd'}}\"\n           is-open=\"openedDatePopUp\"\n           ng-required=\"false\"\n           show-button-bar=\"false\"\n           datepicker-options=\"to.datepickerOptions\"\n           on-open-focus=\"false\"\n           ng-click=\"openPopUp($event)\"/>\n    <span class=\"input-group-btn\">\n        <button type=\"button\" class=\"btn btn-default\" ng-click=\"openPopUp($event)\">\n            <i class=\"glyphicon glyphicon-calendar\"></i>\n        </button>\n    </span>\n</p>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/input.tpl.html", "<input class=\"form-control\"  ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");
