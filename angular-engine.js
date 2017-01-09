@@ -6,16 +6,6 @@ angular.module('engine.common', []);
 angular.module('engine.dashboard', ['ngRoute', 'engine.list']);
 'use strict';
 
-/**
- * @ngdoc overview
- * @name engine.document
- *
- * @requires ngRoute
- *
- * @description
- * Module containing all functionalities of a single document form
- *
- */
 angular.module('engine.document', ['ngRoute']);
 'use strict';
 
@@ -26,6 +16,7 @@ angular.module('engine.steps', ['ngRoute']);
  * @ngdoc overview
  * @name engine
  *
+ * @requires engine
  * @requires engine.list
  * @requires engine.document
  * @requires engine.dashboard
@@ -245,7 +236,7 @@ angular.module('engine.document').component('engineDocument', {
     this.onStepChange = function (newStep, oldStep) {
         if (newStep != oldStep) {
             if (self.documentForm.isEditable()) {
-                self.documentForm.validate(oldStep, true);
+                self.documentForm.validate(oldStep);
                 self.save();
             }
         }
@@ -258,7 +249,7 @@ angular.module('engine.document').component('engineDocument', {
     };
 
     $scope.$on('engine.common.document.validate', function () {
-        self.documentForm.validate(null, true).then(function (valid) {
+        self.documentForm.validate().then(function (valid) {
             if (!valid) self.step = self.stepList.getFirstInvalidIndex();
         });
     });
@@ -576,6 +567,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
 
         this.register(new DocumentCategory('category', function (formlyCategory, metricCategory, ctx) {
             formlyCategory.templateOptions.wrapperClass = 'text-box';
+            formlyCategory.templateOptions.wrapperInnerClass = 'text-content';
             formlyCategory.wrapper = 'category';
 
             return formlyCategory;
@@ -597,6 +589,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
 
         this.categoryWrapper = 'default';
         this.categoryWrapperCSS = '';
+        this.categoryWrapperInnerCSS = '';
     }
 
     DocumentCategory.prototype.matches = function matches(metricCategory) {
@@ -828,7 +821,6 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this.register(new DocumentField({ inputType: 'EXTERNAL' }, function (field, metric, ctx) {
             return {
                 data: field.data,
-                key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' + 'options="options.templateOptions.options" metric="options.data.metric" errors="fc.$error" ' + 'class="' + metric.visualClass.join(' ') + '" ' + 'ng-disabled="options.data.form.disabled" ' + 'formly-options="options" ' + 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
                 templateOptions: { ngModel: ctx.document, options: ctx.options }
                 // expressionProperties: {'templateOptions.disabled': false}
@@ -838,7 +830,6 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
             field = {
                 data: field.data,
-                key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
@@ -866,26 +857,10 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
     //make it class method, to not instantiate it for every field
     DocumentField.onChange = function ($viewValue, $modelValue, $scope) {
-        _.forEach($scope.options.data.onChangeHandlers, function (callback) {
-            callback($viewValue, $modelValue, $scope);
-        });
-    };
-    DocumentField.validate = function ($viewValue, $modelValue, $scope) {};
-    DocumentField.onReload = function ($viewValue, $modelValue, $scope) {
         //emit reload request for dom element which wants to listen (eg. document)
         $scope.$emit('document.form.requestReload');
-        $scope.options.data.form._onReload();
-    };
-    DocumentField.onValidateSelf = function ($viewValue, $modelValue, $scope) {
-        var metricToValidate = {};
-        metricToValidate[$scope.options.data.metric.id] = $viewValue == null ? null : $viewValue;
-        $scope.options.data.form.validator.validateMetrics($modelValue, metricToValidate);
-    };
-    DocumentField.onValidate = function ($viewValue, $modelValue, $scope) {
-        //emit validate request for dom element which wants to listen (eg. document)
-        $scope.$emit('document.form.requestValidate');
 
-        $scope.options.data.form.validate(null, false);
+        $scope.options.data.form._onReload();
     };
 
     DocumentField.prototype.matches = function matches(metric) {
@@ -905,8 +880,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 form: ctx.documentForm,
                 categoryId: metric.categoryId,
                 unit: metric.unit,
-                id: metric.id, //this is required for DocumentForm
-                onChangeHandlers: []
+                id: metric.id //this is required for DocumentForm
             },
             templateOptions: {
                 type: 'text',
@@ -914,9 +888,8 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 metricId: metric.id,
                 description: metric.description,
                 placeholder: 'Enter missing value',
-                // required: metric.required, now it's handled by server side validation
-                visualClass: metric.visualClass,
-                onChange: DocumentField.onChange
+                required: metric.required,
+                visualClass: metric.visualClass
             },
             ngModelAttrs: {
                 metricId: {
@@ -925,13 +898,17 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             },
             expressionProperties: {
                 'templateOptions.disabled': function templateOptionsDisabled($viewValue, $modelValue, scope) {
-                    return scope.options.data.form.disabled; //|| !(scope.options.data.metric.editable == true); //enable it when it's supported by the backend
+                    return scope.options.data.form.disabled;
                 }
             },
             validation: {
                 messages: {
+                    required: function required(viewValue, modelValue, scope) {
+                        if (scope.to.serverErrors == null || _.isEmpty(scope.to.serverErrors)) return scope.to.label + "_required";
+                        return '';
+                    },
                     server: function server(viewValue, modelValue, scope) {
-                        return _.isArray(scope.to.serverErrors) && scope.to.serverErrors.length > 0 ? scope.to.serverErrors[0] : '';
+                        return scope.to.serverErrors[0];
                     },
                     date: 'to.label+"_date"'
                 }
@@ -941,19 +918,8 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         if (metric.unit != null) formlyField.wrapper = 'unit';
 
         if (metric.reloadOnChange == true) {
-            formlyField.data.onChangeHandlers.push(DocumentField.onReload);
+            formlyField.templateOptions.onChange = DocumentField.onChange;
         }
-
-        //if validateOnChange is true all other metrics should be validated after this one changes
-        if (metric.validateOnChange == true) {
-            formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
-            formlyField.templateOptions.onBlur = DocumentField.onValidate;
-        }
-        //otherwise only this metrics
-        else {
-                formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
-                formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
-            }
 
         var ret = this.fieldCustomizer(formlyField, metric, ctx);
 
@@ -1268,9 +1234,8 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         }).$promise;
     };
 
-    DocumentForm.prototype.validate = function validate(step, fillNull) {
-        if (step == null) step = this.currentStep;
-        return this.validator.validate(step, fillNull);
+    DocumentForm.prototype.validate = function validate(step) {
+        return this.validator.validate(step);
     };
 
     return DocumentForm;
@@ -1388,16 +1353,7 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
 });
 'use strict';
 
-angular.module('engine.document')
-/**
- * @ngdoc service
- * @name engine.document.service:DocumentValidator
- *
- * @description
- * Document validation service
- *
- */
-.factory('DocumentValidator', function (engineDocument, $engineApiCheck, $log, Step) {
+angular.module('engine.document').factory('DocumentValidator', function (engineDocument, $engineApiCheck, $log, Step) {
     function DocumentValidator(document, stepList, formStructure) {
         this.stepList = stepList;
         this.formStructure = formStructure;
@@ -1411,18 +1367,15 @@ angular.module('engine.document')
         });
     };
 
-    DocumentValidator.prototype.cleanDocumentMetrics = function makeDocumentForValidation() {
-        var documentForValidation = _.omit(this.document, 'metrics');
+    DocumentValidator.prototype.makeDocumentForValidation = function makeDocumentForValidation(document, stepsToValidate) {
+        var documentForValidation = _.omit(document, 'metrics');
+
         documentForValidation.metrics = {};
-        return documentForValidation;
-    };
-    DocumentValidator.prototype.makeDocumentForValidation = function makeDocumentForValidation(document, stepsToValidate, fillNull) {
-        var documentForValidation = this.cleanDocumentMetrics();
 
         _.forEach(stepsToValidate, function (step) {
             _.forEach(step.fields, function (field) {
                 documentForValidation.metrics[field.data.id] = document.metrics[field.data.id];
-                if (fillNull && documentForValidation.metrics[field.data.id] === undefined) // if field has not been set, set it to null, otherwise it won't be sent
+                if (documentForValidation.metrics[field.data.id] === undefined) // if field has not been set, set it to null, otherwise it won't be sent
                     documentForValidation.metrics[field.data.id] = null;
             });
         });
@@ -1430,45 +1383,7 @@ angular.module('engine.document')
         return documentForValidation;
     };
 
-    /**
-     * @ngdoc method
-     * @name validateMetrics
-     * @methodOf engine.document.service:DocumentValidator
-     *
-     * @description
-     * Validates given metrics, returns promise
-     *
-     * @param {Object} metrics dict `{metricId: metricValue}`
-     * @returns {Promise} Promise of server validation
-     */
-    DocumentValidator.prototype.validateMetrics = function (field, metrics) {
-        var self = this;
-        $engineApiCheck.throw([$engineApiCheck.object], arguments);
-        var documentForValidation = this.cleanDocumentMetrics();
-        documentForValidation.metrics = metrics;
-        return engineDocument.validate(documentForValidation).$promise.then(function (validatedMetrics) {
-            validatedMetrics = _.indexBy(validatedMetrics.results, 'metricId');
-            self.setMetricValidation(field, validatedMetrics);
-
-            return validatedMetrics;
-        });
-    };
-
-    DocumentValidator.prototype.setMetricValidation = function (field, validatedMetrics) {
-        var self = this;
-        if (self.formStructure[field.id] != null) {
-            if (validatedMetrics[field.key] != null)
-                // _.forEach(validatedMetrics[field.key].messages, function (message) {
-                // self.formStructure[field.id].$setValidity(message, false);
-                // });
-                self.formStructure[field.id].$setValidity('server', validatedMetrics[field.key].valid);
-
-            field.validation.show = !validatedMetrics[field.key].valid;
-        }
-        field.templateOptions.serverErrors = validatedMetrics[field.key] == null ? [] : validatedMetrics[field.key].messages;
-    };
-
-    DocumentValidator.prototype.validate = function validate(step, fillNull) {
+    DocumentValidator.prototype.validate = function validate(step) {
         $engineApiCheck([$engineApiCheck.typeOrArrayOf($engineApiCheck.number).optional], arguments);
 
         var self = this;
@@ -1487,7 +1402,7 @@ angular.module('engine.document')
 
         this.setStepsState(stepsToValidate, Step.STATE_LOADING);
 
-        var documentForValidation = this.makeDocumentForValidation(this.document, stepsToValidate, fillNull);
+        var documentForValidation = this.makeDocumentForValidation(this.document, stepsToValidate);
 
         return engineDocument.validate(documentForValidation).$promise.then(function (validationData) {
             $log.debug(validationData);
@@ -1496,10 +1411,18 @@ angular.module('engine.document')
 
             _.forEach(stepsToValidate, function (step) {
                 _.forEach(step.fields, function (field, fieldId) {
-                    if (fieldId in _validatedMetrics) {
-                        if (_validatedMetrics[fieldId].valid == false) step.setState(Step.STATE_INVALID);
+                    if (_validatedMetrics[fieldId].valid == false) {
+                        step.setState(Step.STATE_INVALID);
+                        if (self.formStructure[field.id] != null) {
+                            _.forEach(_validatedMetrics[fieldId].messages, function (message) {
+                                self.formStructure[field.id].$setValidity(message, false);
+                            });
+                            self.formStructure[field.id].$setValidity('server', false);
+                            self.formStructure[field.id].$setValidity('required', true);
 
-                        self.setMetricValidation(field, _validatedMetrics);
+                            field.validation.show = true;
+                        }
+                        field.templateOptions.serverErrors = _validatedMetrics[fieldId].messages;
                     }
                 });
 
@@ -1592,15 +1515,6 @@ angular.module('engine.steps').component('engineSteps', {
 });
 'use strict';
 
-/**
- * @ngdoc controller
- * @name engine.controller:engineMainCtrl
- * @description
- *
- * Main application controller, does not have much functionality yet,
- * apart from setting a few `$rootScope` variables
- *
- */
 angular.module('engine').controller('engineMainCtrl', function ($rootScope, engineResourceLoader) {
     $rootScope.resourcesLoaded = false;
 
@@ -2435,8 +2349,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-09T12:31:55.952Z';
-var ENGINE_VERSION = '0.6.36';
+var ENGINE_COMPILATION_DATE = '2017-01-09T12:41:13.195Z';
+var ENGINE_VERSION = '0.6.37';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2893,7 +2807,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/textarea.tpl.html", "<textarea class=\"form-control\" ng-model=\"model[options.key]\"></textarea>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\" ng-show=\"options.data.hasMetrics()\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
+  $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\" ng-show=\"options.data.hasMetrics()\">\n    <h2 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h2>\n    <div class=\"{{::options.templateOptions.wrapperInnerClass}}\">\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/default.tpl.html", "<div class=\"{{::options.to.categoryWrapperCSS}}\">\n    <formly-transclude></formly-transclude>\n</div>");

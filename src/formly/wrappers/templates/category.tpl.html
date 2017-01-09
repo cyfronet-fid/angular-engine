@@ -1,6 +1,6 @@
 <div class="{{options.templateOptions.wrapperClass}}" ng-show="options.data.hasMetrics()">
-    <h3 ng-if="options.templateOptions.label" translate>{{options.templateOptions.label}}</h3>
-    <div>
+    <h2 ng-if="options.templateOptions.label" translate>{{options.templateOptions.label}}</h2>
+    <div class="{{::options.templateOptions.wrapperInnerClass}}">
         <formly-transclude></formly-transclude>
     </div>
 </div>
