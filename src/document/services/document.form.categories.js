@@ -57,6 +57,7 @@ angular.module('engine.document')
 
             this.register(new DocumentCategory('category', function (formlyCategory, metricCategory, ctx) {
                 formlyCategory.templateOptions.wrapperClass = 'text-box';
+                formlyCategory.templateOptions.wrapperInnerClass = 'text-content';
                 formlyCategory.wrapper = 'category';
 
                 return formlyCategory;
@@ -79,6 +80,7 @@ angular.module('engine.document')
 
             this.categoryWrapper = 'default';
             this.categoryWrapperCSS = '';
+            this.categoryWrapperInnerCSS = '';
         }
 
         DocumentCategory.prototype.matches = function matches(metricCategory) {

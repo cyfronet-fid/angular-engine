@@ -567,6 +567,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
 
         this.register(new DocumentCategory('category', function (formlyCategory, metricCategory, ctx) {
             formlyCategory.templateOptions.wrapperClass = 'text-box';
+            formlyCategory.templateOptions.wrapperInnerClass = 'text-content';
             formlyCategory.wrapper = 'category';
 
             return formlyCategory;
@@ -588,6 +589,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
 
         this.categoryWrapper = 'default';
         this.categoryWrapperCSS = '';
+        this.categoryWrapperInnerCSS = '';
     }
 
     DocumentCategory.prototype.matches = function matches(metricCategory) {
@@ -2347,8 +2349,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-05T17:36:19.204Z';
-var ENGINE_VERSION = '0.6.36';
+var ENGINE_COMPILATION_DATE = '2017-01-09T12:41:13.195Z';
+var ENGINE_VERSION = '0.6.37';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2805,7 +2807,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/textarea.tpl.html", "<textarea class=\"form-control\" ng-model=\"model[options.key]\"></textarea>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\" ng-show=\"options.data.hasMetrics()\">\n    <h3 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h3>\n    <div>\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
+  $templateCache.put("/src/formly/wrappers/templates/category.tpl.html", "<div class=\"{{options.templateOptions.wrapperClass}}\" ng-show=\"options.data.hasMetrics()\">\n    <h2 ng-if=\"options.templateOptions.label\" translate>{{options.templateOptions.label}}</h2>\n    <div class=\"{{::options.templateOptions.wrapperInnerClass}}\">\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/default.tpl.html", "<div class=\"{{::options.to.categoryWrapperCSS}}\">\n    <formly-transclude></formly-transclude>\n</div>");
