@@ -89,7 +89,7 @@ angular.module('engine.document')
     this.onStepChange = function (newStep, oldStep) {
         if(newStep != oldStep){
             if(self.documentForm.isEditable()){
-                self.documentForm.validate(oldStep);
+                self.documentForm.validate(oldStep, true);
                 self.save();
             }
         }
@@ -102,7 +102,7 @@ angular.module('engine.document')
     };
 
     $scope.$on('engine.common.document.validate', function () {
-        self.documentForm.validate().then(function (valid) {
+        self.documentForm.validate(null, true).then(function (valid) {
             if(!valid)
                 self.step = self.stepList.getFirstInvalidIndex();
         });

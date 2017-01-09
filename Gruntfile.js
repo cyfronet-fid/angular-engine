@@ -31,12 +31,12 @@ module.exports = function (grunt) {
                 deferLoad: false,
             },
             public: {
-                src: ['src/engine.provider.js', 'docs/content/api/**.ngdoc'],
+                src: ['src/engine.provider.js', 'docs/content/api/**/*.ngdoc'],
                 title: 'Public API',
                 api: false
             },
             developer: {
-                src: ['docs/content/developer/**.ngdoc', 'src/**.js'],
+                src: ['docs/content/developer/**/*.ngdoc', 'src/**/*.js'],
                 title: 'Developer Guide',
                 api: true
             }

@@ -167,6 +167,7 @@ angular.module('engine.document')
         this.register(new DocumentField({inputType: 'EXTERNAL'}, function (field, metric, ctx) {
             return {
                 data: field.data,
+                key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' +
                 'options="options.templateOptions.options" metric="options.data.metric" errors="fc.$error" '+
                 'class="' + metric.visualClass.join(' ') + '" ' +
@@ -181,6 +182,7 @@ angular.module('engine.document')
         this.register(new DocumentField({inputType: 'QUERIED_LIST'}, function (field, metric, ctx) {
             field = {
                 data: field.data,
+                key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" '+
                 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 ' list-caption="\''+metric.label+'\'"'+
@@ -210,11 +212,30 @@ angular.module('engine.document')
 
         //make it class method, to not instantiate it for every field
         DocumentField.onChange = function($viewValue, $modelValue, $scope) {
+            _.forEach($scope.options.data.onChangeHandlers, function (callback) {
+                callback($viewValue, $modelValue, $scope);
+            })
+        };
+        DocumentField.validate = function ($viewValue, $modelValue, $scope) {
+
+        };
+        DocumentField.onReload = function($viewValue, $modelValue, $scope) {
             //emit reload request for dom element which wants to listen (eg. document)
             $scope.$emit('document.form.requestReload');
-
             $scope.options.data.form._onReload();
         };
+        DocumentField.onValidateSelf = function($viewValue, $modelValue, $scope) {
+            var metricToValidate = {};
+            metricToValidate[$scope.options.data.metric.id] = $viewValue == null ? null : $viewValue;
+            $scope.options.data.form.validator.validateMetrics($modelValue, metricToValidate);
+        };
+        DocumentField.onValidate = function($viewValue, $modelValue, $scope) {
+            //emit validate request for dom element which wants to listen (eg. document)
+            $scope.$emit('document.form.requestValidate');
+
+            $scope.options.data.form.validate(null, false);
+        };
+
 
         DocumentField.prototype.matches = function matches(metric) {
             return this.fieldCondition(metric);
@@ -233,7 +254,8 @@ angular.module('engine.document')
                     form: ctx.documentForm,
                     categoryId: metric.categoryId,
                     unit: metric.unit,
-                    id: metric.id //this is required for DocumentForm
+                    id: metric.id, //this is required for DocumentForm
+                    onChangeHandlers: []
                 },
                 templateOptions: {
                     type: 'text',
@@ -241,8 +263,9 @@ angular.module('engine.document')
                     metricId: metric.id,
                     description: metric.description,
                     placeholder: 'Enter missing value',
-                    required: metric.required,
-                    visualClass: metric.visualClass
+                    // required: metric.required, now it's handled by server side validation
+                    visualClass: metric.visualClass,
+                    onChange: DocumentField.onChange
                 },
                 ngModelAttrs: {
                     metricId: {
@@ -251,18 +274,13 @@ angular.module('engine.document')
                 },
                 expressionProperties: {
                     'templateOptions.disabled': function ($viewValue, $modelValue, scope) {
-                        return scope.options.data.form.disabled;
+                        return scope.options.data.form.disabled; //|| !(scope.options.data.metric.editable == true); //enable it when it's supported by the backend
                     }
                 },
                 validation: {
                     messages: {
-                        required: function (viewValue, modelValue, scope) {
-                            if(scope.to.serverErrors == null || _.isEmpty(scope.to.serverErrors))
-                                return scope.to.label+"_required";
-                            return '';
-                        },
                         server: function (viewValue, modelValue, scope) {
-                            return scope.to.serverErrors[0];
+                            return _.isArray(scope.to.serverErrors) && scope.to.serverErrors.length > 0 ? scope.to.serverErrors[0] : '';
                         },
                         date: 'to.label+"_date"'
                     }
@@ -273,9 +291,19 @@ angular.module('engine.document')
                 formlyField.wrapper = 'unit';
 
             if (metric.reloadOnChange == true) {
-                formlyField.templateOptions.onChange = DocumentField.onChange;
+                formlyField.data.onChangeHandlers.push(DocumentField.onReload);
             }
 
+            //if validateOnChange is true all other metrics should be validated after this one changes
+            if (metric.validateOnChange == true) {
+                formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
+                formlyField.templateOptions.onBlur = DocumentField.onValidate;
+            }
+            //otherwise only this metrics
+            else {
+                formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
+                formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
+            }
 
             var ret = this.fieldCustomizer(formlyField, metric, ctx);
 

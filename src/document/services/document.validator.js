@@ -1,5 +1,13 @@
 angular.module('engine.document')
-.factory('DocumentValidator', function (engineDocument, $engineApiCheck, $log, Step) {
+/**
+ * @ngdoc service
+ * @name engine.document.service:DocumentValidator
+ *
+ * @description
+ * Document validation service
+ *
+ */
+    .factory('DocumentValidator', function (engineDocument, $engineApiCheck, $log, Step) {
     function DocumentValidator(document, stepList, formStructure) {
         this.stepList = stepList;
         this.formStructure = formStructure;
@@ -13,15 +21,18 @@ angular.module('engine.document')
         });
     };
 
-    DocumentValidator.prototype.makeDocumentForValidation = function makeDocumentForValidation(document, stepsToValidate) {
-        var documentForValidation = _.omit(document, 'metrics');
-
+    DocumentValidator.prototype.cleanDocumentMetrics = function makeDocumentForValidation() {
+        var documentForValidation = _.omit(this.document, 'metrics');
         documentForValidation.metrics = {};
+        return documentForValidation;
+    };
+    DocumentValidator.prototype.makeDocumentForValidation = function makeDocumentForValidation(document, stepsToValidate, fillNull) {
+        var documentForValidation = this.cleanDocumentMetrics();
 
         _.forEach(stepsToValidate, function (step) {
             _.forEach(step.fields, function (field) {
                 documentForValidation.metrics[field.data.id] = document.metrics[field.data.id];
-                if(documentForValidation.metrics[field.data.id] === undefined) // if field has not been set, set it to null, otherwise it won't be sent
+                if(fillNull && documentForValidation.metrics[field.data.id] === undefined) // if field has not been set, set it to null, otherwise it won't be sent
                     documentForValidation.metrics[field.data.id] = null;
             });
         });
@@ -29,7 +40,45 @@ angular.module('engine.document')
         return documentForValidation;
     };
 
-    DocumentValidator.prototype.validate = function validate(step) {
+    /**
+     * @ngdoc method
+     * @name validateMetrics
+     * @methodOf engine.document.service:DocumentValidator
+     *
+     * @description
+     * Validates given metrics, returns promise
+     *
+     * @param {Object} metrics dict `{metricId: metricValue}`
+     * @returns {Promise} Promise of server validation
+     */
+    DocumentValidator.prototype.validateMetrics = function (field, metrics) {
+        var self = this;
+        $engineApiCheck.throw([$engineApiCheck.object], arguments);
+        var documentForValidation = this.cleanDocumentMetrics();
+        documentForValidation.metrics = metrics;
+        return engineDocument.validate(documentForValidation).$promise.then(function (validatedMetrics) {
+            validatedMetrics = _.indexBy(validatedMetrics.results, 'metricId');
+            self.setMetricValidation(field, validatedMetrics);
+
+            return validatedMetrics;
+        });
+    };
+
+    DocumentValidator.prototype.setMetricValidation = function(field, validatedMetrics) {
+        var self = this;
+        if(self.formStructure[field.id] != null) {
+            if(validatedMetrics[field.key] != null)
+                // _.forEach(validatedMetrics[field.key].messages, function (message) {
+                    // self.formStructure[field.id].$setValidity(message, false);
+                // });
+            self.formStructure[field.id].$setValidity('server', validatedMetrics[field.key].valid);
+
+            field.validation.show = !validatedMetrics[field.key].valid;
+        }
+        field.templateOptions.serverErrors = validatedMetrics[field.key] == null ? [] : validatedMetrics[field.key].messages;
+    };
+
+    DocumentValidator.prototype.validate = function validate(step, fillNull) {
         $engineApiCheck([$engineApiCheck.typeOrArrayOf($engineApiCheck.number).optional], arguments);
 
         var self = this;
@@ -51,7 +100,7 @@ angular.module('engine.document')
 
         this.setStepsState(stepsToValidate, Step.STATE_LOADING);
 
-        var documentForValidation = this.makeDocumentForValidation(this.document, stepsToValidate);
+        var documentForValidation = this.makeDocumentForValidation(this.document, stepsToValidate, fillNull);
 
         return engineDocument.validate(documentForValidation).$promise.then(function (validationData) {
             $log.debug(validationData);
@@ -60,18 +109,11 @@ angular.module('engine.document')
 
             _.forEach(stepsToValidate, function (step) {
                 _.forEach(step.fields, function (field, fieldId) {
-                    if(_validatedMetrics[fieldId].valid == false) {
-                        step.setState(Step.STATE_INVALID);
-                        if(self.formStructure[field.id] != null) {
-                            _.forEach(_validatedMetrics[fieldId].messages, function (message) {
-                                self.formStructure[field.id].$setValidity(message, false);
-                            });
-                            self.formStructure[field.id].$setValidity('server', false);
-                            self.formStructure[field.id].$setValidity('required', true);
+                    if(fieldId in _validatedMetrics){
+                        if(_validatedMetrics[fieldId].valid == false)
+                            step.setState(Step.STATE_INVALID);
 
-                            field.validation.show = true;
-                        }
-                        field.templateOptions.serverErrors = _validatedMetrics[fieldId].messages;
+                        self.setMetricValidation(field, _validatedMetrics)
                     }
                 });
 

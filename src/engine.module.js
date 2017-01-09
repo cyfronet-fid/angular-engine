@@ -2,7 +2,6 @@
  * @ngdoc overview
  * @name engine
  *
- * @requires engine
  * @requires engine.list
  * @requires engine.document
  * @requires engine.dashboard
