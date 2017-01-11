@@ -261,6 +261,13 @@ angular.module('engine')
          *              };
          *        })
          *
+         *      * **noDocumentsMessage** {String} *Optional* message shown to user if no documents were retrieved
+         *      defaults to "There are no documents to display", will be translated
+         *
+         *      * **noParentDocumentMessage** {String} *Optional* message shown to user when list has parent document
+         *      (is embedded as metric) but parent document has not been saved to database yet. Defaults to
+         *      "Parent document does not exist, save this document first", will be translated
+         *
          *    * **caption**: {String}, *Optional* Caption displayed on top of the list view, will be translated
          *
          * **document** {Object}, specific options for document view must contain below attributes (if not stated otherwise)

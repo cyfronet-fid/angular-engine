@@ -42,7 +42,8 @@ angular.module('engine')
 
                 var parentDocumentId = parentDocument != null && parentDocument.id != null ? parentDocument.id : '';
 
-                var res = {$resolved: 0};
+                var res = [];
+                res.$resolved = 0;
 
                 var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query +
                                    '&attachAvailableActions=true&documentId=' +
@@ -73,6 +74,10 @@ angular.module('engine')
                 q = q.then(function (data) {
                     res.$resolved = 1;
                     return res;
+                }, function (response) {
+                    res.$resolved = 2;
+                    res.$error = true;
+                    res.$errorMessage = response.data.msg
                 }).then(callback, errorCallback);
                 res.$promise = q;
                 return res;

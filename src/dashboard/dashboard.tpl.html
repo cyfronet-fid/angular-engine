@@ -1,4 +1,6 @@
 <div class="text-box">
 <engine-document-list ng-repeat="query in queries" show-create-button="query.showCreateButton" columns="query.columns" custom-buttons="query.customButtons"
+                      no-documents-message="{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}"
+                      no-parent-document-message="{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}"
                       query="query.queryId" options="$engine.getOptions(query.documentModelId)" list-caption="query.label"></engine-document-list>
 </div>
