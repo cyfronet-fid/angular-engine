@@ -18,7 +18,7 @@ angular.module('engine.list')
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
                                         engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log,
-                                        $injector) {
+                                        $injector, $rootScope) {
     var self = this;
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -56,26 +56,28 @@ angular.module('engine.list')
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 
-    if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null))
-        $scope.documents = engineQuery.get($scope.query, this.parentDocument);
-    else {
-        this.noParentDocument = true;
-        $scope.documents = {$resolved: 1};
-    }
 
+    this.loadDocuments = function () {
+        if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null))
+            $scope.documents = engineQuery.get($scope.query, this.parentDocument);
+        else {
+            this.noParentDocument = true;
+            $scope.documents = {$resolved: 1};
+        }
+    };
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
     $scope.engineAction = function (action, document) {
 
         if(action.type == 'LINK'){
             return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
-                $scope.documents = engineQuery.get($scope.query);
-                $scope.$emit('engine.list.reload');
+                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                $rootScope.$broadcast('engine.list.reload', $scope.query);
             }, undefined, document.id);
         } else {
             return engineAction(action.id, document).$promise.then(function (data) {
-                $scope.documents = engineQuery.get($scope.query);
-                $scope.$emit('engine.list.reload');
+                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                $rootScope.$broadcast('engine.list.reload', $scope.query);
             });
         }
     };
@@ -124,8 +126,8 @@ angular.module('engine.list')
                     $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
             } else {
                 DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
-                    $scope.documents = engineQuery.get($scope.query, self.parentDocument);
-                    $scope.$emit('engine.list.reload');
+                    // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                    $rootScope.$broadcast('engine.list.reload', $scope.query);
                 });
             }
         } else {
@@ -140,7 +142,8 @@ angular.module('engine.list')
     $scope.onCreateDocument = function() {
         if($scope.options.subdocument == true)
             DocumentModal(undefined, $scope.options, self.parentDocument, function () {
-                $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                $rootScope.$broadcast('engine.list.reload', $scope.query);
             });
         else
             $location.path($scope.genDocumentLink('new'));
@@ -150,9 +153,11 @@ angular.module('engine.list')
         return engineActionUtils.getCreateUpdateAction($scope.actions) != null;
     };
 
-    $scope.$on('engine.list.reload', function (event) {
-        $log.debug('engine.list.reload received, reloading documents');
-        $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+    $scope.$on('engine.list.reload', function (event, query) {
+        // if($scope == event.currentScope)
+        //     return;
+        $log.debug('engine.list.reload received, reloading documents', 'queryId', $scope.query);
+        self.loadDocuments();
     });
-
+    self.loadDocuments();
 });

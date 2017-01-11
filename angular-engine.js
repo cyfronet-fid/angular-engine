@@ -890,7 +890,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         //emit validate request for dom element which wants to listen (eg. document)
         $scope.$emit('document.form.requestValidate');
 
-        $scope.options.data.form.validate(null, false);
+        $scope.options.data.form.validateCurrentStep(false);
     };
 
     DocumentField.prototype.matches = function matches(metric) {
@@ -1273,8 +1273,11 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         }).$promise;
     };
 
+    DocumentForm.prototype.validate = function validateCurrentStep(fillNull) {
+        return this.validator.validate(this.currentStep, fillNull);
+    };
+
     DocumentForm.prototype.validate = function validate(step, fillNull) {
-        if (step == null) step = this.currentStep;
         return this.validator.validate(step, fillNull);
     };
 
@@ -2452,8 +2455,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-11T13:31:24.508Z';
-var ENGINE_VERSION = '0.6.41';
+var ENGINE_COMPILATION_DATE = '2017-01-11T14:10:13.082Z';
+var ENGINE_VERSION = '0.6.42';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2731,7 +2734,7 @@ angular.module('engine.list').component('engineDocumentList', {
         noDocumentsMessage: '@',
         noParentDocumentMessage: '@'
     }
-}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log, $injector) {
+}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log, $injector, $rootScope) {
     var self = this;
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
@@ -2763,24 +2766,25 @@ angular.module('engine.list').component('engineDocumentList', {
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 
-    if (this.parentDocument == null || this.parentDocument != null && this.parentDocument.id != null) $scope.documents = engineQuery.get($scope.query, this.parentDocument);else {
-        this.noParentDocument = true;
-        $scope.documents = { $resolved: 1 };
-    }
-
+    this.loadDocuments = function () {
+        if (this.parentDocument == null || this.parentDocument != null && this.parentDocument.id != null) $scope.documents = engineQuery.get($scope.query, this.parentDocument);else {
+            this.noParentDocument = true;
+            $scope.documents = { $resolved: 1 };
+        }
+    };
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
     $scope.engineAction = function (action, document) {
 
         if (action.type == 'LINK') {
             return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
-                $scope.documents = engineQuery.get($scope.query);
-                $scope.$emit('engine.list.reload');
+                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                $rootScope.$broadcast('engine.list.reload', $scope.query);
             }, undefined, document.id);
         } else {
             return engineAction(action.id, document).$promise.then(function (data) {
-                $scope.documents = engineQuery.get($scope.query);
-                $scope.$emit('engine.list.reload');
+                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                $rootScope.$broadcast('engine.list.reload', $scope.query);
             });
         }
     };
@@ -2820,8 +2824,8 @@ angular.module('engine.list').component('engineDocumentList', {
                 if (linkAction != null) $scope.engineAction(linkAction, documentEntry.document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
             } else {
                 DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
-                    $scope.documents = engineQuery.get($scope.query, self.parentDocument);
-                    $scope.$emit('engine.list.reload');
+                    // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                    $rootScope.$broadcast('engine.list.reload', $scope.query);
                 });
             }
         } else {
@@ -2835,17 +2839,21 @@ angular.module('engine.list').component('engineDocumentList', {
 
     $scope.onCreateDocument = function () {
         if ($scope.options.subdocument == true) DocumentModal(undefined, $scope.options, self.parentDocument, function () {
-            $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+            // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+            $rootScope.$broadcast('engine.list.reload', $scope.query);
         });else $location.path($scope.genDocumentLink('new'));
     };
     $scope.canCreateDocument = function () {
         return engineActionUtils.getCreateUpdateAction($scope.actions) != null;
     };
 
-    $scope.$on('engine.list.reload', function (event) {
-        $log.debug('engine.list.reload received, reloading documents');
-        $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+    $scope.$on('engine.list.reload', function (event, query) {
+        // if($scope == event.currentScope)
+        //     return;
+        $log.debug('engine.list.reload received, reloading documents', 'queryId', $scope.query);
+        self.loadDocuments();
     });
+    self.loadDocuments();
 });
 'use strict';
 

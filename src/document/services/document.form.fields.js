@@ -237,7 +237,7 @@ angular.module('engine.document')
             //emit validate request for dom element which wants to listen (eg. document)
             $scope.$emit('document.form.requestValidate');
 
-            $scope.options.data.form.validate(null, false);
+            $scope.options.data.form.validateCurrentStep(false);
         };
 
 
