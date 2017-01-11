@@ -66,3 +66,10 @@
     background-color: #ffffff;
     border-color: #75ad40;}
 
+.cog-dropdown .dropdown{
+    position: relative;
+}
+.cog-dropdown .dropdown-menu{
+    position: absolute;
+    left: -130px;
+}

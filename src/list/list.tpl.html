@@ -12,7 +12,7 @@
             </tr>
             <tr ng-repeat="document_entry in documents">
                 <td ng-repeat="column in columns" class="{{column.css}}" ng-include="getCellTemplate(document_entry.document, column)"></td>
-                <td class="text-right" style="padding-top: 5px">
+                <td class="text-right cog-dropdown" style="padding-top: 5px">
                     <div class="dropdown" style="height: 9px;" ng-if="document_entry.actions.length > 0">
                         <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><span class="glyphicon glyphicon-cog"></span></a>
                         <ul class="dropdown-menu">
