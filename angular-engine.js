@@ -2452,7 +2452,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-11T13:27:03.940Z';
+var ENGINE_COMPILATION_DATE = '2017-01-11T13:31:24.508Z';
 var ENGINE_VERSION = '0.6.41';
 var ENGINE_BACKEND_VERSION = '1.0.80';
 
@@ -2763,7 +2763,7 @@ angular.module('engine.list').component('engineDocumentList', {
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 
-    if (this.parentDocument != null && this.parentDocument.id != null) $scope.documents = engineQuery.get($scope.query, this.parentDocument);else {
+    if (this.parentDocument == null || this.parentDocument != null && this.parentDocument.id != null) $scope.documents = engineQuery.get($scope.query, this.parentDocument);else {
         this.noParentDocument = true;
         $scope.documents = { $resolved: 1 };
     }

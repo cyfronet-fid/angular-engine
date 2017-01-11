@@ -56,7 +56,7 @@ angular.module('engine.list')
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 
-    if(this.parentDocument != null && this.parentDocument.id != null)
+    if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null))
         $scope.documents = engineQuery.get($scope.query, this.parentDocument);
     else {
         this.noParentDocument = true;
