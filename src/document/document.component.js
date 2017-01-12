@@ -51,13 +51,14 @@ angular.module('engine.document')
 
         var _actionsToPerform = [];
 
-        //if the document exists, the first action will be retriving it
+        //if the document exists, the first action will be retrieving it
         if (self.documentId && self.documentId != 'new') {
             _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (data) {
                 self.document = data.document;
+                self.messages = data.messages;
                 // self.documentChange(self.document);
             }));
-        } //if document does not exist copy base from optionas, and set the name
+        } //if document does not exist copy base from options, and set the name
         else {
             self.document = angular.copy(self.options.documentJSON);
             self.document.name = (self.options.name || 'Document') + ' initiated on ' + (new Date());

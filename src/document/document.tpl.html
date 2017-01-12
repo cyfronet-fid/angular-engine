@@ -3,6 +3,7 @@
 </div>
 
 <div ng-show="$ctrl.$ready.$$state.status === 1" ng-cloak>
+    <div ng-repeat="message in $ctrl.messages" class="alert alert-{{message.type}} alert-document" role="alert" translate>{{message.body}}</div>
     <form ng-submit="$ctrl.onSubmit()" name="$ctrl.documentForm.formlyState" novalidate>
         <formly-form model="$ctrl.document" fields="$ctrl.documentForm.formStructure" class="horizontal"
                      options="$ctrl.documentForm.formlyOptions" form="$ctrl.documentForm.formlyState">
@@ -14,6 +15,6 @@
     </form>
 </div>
 
-<div ng-show="!$ctrl.$ready.$$state.status === 2" ng-cloak>
+<div ng-show="!$ctrl.$ready.$$state.status === 2" ng-cloak translate>
     REJECTED
 </div>
