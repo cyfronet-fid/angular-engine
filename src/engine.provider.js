@@ -118,7 +118,7 @@ angular.module('engine')
                     queryId: _apiCheck.string,
                     label: _apiCheck.string,
                     documentModelId: _apiCheck.string,
-                    columns: _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, label: _apiCheck.string})).optional,
+                    columns: _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, label: _apiCheck.string, style: _apiCheck.string})).optional,
                     showCreateButton: _apiCheck.bool.optional,
                     customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional
                 }),
@@ -187,7 +187,7 @@ angular.module('engine')
          *                            //will be shown (which in most cases
          *                            //will clutter view to great extent)
          *                            columns: [
-         *                                {name: 'id'},
+         *                                {name: 'id', type: 'link', style: 'id'},
          *                                {name: 'name'},
          *                                {name: 'author'},
          *                                {name: 'beamlineChoice'},
@@ -245,6 +245,9 @@ angular.module('engine')
          *      * **type** {String, one of: ['link', 'text', 'date']} specifies what type of data is stored in this
          *      document field, will be formatted accordingly. 'link' field will be formatted as text, but will be wrapped
          *      in `<a>` tag allowing navigation to the selected document.
+         *
+         *      * **style** {String} css classes which will be appended to the fields (to `<td>` element. one of the
+         *      prepared styles is `id` which formats field in monospace font family.
          *
          *      * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
          *      the view. Object must have following fields:
@@ -380,7 +383,7 @@ angular.module('engine')
             _baseUrl = url;
         };
 
-        var _visibleDocumentFields = [{name: 'id', caption: 'ID', type: 'link'}, {name: 'name', caption: 'Name'}];
+        var _visibleDocumentFields = [{name: 'id', caption: 'ID', type: 'link', style: 'monospace'}, {name: 'name', caption: 'Name'}];
 
         /**
          * @ngdoc method

@@ -25,6 +25,12 @@
     font-size: 20px;
 }
 
+.id {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+
 /* multi select with images */
 
 .alert {
