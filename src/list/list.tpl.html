@@ -1,5 +1,4 @@
-<h1 translate>{{ $ctrl.listCaption || options.list.caption }}</h1>
-
+<h2 ng-if="$ctrl.listCaption" translate>{{ $ctrl.listCaption }}</h2>
 <div>
     <div class="eng-loading-box" ng-show="!documents.$resolved">
         <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>

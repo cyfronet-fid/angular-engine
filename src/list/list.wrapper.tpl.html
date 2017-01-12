@@ -1,5 +1,9 @@
-<div class="text-box">
-<engine-document-list no-documents-message="{{query.noDocumentsMessage || options.list.noDocumentsMessage || ''}}"
-                      no-parent-document-message="{{query.noParentDocumentMessage || options.list.noParentDocumentMessage || ''}}"
-                      ng-repeat="query in queries" show-create-button="$last" query="query.id" options="options" list-caption="query.label"></engine-document-list>
+<h1 translate>{{::options.list.caption}}</h1>
+<div class="text-box" ng-repeat="query in queries">
+    <div class="text-content">
+        <engine-document-list
+                no-documents-message="{{query.noDocumentsMessage || options.list.noDocumentsMessage || ''}}"
+                no-parent-document-message="{{query.noParentDocumentMessage || options.list.noParentDocumentMessage || ''}}"
+                show-create-button="$last" query="query.id" options="options"></engine-document-list>
+    </div>
 </div>

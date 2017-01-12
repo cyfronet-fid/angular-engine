@@ -71,7 +71,8 @@ angular.module('engine')
             document: _apiCheck.shape({
                 templateUrl: _apiCheck.string,
                 steps: _apiCheck.arrayOf(_apiCheck.object),
-                showValidateButton: _apiCheck.bool.optional
+                showValidateButton: _apiCheck.bool.optional,
+                caption: _apiCheck.string.optional
             })
         });
 
@@ -105,6 +106,10 @@ angular.module('engine')
          * @param {string} url Angular url to created dashboard
          * @param {Array} queries list of query objects
          * @param {Object} options Dashboard options
+         * Available fields:
+         * * **templateUrl** {String} url to template which will replace default one
+         * * **caption** {String} Dashboard caption (will be translated)
+         *
          */
         this.dashboard = function (url, queries, options) {
             var _options = {
@@ -122,7 +127,7 @@ angular.module('engine')
                     showCreateButton: _apiCheck.bool.optional,
                     customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional
                 }),
-                _apiCheck.shape({templateUrl: _apiCheck.string}))], [url, queries, options]);
+                _apiCheck.shape({templateUrl: _apiCheck.string, caption: _apiCheck.string.optional}))], [url, queries, options]);
 
             options.queries = queries;
 
