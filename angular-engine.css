@@ -82,3 +82,9 @@
     position: absolute;
     left: -130px;
 }
+
+.row-label {
+    font-family: 'ek_muktabold';
+    font-size: 13px;
+    text-transform: uppercase;
+}
