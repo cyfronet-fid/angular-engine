@@ -113,7 +113,9 @@ angular.module('engine.list')
             else if(column.type == 'array')
                 return '/src/list/cell/array.tpl.html';
         }
-        return '/src/list/cell/text.tpl.html'
+        if(column.name == '@index')
+            return '/src/list/cell/index.tpl.html';
+        return '/src/list/cell/text.tpl.html';
     };
     $scope.onDocumentSelect = function(documentEntry) {
         if(_parentDocumentId) {

@@ -240,9 +240,12 @@ angular.module('engine')
          * **list** {Object}, specific options for list view, must contain below attributes (if not stated otherwise)
          *
          *    * **columns**: {Array}, *Optional*, if not specified all document metrics will be displayed.
-         *      Every element in the array should be object containing 'name' attribute which corresponds to
+         *      Every element in the array should be object containing **'name'** attribute which corresponds to
          *      either document property, or document metric. Dotted expression to access nested properties are allowed:
-         *      <pre>{name: 'state.documentState'}</pre>
+         *      <pre>{name: 'state.documentState'}</pre>. Additionally `name` parameter can have one of the following
+         *      values, which coresspond to special behavior:
+         *      * `@index` every row's value will be substituted for this row's index (counted from 1)
+         *
          *      additional properties which can be provided:
          *
          *      * **caption** {String} if set will be displayed in the column header row, will be translated

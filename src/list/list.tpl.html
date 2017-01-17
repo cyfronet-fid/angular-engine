@@ -9,7 +9,7 @@
                 <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;" ng-repeat="column in columns" translate>{{column.caption || column.name}}</th>
                 <th class="text-right"></th>
             </tr>
-            <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument">
+            <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument" ng-init="$row=$index">
                 <td ng-repeat="column in columns" class="{{column.css}} {{column.style}}" ng-include="getCellTemplate(document_entry.document, column)"></td>
                 <td class="text-right cog-dropdown" style="padding-top: 5px">
                     <div class="dropdown" style="height: 9px;" ng-if="document_entry.actions.length > 0">
