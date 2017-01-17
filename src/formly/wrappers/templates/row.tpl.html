@@ -1,4 +1,4 @@
-<div>
+<div ng-if="options.data.hasMetrics()">
     <p class="row-label" ng-if="to.label" translate>{{to.label}}</p>
     <div class="row  {{options.templateOptions.wrapperClass}}">
         <formly-transclude></formly-transclude>
