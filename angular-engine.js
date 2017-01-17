@@ -474,6 +474,8 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
                 if (ev1.defaultPrevented || ev2.defaultPrevented) return result;
             }
             return DocumentActionProcess(self.document, result);
+        }, function (result) {
+            self.$scope.$broadcast('engine.common.action.error', { 'document': self.document, 'action': self, 'result': result });
         });
     };
 
@@ -1274,7 +1276,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         }).$promise;
     };
 
-    DocumentForm.prototype.validate = function validateCurrentStep(fillNull) {
+    DocumentForm.prototype.validateCurrentStep = function validateCurrentStep(fillNull) {
         return this.validator.validate(this.currentStep, fillNull);
     };
 
@@ -2464,8 +2466,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-17T15:13:26.529Z';
-var ENGINE_VERSION = '0.6.45';
+var ENGINE_COMPILATION_DATE = '2017-01-17T15:31:45.890Z';
+var ENGINE_VERSION = '0.6.46';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);

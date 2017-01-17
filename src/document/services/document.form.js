@@ -290,7 +290,7 @@ angular.module('engine.document')
         }).$promise;
     };
 
-    DocumentForm.prototype.validate = function validateCurrentStep(fillNull) {
+    DocumentForm.prototype.validateCurrentStep = function validateCurrentStep(fillNull) {
         return this.validator.validate(this.currentStep, fillNull);
     };
 
