@@ -69,7 +69,7 @@ angular.module('engine.document')
             self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
             return self.actionList.$ready;
         }).then(function () {
-            self.documentForm.init(self.document, self.options, self.stepList);
+            self.documentForm.init(self.document, self.options, self.stepList, self.actionList);
             //load metrics to form
             return self.documentForm.loadForm();
         });

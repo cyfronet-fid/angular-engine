@@ -131,6 +131,9 @@ angular.module('engine.document')
     DocumentForm.prototype._setDocument = function setDocument(document) {
         this.document = document;
     };
+    DocumentForm.prototype._setActions = function setActions(actions) {
+        this.actions = actions;
+    };
     DocumentForm.prototype._setOptions = function setOptions(documentOptions) {
         this.documentOptions = documentOptions;
     };
@@ -146,12 +149,13 @@ angular.module('engine.document')
             })
         })
     };
-    DocumentForm.prototype.init = function init(document, options, steps) {
+    DocumentForm.prototype.init = function init(document, options, steps, actions) {
         _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);
 
         this._setDocument(document);
         this._setOptions(options);
         this._setSteps(steps);
+        this._setActions(actions);
 
         this.markInit();
     };
@@ -181,6 +185,7 @@ angular.module('engine.document')
         assert(this.document != null, 'DocumentForm.document'+message);
         assert(this.documentOptions != null, 'DocumentForm.documentOptions'+message);
         assert(this.steps != null, 'DocumentForm.steps'+message);
+        assert(this.actions != null, 'DocumentForm.actions'+message);
     };
 
     DocumentForm.prototype._onReload = function onReload() {

@@ -226,7 +226,7 @@ angular.module('engine.document').component('engineDocument', {
             self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
             return self.actionList.$ready;
         }).then(function () {
-            self.documentForm.init(self.document, self.options, self.stepList);
+            self.documentForm.init(self.document, self.options, self.stepList, self.actionList);
             //load metrics to form
             return self.documentForm.loadForm();
         });
@@ -1126,6 +1126,9 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
     DocumentForm.prototype._setDocument = function setDocument(document) {
         this.document = document;
     };
+    DocumentForm.prototype._setActions = function setActions(actions) {
+        this.actions = actions;
+    };
     DocumentForm.prototype._setOptions = function setOptions(documentOptions) {
         this.documentOptions = documentOptions;
     };
@@ -1138,12 +1141,13 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
             });
         });
     };
-    DocumentForm.prototype.init = function init(document, options, steps) {
+    DocumentForm.prototype.init = function init(document, options, steps, actions) {
         _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);
 
         this._setDocument(document);
         this._setOptions(options);
         this._setSteps(steps);
+        this._setActions(actions);
 
         this.markInit();
     };
@@ -1172,6 +1176,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         assert(this.document != null, 'DocumentForm.document' + message);
         assert(this.documentOptions != null, 'DocumentForm.documentOptions' + message);
         assert(this.steps != null, 'DocumentForm.steps' + message);
+        assert(this.actions != null, 'DocumentForm.actions' + message);
     };
 
     DocumentForm.prototype._onReload = function onReload() {
@@ -2470,7 +2475,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T12:50:23.278Z';
+var ENGINE_COMPILATION_DATE = '2017-01-25T13:03:54.780Z';
 var ENGINE_VERSION = '0.6.50';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
@@ -2804,20 +2809,6 @@ angular.module('engine.list').component('engineDocumentList', {
         }
     };
 
-    if ($scope.columns === null || $scope.columns === undefined) {
-        $scope.columns = [];
-
-        $engine.visibleDocumentFields.forEach(function (field) {
-            if (field.caption === undefined && field.id === undefined) $scope.columns.push({ name: field });else $scope.columns.push(field);
-        });
-
-        engineMetric($scope.options.documentJSON, function (data) {
-            angular.forEach(data, function (metric) {
-                $scope.columns.push({ name: metric.id, caption: metric.label });
-            });
-        });
-    }
-
     $scope.renderCell = function (document, column) {
         return document[column.name];
     };
@@ -2873,7 +2864,25 @@ angular.module('engine.list').component('engineDocumentList', {
         $log.debug('engine.list.reload received, reloading documents', 'queryId', $scope.query);
         self.loadDocuments();
     });
-    self.loadDocuments();
+
+    function init() {
+        if ($scope.columns === null || $scope.columns === undefined) {
+            $scope.columns = [];
+
+            $engine.visibleDocumentFields.forEach(function (field) {
+                if (field.caption === undefined && field.id === undefined) $scope.columns.push({ name: field });else $scope.columns.push(field);
+            });
+
+            engineMetric($scope.options.documentJSON, function (data) {
+                angular.forEach(data, function (metric) {
+                    $scope.columns.push({ name: metric.id, caption: metric.label });
+                });
+            });
+        }
+        self.loadDocuments();
+    }
+
+    init();
 });
 'use strict';
 

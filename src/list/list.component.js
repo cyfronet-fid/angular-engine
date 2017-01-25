@@ -82,23 +82,6 @@ angular.module('engine.list')
         }
     };
 
-    if($scope.columns === null || $scope.columns === undefined) {
-        $scope.columns = [];
-
-        $engine.visibleDocumentFields.forEach(function (field) {
-            if(field.caption === undefined && field.id === undefined)
-                $scope.columns.push({name: field});
-            else
-                $scope.columns.push(field);
-        });
-
-        engineMetric($scope.options.documentJSON, function (data) {
-            angular.forEach(data, function (metric) {
-                $scope.columns.push({name: metric.id, caption: metric.label});
-            });
-        });
-    }
-
     $scope.renderCell = function (document, column) {
         return document[column.name];
     };
@@ -167,5 +150,26 @@ angular.module('engine.list')
         $log.debug('engine.list.reload received, reloading documents', 'queryId', $scope.query);
         self.loadDocuments();
     });
-    self.loadDocuments();
+
+    function init() {
+        if($scope.columns === null || $scope.columns === undefined) {
+            $scope.columns = [];
+
+            $engine.visibleDocumentFields.forEach(function (field) {
+                if(field.caption === undefined && field.id === undefined)
+                    $scope.columns.push({name: field});
+                else
+                    $scope.columns.push(field);
+            });
+
+            engineMetric($scope.options.documentJSON, function (data) {
+                angular.forEach(data, function (metric) {
+                    $scope.columns.push({name: metric.id, caption: metric.label});
+                });
+            });
+        }
+        self.loadDocuments();
+    }
+
+    init();
 });
