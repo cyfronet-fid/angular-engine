@@ -298,6 +298,18 @@ angular.module('engine')
          *    * **summary** {Boolean}, *Optional*, default `true` if true adds additional step to document form, which
          *    will contain non editable document summary. **(NOT IMPLEMENTED YET)**
          *
+         *    * **details** {Object}, *Optional*, defines additional information displayed in details box, available fields
+         *    are:
+         *      * **caption** {String}, Displayed caption, if not specified will default to `options.name`
+         *      * **saveCaption** {String}, Caption of the save button, default: 'Save'
+         *      * **entries** {Array}, array of objects defining additional information displayed in details box, each
+         *      element of the array should conform to the following format:
+         *        * **name** {String}, id of the element displayed (eg. `states.documentType`) dotted notation is supported
+         *        * **caption** {String}, caption for the given entry
+         *
+         *      Example:
+         *      `[{name: 'states.documentType', caption: 'Type'}]`
+         *
          * For example object see this method's description.
          *
          *

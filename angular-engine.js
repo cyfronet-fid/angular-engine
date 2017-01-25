@@ -162,6 +162,24 @@ angular.module('engine.dashboard').controller('engineDashboardCtrl', function ($
 });
 'use strict';
 
+angular.module('engine.document').component('engineDocumentDetails', {
+    templateUrl: '/src/document/details/details.tpl.html',
+    controller: function controller(engineResolve) {
+        var self = this;
+        this.engineResolve = engineResolve;
+
+        this.saveDocument = function () {
+            self.savePromise = self.actions.callSave();
+        };
+    },
+    bindings: {
+        ngModel: '=',
+        options: '=',
+        actions: '='
+    }
+});
+'use strict';
+
 angular.module('engine.document').component('engineDocument', {
     templateUrl: '/src/document/document.tpl.html',
     controller: 'engineDocumentCtrl',
@@ -226,6 +244,7 @@ angular.module('engine.document').component('engineDocument', {
             self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
             return self.actionList.$ready;
         }).then(function () {
+            self.actions = self.actionList;
             self.documentForm.init(self.document, self.options, self.stepList, self.actionList);
             //load metrics to form
             return self.documentForm.loadForm();
@@ -1918,6 +1937,18 @@ angular.module('engine').provider('$engineConfig', function () {
      *    * **summary** {Boolean}, *Optional*, default `true` if true adds additional step to document form, which
      *    will contain non editable document summary. **(NOT IMPLEMENTED YET)**
      *
+     *    * **details** {Object}, *Optional*, defines additional information displayed in details box, available fields
+     *    are:
+     *      * **caption** {String}, Displayed caption, if not specified will default to `options.name`
+     *      * **saveCaption** {String}, Caption of the save button, default: 'Save'
+     *      * **entries** {Array}, array of objects defining additional information displayed in details box, each
+     *      element of the array should conform to the following format:
+     *        * **name** {String}, id of the element displayed (eg. `states.documentType`) dotted notation is supported
+     *        * **caption** {String}, caption for the given entry
+     *
+     *      Example:
+     *      `[{name: 'states.documentType', caption: 'Type'}]`
+     *
      * For example object see this method's description.
      *
      *
@@ -2197,6 +2228,7 @@ angular.module('engine').provider('$engineConfig', function () {
 
 angular.module('engine').factory('engineResolve', function () {
     function index(obj, i) {
+        if (obj == null) return undefined;
         return obj[i];
     }
 
@@ -2475,8 +2507,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T13:03:54.780Z';
-var ENGINE_VERSION = '0.6.50';
+var ENGINE_COMPILATION_DATE = '2017-01-25T14:40:33.151Z';
+var ENGINE_VERSION = '0.6.52';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2914,13 +2946,16 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<h1 translate>{{options.caption}}</h1>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                              custom-buttons=\"query.customButtons\"\n                              no-documents-message=\"{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}\"\n                              no-parent-document-message=\"{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}\"\n                              query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\"\n                              list-caption=\"query.label\"></engine-document-list>\n\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/document/details/details.tpl.html", "<div class=\"text-box\" style=\"margin-right: 30px\">\n    <div class=\"text-content\" ng-clock>\n        <h3 style=\"margin-top: 0px\">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>\n\n        <table class=\"table\">\n            <tr ng-repeat=\"entry in $ctrl.options.document.details.entries\">\n                <td translate>{{entry.caption || entry.name}}</td>\n                <td translate>{{$ctrl.engineResolve($ctrl.ngModel, entry.name)}}</td>\n            </tr>\n        </table>\n        <button style=\"width: 100%\" type=\"submit\" class=\"btn btn-default\" ng-if=\"$ctrl.actions.getSaveAction() != null\"\n                ng-click=\"$ctrl.saveDocument()\">\n            <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\" ng-show=\"$ctrl.savePromise.$$state.status === 0\"></i>\n            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>\n        </button>\n    </div>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 class=\"modal-title\" id=\"myModalLabel\" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>\n\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document=\"parentDocument\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent=\"parentDocument\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.$ready.$$state.status === 0\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n\n<div ng-show=\"$ctrl.$ready.$$state.status === 1\" ng-cloak>\n    <div ng-repeat=\"message in $ctrl.messages\" class=\"alert alert-{{message.type}} alert-document\" role=\"alert\" translate>{{message.body}}</div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>\n\n<div ng-show=\"!$ctrl.$ready.$$state.status === 2\" ng-cloak translate>\n    REJECTED\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1><span translate>{{ options.document.caption || 'CREATE ' + options.name }}</span><span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">: {{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span></h1>\n    <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\" document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\" class=\"col-md-8\"></engine-document>\n    <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\" class=\"col-md-4\"></engine-steps>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1><span translate>{{ options.document.caption || 'CREATE ' + options.name }}</span><span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">: {{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span></h1>\n    <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\"\n                     document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\"\n                     class=\"col-md-8\" actions=\"actions\"></engine-document>\n    <div class=\"col-md-4\">\n        <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n        <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\"></engine-document-details>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle-o': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");

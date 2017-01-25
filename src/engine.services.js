@@ -1,6 +1,10 @@
 angular.module('engine')
     .factory('engineResolve', function () {
-        function index(obj,i) {return obj[i]}
+        function index(obj,i) {
+            if(obj == null)
+                return undefined;
+            return obj[i]
+        }
 
         return function (baseObject, str) {
             return str.split('.').reduce(index, baseObject);
