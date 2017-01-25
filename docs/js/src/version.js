@@ -26,11 +26,11 @@ angular.module('docsApp').component('engineVersionSelector', {
     '<a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href>' +
     'Current: <span engine-version></span> <span class="caret"></span>'+
     '</a>' +
-    '<ul class="dropdown-menu" role="menu" aria-labelledby="single-button">'+
-    '<li role="menuitem" ng-repeat="version in versions"><a href="../{{::version}}/">{{::version}}</a></li>'+
+    '<ul class="dropdown-menu" role="menu" aria-labelledby="single-button" style="max-height: 300px; overflow-x: hidden; overflow-y: scroll;">'+
+    '<li role="menuitem" ng-repeat="version in versions | reverse"><a href="../{{::version}}/">{{::version}}</a></li>'+
     '</ul>'+
     '</div>',
     controller: function ($scope) {
-        $scope.versions = ENGINE_VERSIONS.split('|');
+        $scope.versions = ENGINE_VERSIONS.split('|').reverse();
     }
 });
