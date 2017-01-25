@@ -205,6 +205,24 @@ angular.module('engine.document').component('engineDocument', {
     this.actionList = null;
     this.documentForm = new DocumentForm();
 
+    this.getDocument = function () {
+        var _actionsToPerform = [];
+        //if the document exists, the first action will be retrieving it
+        if (self.documentId && self.documentId != 'new') {
+            _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (data) {
+                self.document = data.document;
+                self.messages = data.messages;
+                // self.documentChange(self.document);
+            }));
+        } //if document does not exist copy base from options, and set the name
+        else {
+                self.document = angular.copy(self.options.documentJSON);
+                self.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
+            }
+        return $q.all(_actionsToPerform).then(function () {
+            self.stepList.setDocument(self.document);
+        });
+    };
     /**
      * **NOTE** this function should be called only after all required promises are fulfilled:
      * * this.stepList.$ready
@@ -224,26 +242,9 @@ angular.module('engine.document').component('engineDocument', {
 
         self.stepList.setCurrentStep(self.step);
 
-        var _actionsToPerform = [];
-
-        //if the document exists, the first action will be retrieving it
-        if (self.documentId && self.documentId != 'new') {
-            _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (data) {
-                self.document = data.document;
-                self.messages = data.messages;
-                // self.documentChange(self.document);
-            }));
-        } //if document does not exist copy base from options, and set the name
-        else {
-                self.document = angular.copy(self.options.documentJSON);
-                self.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
-            }
-
         // return chained promise, which will do all other common required operations:
-        return $q.all(_actionsToPerform).then(function () {
-            self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
-            return self.actionList.$ready;
-        }).then(function () {
+        self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
+        return self.actionList.$ready.then(function () {
             //assign actions only if binding is present
             if ($attrs.actions) self.actions = self.actionList;
             self.documentForm.init(self.document, self.options, self.stepList, self.actionList);
@@ -286,7 +287,9 @@ angular.module('engine.document').component('engineDocument', {
 
     $scope.$on('engine.common.action.after', function (event, document, action, result) {});
 
-    this.$ready = $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(this.postinitDocument).then(function () {
+    this.$ready = this.getDocument().then(function () {
+        return $q.all(self.stepList.$ready, self.documentForm.$ready);
+    }).then(this.initDocument).then(this.postinitDocument).then(function () {
         $log.debug('engineDocumentCtrl initialized: ', self);
         console.log(self.$ready.$$state.status);
     });
@@ -379,7 +382,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
         this.markInit = null;
 
         this.loadActions = function loadActions() {
-            engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
+            return engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
                 self.actions = [];
                 _.forEach(actions, function (action) {
                     self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope));
@@ -1318,7 +1321,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
 });
 'use strict';
 
-angular.module('engine.document').factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck, $log) {
+angular.module('engine.document').factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck, $log, $parse) {
     var _ac = $engineApiCheck;
 
     function StepList(documentOptionSteps) {
@@ -1328,10 +1331,24 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
         this.steps = [];
         this.singleStep = false;
         this.$ready = null;
-        this.currentStep = null;
 
-        this._preprocessDocumentSteps();
+        this.currentStep = null;
     }
+
+    StepList.prototype.setDocument = function setDocument(document) {
+        var self = this;
+        this.document = document;
+
+        this.documentSteps = _.filter(this.documentSteps, function (step) {
+            var cond = step.condition;
+            if (cond == null) return true;else if (_.isString(cond)) {
+                return $parse(cond)(self.document);
+            } else if (_.isFunction(cond)) {
+                return cond(self.document);
+            } else return false;
+        });
+        this._preprocessDocumentSteps();
+    };
 
     StepList.prototype._preprocessDocumentSteps = function _preprocessDocumentSteps() {
         var self = this;
@@ -1935,6 +1952,17 @@ angular.module('engine').provider('$engineConfig', function () {
      *      If this field is a {String} it will be interpreted as metric-category containing children, in which case
      *      those children will be actual categories diplayied in this step, if this field is an {Array} supplied
      *      metric-categories will be used directly.
+     *      * **condition** {Function|String}, condition which must be passed for the given step to be shown,
+     *      condition can either be a function (which will receive one argument - document) or a string which
+     *      will be evaluated (all document's fields will be accessable as locals)
+     *
+     *      Example string condition: `states.documentState == 'draft' && id != null`
+     *      Example Function condition:
+     *      ```
+     *      function cond(document) {
+     *          return document.states.documentType == 'draft' && document.id != null;
+     *      }
+     *      ```
      *
      *    * **showValidationButton** {Boolean}, *Optional*, default `true` if true shows 'Validate' button at
      *    the end of document form
@@ -2516,8 +2544,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T15:28:48.769Z';
-var ENGINE_VERSION = '0.6.55';
+var ENGINE_COMPILATION_DATE = '2017-01-25T18:30:56.404Z';
+var ENGINE_VERSION = '0.6.56';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);

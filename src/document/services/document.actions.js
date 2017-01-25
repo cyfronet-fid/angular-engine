@@ -15,7 +15,7 @@ angular.module('engine.document')
             this.markInit = null;
 
             this.loadActions = function loadActions() {
-                engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
+                return engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
                     self.actions = [];
                     _.forEach(actions, function (action) {
                         self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope));

@@ -28,7 +28,24 @@ angular.module('engine.document')
     this.actionList = null;
     this.documentForm = new DocumentForm();
 
-
+    this.getDocument = function () {
+        var _actionsToPerform = [];
+        //if the document exists, the first action will be retrieving it
+        if (self.documentId && self.documentId != 'new') {
+            _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (data) {
+                self.document = data.document;
+                self.messages = data.messages;
+                // self.documentChange(self.document);
+            }));
+        } //if document does not exist copy base from options, and set the name
+        else {
+            self.document = angular.copy(self.options.documentJSON);
+            self.document.name = (self.options.name || 'Document') + ' initiated on ' + (new Date());
+        }
+        return $q.all(_actionsToPerform).then(function () {
+            self.stepList.setDocument(self.document);
+        });
+    };
     /**
      * **NOTE** this function should be called only after all required promises are fulfilled:
      * * this.stepList.$ready
@@ -49,26 +66,9 @@ angular.module('engine.document')
 
         self.stepList.setCurrentStep(self.step);
 
-        var _actionsToPerform = [];
-
-        //if the document exists, the first action will be retrieving it
-        if (self.documentId && self.documentId != 'new') {
-            _actionsToPerform.push(engineDocument.get(self.documentId).$promise.then(function (data) {
-                self.document = data.document;
-                self.messages = data.messages;
-                // self.documentChange(self.document);
-            }));
-        } //if document does not exist copy base from options, and set the name
-        else {
-            self.document = angular.copy(self.options.documentJSON);
-            self.document.name = (self.options.name || 'Document') + ' initiated on ' + (new Date());
-        }
-
         // return chained promise, which will do all other common required operations:
-        return $q.all(_actionsToPerform).then(function () {
-            self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
-            return self.actionList.$ready;
-        }).then(function () {
+        self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
+        return self.actionList.$ready.then(function () {
             //assign actions only if binding is present
             if($attrs.actions)
                 self.actions = self.actionList;
@@ -116,7 +116,7 @@ angular.module('engine.document')
 
     });
 
-    this.$ready = $q.all(this.stepList.$ready, this.documentForm.$ready).then(this.initDocument).then(this.postinitDocument).then(function () {
+    this.$ready = this.getDocument().then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)}).then(this.initDocument).then(this.postinitDocument).then(function () {
         $log.debug('engineDocumentCtrl initialized: ', self);
         console.log(self.$ready.$$state.status);
     });

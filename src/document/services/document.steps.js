@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck, $log) {
+    .factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck, $log, $parse) {
         var _ac = $engineApiCheck;
 
         function StepList(documentOptionSteps) {
@@ -9,11 +9,29 @@ angular.module('engine.document')
             this.steps = [];
             this.singleStep = false;
             this.$ready = null;
+
             this.currentStep = null;
 
-            this._preprocessDocumentSteps();
-
         }
+
+        StepList.prototype.setDocument = function setDocument(document) {
+            var self = this;
+            this.document = document;
+
+            this.documentSteps = _.filter(this.documentSteps, function (step) {
+                var cond = step.condition;
+                if(cond == null)
+                    return true;
+                else if(_.isString(cond)) {
+                    return $parse(cond)(self.document);
+                }
+                else if(_.isFunction(cond)) {
+                    return cond(self.document);
+                } else
+                    return false
+            });
+            this._preprocessDocumentSteps();
+        };
 
         StepList.prototype._preprocessDocumentSteps = function _preprocessDocumentSteps() {
             var self = this;

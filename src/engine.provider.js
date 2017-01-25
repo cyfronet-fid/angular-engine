@@ -291,6 +291,17 @@ angular.module('engine')
          *      If this field is a {String} it will be interpreted as metric-category containing children, in which case
          *      those children will be actual categories diplayied in this step, if this field is an {Array} supplied
          *      metric-categories will be used directly.
+         *      * **condition** {Function|String}, condition which must be passed for the given step to be shown,
+         *      condition can either be a function (which will receive one argument - document) or a string which
+         *      will be evaluated (all document's fields will be accessable as locals)
+         *
+         *      Example string condition: `states.documentState == 'draft' && id != null`
+         *      Example Function condition:
+         *      ```
+         *      function cond(document) {
+         *          return document.states.documentType == 'draft' && document.id != null;
+         *      }
+         *      ```
          *
          *    * **showValidationButton** {Boolean}, *Optional*, default `true` if true shows 'Validate' button at
          *    the end of document form
