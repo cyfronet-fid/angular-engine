@@ -18,8 +18,9 @@ angular.module('engine.list')
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
                                         engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log,
-                                        $injector, $rootScope) {
+                                        $injector, $rootScope, $parse) {
     var self = this;
+
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
     this.formWidget = this.formWidget === 'true';
@@ -32,7 +33,7 @@ angular.module('engine.list')
     });
 
 
-
+    $scope.$parse = $parse;
     $scope.options = this.options;
     $scope.columns = this.columns || $scope.options.list.columns;
 
@@ -56,10 +57,29 @@ angular.module('engine.list')
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 
+    this.arrayCellIterate = function (iterator, array) {
+        if(iterator == null)
+            return array.join(', ');
+
+        return _.map(array, function (element) {
+            if(_.isFunction(iterator))
+                return iterator(element);
+            return $parse(iterator)(element);
+        }).join(', ');
+    };
+
+    this.process = function (processor, element) {
+        if(processor != null && _.isFunction(processor))
+            return processor(element);
+        return element;
+    };
 
     this.loadDocuments = function () {
-        if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null))
+        if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)){
             $scope.documents = engineQuery.get($scope.query, this.parentDocument);
+        $scope.documents.$promise.then(function (documents) {
+           var a =0;
+        })}
         else {
             this.noParentDocument = true;
             $scope.documents = {$resolved: 1};

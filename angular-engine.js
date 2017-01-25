@@ -1902,8 +1902,12 @@ angular.module('engine').provider('$engineConfig', function () {
      *
      *    * **columns**: {Array}, *Optional*, if not specified all document metrics will be displayed.
      *      Every element in the array should be object containing **'name'** attribute which corresponds to
-     *      either document property, or document metric. Dotted expression to access nested properties are allowed:
-     *      <pre>{name: 'state.documentState'}</pre>. Additionally `name` parameter can have one of the following
+     *      either document property, or document metric. JS expressions are also possible, so name parameter
+     *      can be dynamically calculated eg.:
+     *
+     *      * {name: '$ext.author.name + "<" + $ext.author.email + ">"'} // will generate output like this: Username <user@user.com>
+     *
+     *      Additionally `name` parameter can have one of the following
      *      values, which coresspond to special behavior:
      *      * `@index` every row's value will be substituted for this row's index (counted from 1)
      *
@@ -1911,34 +1915,68 @@ angular.module('engine').provider('$engineConfig', function () {
      *
      *      * **caption** {String} if set will be displayed in the column header row, will be translated
      *
-     *      * **type** {String, one of: ['link', 'text', 'date']} specifies what type of data is stored in this
+     *      * **type** {String, one of: ['link', 'text', 'date', 'array']} specifies what type of data is stored in this
      *      document field, will be formatted accordingly. 'link' field will be formatted as text, but will be wrapped
      *      in `<a>` tag allowing navigation to the selected document.
+     *
+     *      * **iterator** {String|Function} only if type of column was specified as `array` it can be either a function
+     *      or a js expression in string. It will be called on every element of the array, returned value will be
+     *      displayed instead of the original value from the array (this method does not change document's data, it
+     *      only affects presentation.
+     *
+     *      Examples:
+     *        *
+     *        <pre>
+     *        {name: '$ext.team.memberships', type: 'array', iterator: function (member) {
+     *                       return member.name + ' <' + memeber.email + '>';
+     *                   }
+     *        </pre>
+     *        *
+     *        <pre>
+     *        {name: '$ext.team.memberships', type: 'array', iterator: "name + ' <' + email +'>'"}
+     *        </pre>
+     *
+     *      * **processor** {String|Function} It can be either a function or a js expression in string.
+     *      It will be called for every entry in this column returned value will be
+     *      displayed instead of the original value (this method does not change document's data, it
+     *      only affects presentation.
+     *
+     *      Examples:
+     *        *
+     *        <pre>
+     *        {name: '$ext.author', iterator: function (author) {
+     *                       return author.name + ' <' + author.email + '>';
+     *                   }
+     *        </pre>
+     *        *
+     *        <pre>
+     *        {name: '$ext.author', processor: "name + ' <' + email +'>'"}
+     *        </pre>
      *
      *      * **style** {String} css classes which will be appended to the fields (to `<td>` element. one of the
      *      prepared styles is `id` which formats field in monospace font family.
      *
-     *      * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
-     *      the view. Object must have following fields:
-     *        * **label** {String} button's label
-     *        * **callback** {String|Function} function which will be called after button is clicked, documentOptions are passed
-     *        as an argument to callback. If argument is a {String} it will be treated as angular service and injected.
-     *        be sure to define this service to return function.
+     *    * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
+     *    the view. Object must have following fields:
+     *      * **label** {String} button's label
+     *      * **callback** {String|Function} function which will be called after button is clicked, documentOptions are passed
+     *      as an argument to callback. If argument is a {String} it will be treated as angular service and injected.
+     *      be sure to define this service to return function.
      *
-     *        Example:
+     *      Example:
      *
-     *        .factory('uploadProposalCalled', function ($log) {
-     *              return function uploadProposalCalled(documentOptions) {
-     *                  $log.debug('uploadProposalCalled', documentOptions);
-     *              };
-     *        })
+     *      .factory('uploadProposalCalled', function ($log) {
+     *            return function uploadProposalCalled(documentOptions) {
+     *                $log.debug('uploadProposalCalled', documentOptions);
+     *            };
+     *      })
      *
-     *      * **noDocumentsMessage** {String} *Optional* message shown to user if no documents were retrieved
+     *    * **noDocumentsMessage** {String} *Optional* message shown to user if no documents were retrieved
      *      defaults to "There are no documents to display", will be translated
      *
-     *      * **noParentDocumentMessage** {String} *Optional* message shown to user when list has parent document
-     *      (is embedded as metric) but parent document has not been saved to database yet. Defaults to
-     *      "Parent document does not exist, save this document first", will be translated
+     *    * **noParentDocumentMessage** {String} *Optional* message shown to user when list has parent document
+     *    (is embedded as metric) but parent document has not been saved to database yet. Defaults to
+     *    "Parent document does not exist, save this document first", will be translated
      *
      *    * **caption**: {String}, *Optional* Caption displayed on top of the list view, will be translated
      *
@@ -2544,8 +2582,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T18:30:56.404Z';
-var ENGINE_VERSION = '0.6.56';
+var ENGINE_COMPILATION_DATE = '2017-01-25T19:26:17.206Z';
+var ENGINE_VERSION = '0.6.57';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2823,8 +2861,9 @@ angular.module('engine.list').component('engineDocumentList', {
         noDocumentsMessage: '@',
         noParentDocumentMessage: '@'
     }
-}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log, $injector, $rootScope) {
+}).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log, $injector, $rootScope, $parse) {
     var self = this;
+
     self.engineResolve = engineResolve;
     //has no usage now, but may be usefull in the future, passed if this controller's component is part of larger form
     this.formWidget = this.formWidget === 'true';
@@ -2833,6 +2872,7 @@ angular.module('engine.list').component('engineDocumentList', {
         if (self.showCreateButton == undefined) self._showCreateButton = true;else self._showCreateButton = newVal;
     });
 
+    $scope.$parse = $parse;
     $scope.options = this.options;
     $scope.columns = this.columns || $scope.options.list.columns;
 
@@ -2855,8 +2895,27 @@ angular.module('engine.list').component('engineDocumentList', {
 
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 
+    this.arrayCellIterate = function (iterator, array) {
+        if (iterator == null) return array.join(', ');
+
+        return _.map(array, function (element) {
+            if (_.isFunction(iterator)) return iterator(element);
+            return $parse(iterator)(element);
+        }).join(', ');
+    };
+
+    this.process = function (processor, element) {
+        if (processor != null && _.isFunction(processor)) return processor(element);
+        return element;
+    };
+
     this.loadDocuments = function () {
-        if (this.parentDocument == null || this.parentDocument != null && this.parentDocument.id != null) $scope.documents = engineQuery.get($scope.query, this.parentDocument);else {
+        if (this.parentDocument == null || this.parentDocument != null && this.parentDocument.id != null) {
+            $scope.documents = engineQuery.get($scope.query, this.parentDocument);
+            $scope.documents.$promise.then(function (documents) {
+                var a = 0;
+            });
+        } else {
             this.noParentDocument = true;
             $scope.documents = { $resolved: 1 };
         }
@@ -3052,19 +3111,19 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/unit.tpl.html", "<div class=\"input-group\">\n    <formly-transclude></formly-transclude>\n    <span class=\"input-group-addon\" >{{::options.data.unit}}</span>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/array.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name).join(', ')}}");
+  $templateCache.put("/src/list/cell/array.tpl.html", "{{$ctrl.arrayCellIterate(column.iterator,\n                         $ctrl.process(column.processor, $parse(column.name)(document_entry.document)))}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name) | date}}");
+  $templateCache.put("/src/list/cell/date.tpl.html", "{{$ctrl.process(column.processor, $parse(column.name)(document_entry.document)) | date}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/index.tpl.html", "{{$row+1}}");
+  $templateCache.put("/src/list/cell/index.tpl.html", "{{$ctrl.process(column.processor, $row+1)}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/cell/link.tpl.html", "<a href=\"\" ng-click=\"onDocumentSelect(document_entry)\" class=\"proposal-title\" ng-include=\"getCellTemplate(document_entry.document, column, true)\"></a>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/cell/text.tpl.html", "{{$ctrl.engineResolve(document_entry.document, column.name)}}");
+  $templateCache.put("/src/list/cell/text.tpl.html", "{{$ctrl.process(column.processor, $parse(column.name)(document_entry.document))}}");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.tpl.html", "<h2 ng-if=\"$ctrl.listCaption\" translate>{{ $ctrl.listCaption }}</h2>\n<div>\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved || $ctrl.noParentDocument\" ng-cloak>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\" translate>{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\" ng-if=\"!documents.$error && !$ctrl.noParentDocument\" ng-init=\"$row=$index\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}} {{column.style}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right cog-dropdown\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\" translate>{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\" translate>No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"documents.$error\" translate>\n            {{documents.$errorMessage || 'An error occurred during document loading'}}\n        </div>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"$ctrl.noParentDocument\" translate>\n            {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}\n        </div>\n        <div class=\"alert alert-info\" role=\"alert\" ng-if=\"documents.$resolved && documents.length == 0 && !documents.$error\" translate>\n            {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}\n        </div>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\" translate>Create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");

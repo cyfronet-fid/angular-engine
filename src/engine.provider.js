@@ -241,8 +241,12 @@ angular.module('engine')
          *
          *    * **columns**: {Array}, *Optional*, if not specified all document metrics will be displayed.
          *      Every element in the array should be object containing **'name'** attribute which corresponds to
-         *      either document property, or document metric. Dotted expression to access nested properties are allowed:
-         *      <pre>{name: 'state.documentState'}</pre>. Additionally `name` parameter can have one of the following
+         *      either document property, or document metric. JS expressions are also possible, so name parameter
+         *      can be dynamically calculated eg.:
+         *
+         *      * {name: '$ext.author.name + "<" + $ext.author.email + ">"'} // will generate output like this: Username <user@user.com>
+         *
+         *      Additionally `name` parameter can have one of the following
          *      values, which coresspond to special behavior:
          *      * `@index` every row's value will be substituted for this row's index (counted from 1)
          *
@@ -250,34 +254,68 @@ angular.module('engine')
          *
          *      * **caption** {String} if set will be displayed in the column header row, will be translated
          *
-         *      * **type** {String, one of: ['link', 'text', 'date']} specifies what type of data is stored in this
+         *      * **type** {String, one of: ['link', 'text', 'date', 'array']} specifies what type of data is stored in this
          *      document field, will be formatted accordingly. 'link' field will be formatted as text, but will be wrapped
          *      in `<a>` tag allowing navigation to the selected document.
+         *
+         *      * **iterator** {String|Function} only if type of column was specified as `array` it can be either a function
+         *      or a js expression in string. It will be called on every element of the array, returned value will be
+         *      displayed instead of the original value from the array (this method does not change document's data, it
+         *      only affects presentation.
+         *
+         *      Examples:
+         *        *
+         *        <pre>
+         *        {name: '$ext.team.memberships', type: 'array', iterator: function (member) {
+         *                       return member.name + ' <' + memeber.email + '>';
+         *                   }
+         *        </pre>
+         *        *
+         *        <pre>
+         *        {name: '$ext.team.memberships', type: 'array', iterator: "name + ' <' + email +'>'"}
+         *        </pre>
+         *
+         *      * **processor** {String|Function} It can be either a function or a js expression in string.
+         *      It will be called for every entry in this column returned value will be
+         *      displayed instead of the original value (this method does not change document's data, it
+         *      only affects presentation.
+         *
+         *      Examples:
+         *        *
+         *        <pre>
+         *        {name: '$ext.author', iterator: function (author) {
+         *                       return author.name + ' <' + author.email + '>';
+         *                   }
+         *        </pre>
+         *        *
+         *        <pre>
+         *        {name: '$ext.author', processor: "name + ' <' + email +'>'"}
+         *        </pre>
          *
          *      * **style** {String} css classes which will be appended to the fields (to `<td>` element. one of the
          *      prepared styles is `id` which formats field in monospace font family.
          *
-         *      * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
-         *      the view. Object must have following fields:
-         *        * **label** {String} button's label
-         *        * **callback** {String|Function} function which will be called after button is clicked, documentOptions are passed
-         *        as an argument to callback. If argument is a {String} it will be treated as angular service and injected.
-         *        be sure to define this service to return function.
+         *    * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
+         *    the view. Object must have following fields:
+         *      * **label** {String} button's label
+         *      * **callback** {String|Function} function which will be called after button is clicked, documentOptions are passed
+         *      as an argument to callback. If argument is a {String} it will be treated as angular service and injected.
+         *      be sure to define this service to return function.
          *
-         *        Example:
+         *      Example:
          *
-         *        .factory('uploadProposalCalled', function ($log) {
-         *              return function uploadProposalCalled(documentOptions) {
-         *                  $log.debug('uploadProposalCalled', documentOptions);
-         *              };
-         *        })
+         *      .factory('uploadProposalCalled', function ($log) {
+         *            return function uploadProposalCalled(documentOptions) {
+         *                $log.debug('uploadProposalCalled', documentOptions);
+         *            };
+         *      })
          *
-         *      * **noDocumentsMessage** {String} *Optional* message shown to user if no documents were retrieved
+         *    * **noDocumentsMessage** {String} *Optional* message shown to user if no documents were retrieved
          *      defaults to "There are no documents to display", will be translated
          *
-         *      * **noParentDocumentMessage** {String} *Optional* message shown to user when list has parent document
-         *      (is embedded as metric) but parent document has not been saved to database yet. Defaults to
-         *      "Parent document does not exist, save this document first", will be translated
+         *    * **noParentDocumentMessage** {String} *Optional* message shown to user when list has parent document
+         *    (is embedded as metric) but parent document has not been saved to database yet. Defaults to
+         *    "Parent document does not exist, save this document first", will be translated
          *
          *    * **caption**: {String}, *Optional* Caption displayed on top of the list view, will be translated
          *

@@ -1,1 +1,1 @@
-{{$ctrl.engineResolve(document_entry.document, column.name) | date}}
+{{$ctrl.process(column.processor, $parse(column.name)(document_entry.document)) | date}}

@@ -1,1 +1,2 @@
-{{$ctrl.engineResolve(document_entry.document, column.name).join(', ')}}
+{{$ctrl.arrayCellIterate(column.iterator,
+                         $ctrl.process(column.processor, $parse(column.name)(document_entry.document)))}}
