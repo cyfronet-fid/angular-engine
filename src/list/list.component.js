@@ -127,10 +127,16 @@ angular.module('engine.list')
                 else
                     $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
             } else {
-                DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
-                    // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
-                    $rootScope.$broadcast('engine.list.reload', $scope.query);
-                });
+                if($scope.options.subdocument == true)
+                    DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
+                        // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+                        $rootScope.$broadcast('engine.list.reload', $scope.query);
+                    });
+                else {
+                    $location.$$search.step = 0;
+                    $location.$$path = $scope.genDocumentLink(documentEntry.document.id);
+                    $location.$$compose();
+                }
             }
         } else {
             $location.path($scope.genDocumentLink(documentEntry.document.id));
