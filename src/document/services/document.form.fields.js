@@ -109,7 +109,8 @@ angular.module('engine.document')
                     if(_.contains(field.model[field.key], element))
                         field.model[field.key].splice(field.model[field.key].indexOf(element), 1);
                     else
-                        field.model[field.key].push(element)
+                        field.model[field.key].push(element);
+                    field.options.templateOptions.onChange();
                 };
 
                 field.data.isActive = function(element) {

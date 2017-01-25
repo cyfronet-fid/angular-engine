@@ -776,6 +776,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
             field.data.addRemoveModel = function (element) {
                 if (_.contains(field.model[field.key], element)) field.model[field.key].splice(field.model[field.key].indexOf(element), 1);else field.model[field.key].push(element);
+                field.options.templateOptions.onChange();
             };
 
             field.data.isActive = function (element) {
@@ -2469,8 +2470,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T12:36:26.429Z';
-var ENGINE_VERSION = '0.6.49';
+var ENGINE_COMPILATION_DATE = '2017-01-25T12:50:23.278Z';
+var ENGINE_VERSION = '0.6.50';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
