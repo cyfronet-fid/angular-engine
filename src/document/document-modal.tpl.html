@@ -1,6 +1,7 @@
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true" ng-click="closeModal()">&times;</button>
-    <h4 class="modal-title" id="myModalLabel" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>
+    <h4 ng-if="!documentId" class="modal-title" id="myModalLabel" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>
+    <h4 ng-if="documentId" ><span translate>{{documentOptions.name}}</span> {{engineResolve(document, documentOptions.document.titleSrc)}}</h4>
 
 </div>
 <div class="modal-body">

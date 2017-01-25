@@ -1,5 +1,9 @@
 <div>
-    <h1><span translate>{{ options.document.caption || 'CREATE ' + options.name }}</span><span class="bold" ng-if="stepList.getSteps().length > 0">: {{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span></h1>
+    <h1>
+        <span ng-if="!document.id" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>
+        <span ng-if="document.id" ><span translate>{{options.name}}</span> {{engineResolve(document, options.document.titleSrc)}}</span>
+
+        <span class="bold" ng-if="stepList.getSteps().length > 0">: {{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span></h1>
     <engine-document step-list="stepList" show-validation-button="options.document.showValidationButton"
                      document-id="{{::documentId}}" document="document" step="$routeParams.step" options="options"
                      class="col-md-8" actions="actions"></engine-document>

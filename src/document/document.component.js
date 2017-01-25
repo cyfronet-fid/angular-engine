@@ -18,7 +18,7 @@ angular.module('engine.document')
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
                                             engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                             engineAction, engineMetricCategories, StepList, DocumentForm,
-                                            DocumentActionList, $q, $log) {
+                                            DocumentActionList, $q, $log, $attrs) {
     var self = this;
     console.log($scope);
     this.document = null;
@@ -69,7 +69,9 @@ angular.module('engine.document')
             self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
             return self.actionList.$ready;
         }).then(function () {
-            self.actions = self.actionList;
+            //assign actions only if binding is present
+            if($attrs.actions)
+                self.actions = self.actionList;
             self.documentForm.init(self.document, self.options, self.stepList, self.actionList);
             //load metrics to form
             return self.documentForm.loadForm();

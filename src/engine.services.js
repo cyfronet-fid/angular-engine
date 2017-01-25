@@ -7,6 +7,8 @@ angular.module('engine')
         }
 
         return function (baseObject, str) {
+            if(!str)
+                return '';
             return str.split('.').reduce(index, baseObject);
         };
     })

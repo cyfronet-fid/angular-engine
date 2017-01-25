@@ -4,7 +4,8 @@ angular.module('engine.document')
         return function(documentId, documentOptions, parentDocument, callback){
             var modalInstance = $uibModal.open({
                 templateUrl: '/src/document/document-modal.tpl.html',
-                controller: function ($scope, documentId, documentOptions, engineActionsAvailable, StepList, $uibModalInstance) {
+                controller: function ($scope, documentId, documentOptions, engineActionsAvailable, StepList, engineResolve, $uibModalInstance) {
+                    $scope.engineResolve = engineResolve;
                     $scope.step = 0;
                     $scope.documentOptions = documentOptions;
                     $scope.parentDocument = parentDocument;

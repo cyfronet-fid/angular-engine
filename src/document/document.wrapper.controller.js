@@ -1,5 +1,6 @@
 angular.module('engine.document')
-    .controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, StepList) {
+    .controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, engineResolve, StepList) {
+        $scope.engineResolve = engineResolve;
         $scope.options = $route.current.$$route.options;
 
         $scope.stepList = new StepList($route.current.$$route.options.document.steps);

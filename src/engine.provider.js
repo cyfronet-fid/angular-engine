@@ -298,6 +298,9 @@ angular.module('engine')
          *    * **summary** {Boolean}, *Optional*, default `true` if true adds additional step to document form, which
          *    will contain non editable document summary. **(NOT IMPLEMENTED YET)**
          *
+         *    * **titleSrc** {String}, *Optional*, default `''`. dotted notation referencing element of the document which
+         *    will be used as title in existing document's forms. (eg. `'metrics.proposalName'`)
+         *
          *    * **details** {Object}, *Optional*, defines additional information displayed in details box, available fields
          *    are:
          *      * **caption** {String}, Displayed caption, if not specified will default to `options.name`
