@@ -27,7 +27,7 @@ angular.module('docsApp').component('engineVersionSelector', {
     'Current: <span engine-version></span> <span class="caret"></span>'+
     '</a>' +
     '<ul class="dropdown-menu" role="menu" aria-labelledby="single-button" style="max-height: 300px; overflow-x: hidden; overflow-y: scroll;">'+
-    '<li role="menuitem" ng-repeat="version in versions | reverse"><a href="../{{::version}}/">{{::version}}</a></li>'+
+    '<li role="menuitem" ng-repeat="version in versions"><a href="../{{::version}}/">{{::version}}</a></li>'+
     '</ul>'+
     '</div>',
     controller: function ($scope) {

@@ -2582,7 +2582,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T19:33:57.117Z';
+var ENGINE_COMPILATION_DATE = '2017-01-25T19:44:07.738Z';
 var ENGINE_VERSION = '0.6.58';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
