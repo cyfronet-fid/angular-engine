@@ -91,10 +91,11 @@ angular.module('engine.document')
                     console.log('Metric to remove: ', metric, 'index: ', metricIndex);
                     delete self.metricDict[metric.id];
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
+                    delete self.document.metrics[metric.id];
                 }
             });
 
-
+            //add new metrics to the form, with respect to position
             _.forEach(newMetrics, function (newMetric) {
                 console.log(self.categoriesDict[newMetric.categoryId]);
                 self.addMetric(newMetric);

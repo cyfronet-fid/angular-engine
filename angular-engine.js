@@ -1110,9 +1110,11 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
                     console.log('Metric to remove: ', metric, 'index: ', metricIndex);
                     delete self.metricDict[metric.id];
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
+                    delete self.document.metrics[metric.id];
                 }
             });
 
+            //add new metrics to the form, with respect to position
             _.forEach(newMetrics, function (newMetric) {
                 console.log(self.categoriesDict[newMetric.categoryId]);
                 self.addMetric(newMetric);
@@ -2507,8 +2509,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T14:40:33.151Z';
-var ENGINE_VERSION = '0.6.52';
+var ENGINE_COMPILATION_DATE = '2017-01-25T14:49:39.908Z';
+var ENGINE_VERSION = '0.6.53';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
