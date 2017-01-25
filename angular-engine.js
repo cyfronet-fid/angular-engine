@@ -2469,8 +2469,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-17T15:52:26.221Z';
-var ENGINE_VERSION = '0.6.48';
+var ENGINE_COMPILATION_DATE = '2017-01-25T12:36:26.429Z';
+var ENGINE_VERSION = '0.6.49';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2838,10 +2838,14 @@ angular.module('engine.list').component('engineDocumentList', {
 
                 if (linkAction != null) $scope.engineAction(linkAction, documentEntry.document);else $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available');
             } else {
-                DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
+                if ($scope.options.subdocument == true) DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
                     // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
                     $rootScope.$broadcast('engine.list.reload', $scope.query);
-                });
+                });else {
+                    $location.$$search.step = 0;
+                    $location.$$path = $scope.genDocumentLink(documentEntry.document.id);
+                    $location.$$compose();
+                }
             }
         } else {
             $location.path($scope.genDocumentLink(documentEntry.document.id));
