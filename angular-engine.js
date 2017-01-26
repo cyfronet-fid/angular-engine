@@ -164,9 +164,9 @@ angular.module('engine.dashboard').controller('engineDashboardCtrl', function ($
 
 angular.module('engine.document').component('engineDocumentDetails', {
     templateUrl: '/src/document/details/details.tpl.html',
-    controller: function controller(engineResolve) {
+    controller: function controller($parse) {
         var self = this;
-        this.engineResolve = engineResolve;
+        this.$parse = $parse;
 
         this.saveDocument = function () {
             self.savePromise = self.actions.callSave();
@@ -2582,8 +2582,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-25T19:44:07.738Z';
-var ENGINE_VERSION = '0.6.58';
+var ENGINE_COMPILATION_DATE = '2017-01-26T12:33:04.447Z';
+var ENGINE_VERSION = '0.6.59';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -3042,7 +3042,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<h1 translate>{{options.caption}}</h1>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                              custom-buttons=\"query.customButtons\"\n                              no-documents-message=\"{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}\"\n                              no-parent-document-message=\"{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}\"\n                              query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\"\n                              list-caption=\"query.label\"></engine-document-list>\n\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/details/details.tpl.html", "<div class=\"text-box\" style=\"margin-right: 30px\">\n    <div class=\"text-content\" ng-clock>\n        <h3 style=\"margin-top: 0px\">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>\n\n        <table class=\"table\">\n            <tr ng-repeat=\"entry in $ctrl.options.document.details.entries\">\n                <td translate>{{entry.caption || entry.name}}</td>\n                <td translate>{{$ctrl.engineResolve($ctrl.ngModel, entry.name)}}</td>\n            </tr>\n        </table>\n        <button style=\"width: 100%\" type=\"submit\" class=\"btn btn-default\" ng-if=\"$ctrl.actions.getSaveAction() != null\"\n                ng-click=\"$ctrl.saveDocument()\">\n            <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\" ng-show=\"$ctrl.savePromise.$$state.status === 0\"></i>\n            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>\n        </button>\n    </div>\n</div>");
+  $templateCache.put("/src/document/details/details.tpl.html", "<div class=\"text-box\" style=\"margin-right: 30px\">\n    <div class=\"text-content\" ng-clock>\n        <h3 style=\"margin-top: 0px\">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>\n\n        <table class=\"table\">\n            <tr ng-repeat=\"entry in $ctrl.options.document.details.entries\">\n                <td translate>{{entry.caption || entry.name}}</td>\n                <td translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</td>\n            </tr>\n        </table>\n        <button style=\"width: 100%\" type=\"submit\" class=\"btn btn-default\" ng-if=\"$ctrl.actions.getSaveAction() != null\"\n                ng-click=\"$ctrl.saveDocument()\">\n            <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\" ng-show=\"$ctrl.savePromise.$$state.status === 0\"></i>\n            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>\n        </button>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 ng-if=\"!documentId\" class=\"modal-title\" id=\"myModalLabel\" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>\n    <h4 ng-if=\"documentId\" ><span translate>{{documentOptions.name}}</span> {{engineResolve(document, documentOptions.document.titleSrc)}}</h4>\n\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document=\"parentDocument\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent=\"parentDocument\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
