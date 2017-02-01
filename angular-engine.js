@@ -799,9 +799,11 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             }
             if (field.model[field.key] == null) field.model[field.key] = [];
 
-            field.data.addRemoveModel = function (element) {
-                if (_.contains(field.model[field.key], element)) field.model[field.key].splice(field.model[field.key].indexOf(element), 1);else field.model[field.key].push(element);
-                field.options.templateOptions.onChange();
+            field.controller = function ($scope) {
+                $scope.addRemoveModel = function (element) {
+                    if (_.contains(field.model[field.key], element)) field.model[field.key].splice(field.model[field.key].indexOf(element), 1);else field.model[field.key].push(element);
+                    $scope.options.templateOptions.onChange(field.model, field, $scope);
+                };
             };
 
             field.data.isActive = function (element) {
@@ -2582,8 +2584,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-01T12:36:27.813Z';
-var ENGINE_VERSION = '0.6.60';
+var ENGINE_COMPILATION_DATE = '2017-02-01T13:10:03.163Z';
+var ENGINE_VERSION = '0.6.61';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -3072,7 +3074,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiSelect.tpl.html", "<div>\n    <div class=\"radio-box\" ng-class=\"{'radio-box-last': $last, 'radio-box-first': $first, 'radio-box-active': model[options.key] == option.value}\"\n         ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <span class=\"radio-desc\">{{::option.name}}</span>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/multiSelectImage.tpl.html", "<!--<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>-->\n\n<div class=\"text-box\">\n    <div class=\"content\">\n        <div class=\"row\">\n            <div ng-repeat=\"col in options.templateOptions.cols\" class=\"{{::options.templateOptions.colClass}}\">\n               <div class=\"alert alert-proposal {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}\"\n                     role=\"alert\" ng-repeat=\"element in col\"\n                     ng-click=\"options.data.addRemoveModel(element.value)\">\n                    <span>{{::element.label}}</span>\n                    <i class=\"fa fa-check-circle\" aria-hidden=\"true\"></i>\n                </div>\n            </div>\n        </div>\n    </div>\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/multiSelectImage.tpl.html", "<!--<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>-->\n\n<div class=\"text-box\">\n    <div class=\"content\">\n        <div class=\"row\">\n            <div ng-repeat=\"col in options.templateOptions.cols\" class=\"{{::options.templateOptions.colClass}}\">\n               <div class=\"alert alert-proposal {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}\"\n                     role=\"alert\" ng-repeat=\"element in col\"\n                     ng-click=\"addRemoveModel(element.value)\">\n                    <span>{{::element.label}}</span>\n                    <i class=\"fa fa-check-circle\" aria-hidden=\"true\"></i>\n                </div>\n            </div>\n        </div>\n    </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiSelectVertical.tpl.html", "<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>");

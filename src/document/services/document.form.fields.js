@@ -105,12 +105,14 @@ angular.module('engine.document')
                 if(field.model[field.key] == null)
                     field.model[field.key] = [];
 
-                field.data.addRemoveModel = function(element) {
-                    if(_.contains(field.model[field.key], element))
-                        field.model[field.key].splice(field.model[field.key].indexOf(element), 1);
-                    else
-                        field.model[field.key].push(element);
-                    field.options.templateOptions.onChange();
+                field.controller = function($scope) {
+                    $scope.addRemoveModel = function(element) {
+                        if(_.contains(field.model[field.key], element))
+                            field.model[field.key].splice(field.model[field.key].indexOf(element), 1);
+                        else
+                            field.model[field.key].push(element);
+                        $scope.options.templateOptions.onChange(field.model, field, $scope);
+                    };
                 };
 
                 field.data.isActive = function(element) {

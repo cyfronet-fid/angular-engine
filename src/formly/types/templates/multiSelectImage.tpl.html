@@ -13,7 +13,7 @@
             <div ng-repeat="col in options.templateOptions.cols" class="{{::options.templateOptions.colClass}}">
                <div class="alert alert-proposal {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}"
                      role="alert" ng-repeat="element in col"
-                     ng-click="options.data.addRemoveModel(element.value)">
+                     ng-click="addRemoveModel(element.value)">
                     <span>{{::element.label}}</span>
                     <i class="fa fa-check-circle" aria-hidden="true"></i>
                 </div>
