@@ -2582,8 +2582,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-01-26T12:33:04.447Z';
-var ENGINE_VERSION = '0.6.59';
+var ENGINE_COMPILATION_DATE = '2017-02-01T12:36:27.813Z';
+var ENGINE_VERSION = '0.6.60';
 var ENGINE_BACKEND_VERSION = '1.0.89';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -3060,7 +3060,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/datepicker.tpl.html", "<p class=\"input-group input-group-datepicker\">\n    <input id=\"{{::id}}\"\n           name=\"{{::id}}\"\n           ng-model=\"model[options.key]\"\n           class=\"form-control datepicker\"\n           type=\"text\"\n           uib-datepicker-popup=\"{{to.datepickerOptions.format || 'yyyy-MM-dd'}}\"\n           is-open=\"openedDatePopUp\"\n           ng-required=\"false\"\n           show-button-bar=\"false\"\n           datepicker-options=\"to.datepickerOptions\"\n           on-open-focus=\"false\"\n           ng-click=\"openPopUp($event)\"/>\n    <span class=\"input-group-btn\">\n        <button type=\"button\" class=\"btn btn-default\" ng-click=\"openPopUp($event)\">\n            <i class=\"glyphicon glyphicon-calendar\"></i>\n        </button>\n    </span>\n</p>");
+  $templateCache.put("/src/formly/types/templates/datepicker.tpl.html", "<p class=\"input-group input-group-datepicker\">\n    <input id=\"{{::id}}\"\n           name=\"{{::id}}\"\n           ng-model=\"model[options.key]\"\n           class=\"form-control datepicker\"\n           type=\"text\"\n           uib-datepicker-popup=\"{{to.datepickerOptions.format || 'yyyy-MM-dd'}}\"\n           is-open=\"openedDatePopUp\"\n           datepicker-popup-template-url=\"/src/formly/types/templates/overrides/datepickerPopup.tpl.html\"\n           ng-required=\"false\"\n           show-button-bar=\"false\"\n           datepicker-options=\"to.datepickerOptions\"\n           on-open-focus=\"false\"\n           ng-click=\"openPopUp($event)\"/>\n    <span class=\"input-group-btn\">\n        <button type=\"button\" class=\"btn btn-default\" ng-click=\"openPopUp($event)\">\n            <i class=\"glyphicon glyphicon-calendar\"></i>\n        </button>\n    </span>\n</p>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/input.tpl.html", "<input class=\"form-control\"  ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");
@@ -3076,6 +3076,9 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiSelectVertical.tpl.html", "<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/types/templates/overrides/datepickerPopup.tpl.html", "<ul role=\"presentation\" class=\"uib-datepicker-popup dropdown-menu uib-position-measure engine-popup\" dropdown-nested ng-if=\"isOpen\" ng-keydown=\"keydown($event)\" ng-click=\"$event.stopPropagation()\">\n    <li ng-transclude></li>\n    <li ng-if=\"showButtonBar\" class=\"uib-button-bar\">\n    <span class=\"btn-group pull-left\">\n      <button type=\"button\" class=\"btn btn-sm btn-info uib-datepicker-current\" ng-click=\"select('today', $event)\" ng-disabled=\"isDisabled('today')\">{{ getText('current') }}</button>\n      <button type=\"button\" class=\"btn btn-sm btn-danger uib-clear\" ng-click=\"select(null, $event)\">{{ getText('clear') }}</button>\n    </span>\n        <button type=\"button\" class=\"btn btn-sm btn-success pull-right uib-close\" ng-click=\"close($event)\">{{ getText('close') }}</button>\n    </li>\n</ul>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/radio.tpl.html", "<div class=\"radio-group\">\n  <div ng-repeat=\"(key, option) in to.options\" class=\"radio\">\n    <label>\n      <input type=\"radio\"\n             id=\"{{id + '_'+ $index}}\"\n             tabindex=\"0\"\n             ng-value=\"option[to.valueProp || 'value']\"\n             ng-model=\"model[options.key]\">\n      {{option[to.labelProp || 'name']}}\n    </label>\n  </div>\n</div>\n");
