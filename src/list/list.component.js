@@ -89,17 +89,16 @@ angular.module('engine.list')
 
     $scope.engineAction = function (action, document) {
 
-        if(action.type == 'LINK'){
-            return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
-                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
-                $rootScope.$broadcast('engine.list.reload', $scope.query);
-            }, undefined, document.id);
-        } else {
-            return engineAction(action.id, document).$promise.then(function (data) {
-                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
-                $rootScope.$broadcast('engine.list.reload', $scope.query);
-            });
-        }
+        // if(action.type == 'LINK'){
+        //     return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
+        //         $rootScope.$broadcast('engine.list.reload', $scope.query);
+        //     }, undefined);
+        // } else {
+        return engineAction(action.id, document, null, null, _parentDocumentId).$promise.then(function (data) {
+            // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+            $rootScope.$broadcast('engine.list.reload', $scope.query);
+        });
+        // }
     };
 
     $scope.renderCell = function (document, column) {

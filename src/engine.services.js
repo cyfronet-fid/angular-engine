@@ -196,17 +196,18 @@ angular.module('engine')
         };
     })
     .service('engineAction', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
-        var _action = $resource($engineConfig.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', {
+        var _action = $resource($engineConfig.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId&otherDocumentId=:otherDocumentId', {
             actionId: '@actionId',
-            documentId: '@documentId'
+            documentId: '@documentId',
+            otherDocumentId: '@otherDocumentId'
         }, {
             post: {method: 'POST', transformResponse: EngineInterceptor.response, isArray: false}
         });
 
-        return function (actionId, document, callback, errorCallback, parentDocumentId) {
+        return function (actionId, document, callback, errorCallback, parentDocumentId, documentId) {
             $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-            return _action.post({actionId: actionId, documentId: parentDocumentId || document.id}, document, callback, errorCallback);
+            return _action.post({actionId: actionId, documentId: documentId || document.id, otherDocumentId:parentDocumentId}, document, callback, errorCallback);
         }
     })
     .service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $http) {

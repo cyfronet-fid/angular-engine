@@ -2477,17 +2477,18 @@ angular.module('engine').factory('engineResolve', function () {
         }
     };
 }).service('engineAction', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
-    var _action = $resource($engineConfig.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId', {
+    var _action = $resource($engineConfig.baseUrl + '/action/invoke?documentId=:documentId&actionId=:actionId&otherDocumentId=:otherDocumentId', {
         actionId: '@actionId',
-        documentId: '@documentId'
+        documentId: '@documentId',
+        otherDocumentId: '@otherDocumentId'
     }, {
         post: { method: 'POST', transformResponse: EngineInterceptor.response, isArray: false }
     });
 
-    return function (actionId, document, callback, errorCallback, parentDocumentId) {
+    return function (actionId, document, callback, errorCallback, parentDocumentId, documentId) {
         $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
 
-        return _action.post({ actionId: actionId, documentId: parentDocumentId || document.id }, document, callback, errorCallback);
+        return _action.post({ actionId: actionId, documentId: documentId || document.id, otherDocumentId: parentDocumentId }, document, callback, errorCallback);
     };
 }).service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $http) {
     var _document = $resource('', { documentId: '@documentId' }, {
@@ -2584,9 +2585,9 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-01T13:10:03.163Z';
-var ENGINE_VERSION = '0.6.61';
-var ENGINE_BACKEND_VERSION = '1.0.89';
+var ENGINE_COMPILATION_DATE = '2017-02-01T14:52:51.086Z';
+var ENGINE_VERSION = '0.6.62';
+var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);
 angular.module('engine').value('backendVersion', ENGINE_BACKEND_VERSION);
@@ -2926,17 +2927,16 @@ angular.module('engine.list').component('engineDocumentList', {
 
     $scope.engineAction = function (action, document) {
 
-        if (action.type == 'LINK') {
-            return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
-                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
-                $rootScope.$broadcast('engine.list.reload', $scope.query);
-            }, undefined, document.id);
-        } else {
-            return engineAction(action.id, document).$promise.then(function (data) {
-                // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
-                $rootScope.$broadcast('engine.list.reload', $scope.query);
-            });
-        }
+        // if(action.type == 'LINK'){
+        //     return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
+        //         $rootScope.$broadcast('engine.list.reload', $scope.query);
+        //     }, undefined);
+        // } else {
+        return engineAction(action.id, document, null, null, _parentDocumentId).$promise.then(function (data) {
+            // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
+            $rootScope.$broadcast('engine.list.reload', $scope.query);
+        });
+        // }
     };
 
     $scope.renderCell = function (document, column) {
