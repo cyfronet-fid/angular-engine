@@ -53,7 +53,7 @@ angular.module('engine')
 
                 var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query +
                                    '&attachAvailableActions=true&documentId=' +
-                                   parentDocumentId + '&attachAvailableActions=true',
+                                   parentDocumentId,
                                    parentDocument)
                     .then(function (response) {
                         return response.data;
@@ -215,7 +215,7 @@ angular.module('engine')
             {
                 getDocument: {url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
                               method: 'POST', transformResponse: EngineInterceptor.response},
-                validate:    {url: $engineConfig.baseUrl + '/validate-metric-values',
+                validate:    {url: $engineConfig.baseUrl + '/validate-metric-values'+'?documentId=:documentId',
                               method: 'POST', transformResponse: EngineInterceptor.response}
             });
 
@@ -266,7 +266,7 @@ angular.module('engine')
                 $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional],
                                  arguments);
 
-                return _document.validate({}, document, callback, errorCallback);
+                return _document.validate({'documentId': document.id}, document, callback, errorCallback);
             }
         }
     }).service('EngineInterceptor', function () {

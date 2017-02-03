@@ -2348,7 +2348,7 @@ angular.module('engine').factory('engineResolve', function () {
             var res = [];
             res.$resolved = 0;
 
-            var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId + '&attachAvailableActions=true', parentDocument).then(function (response) {
+            var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId, parentDocument).then(function (response) {
                 return response.data;
             }).then(EngineInterceptor.response).then(function (data) {
                 res = angular.merge(res, data);
@@ -2494,7 +2494,7 @@ angular.module('engine').factory('engineResolve', function () {
     var _document = $resource('', { documentId: '@documentId' }, {
         getDocument: { url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
             method: 'POST', transformResponse: EngineInterceptor.response },
-        validate: { url: $engineConfig.baseUrl + '/validate-metric-values',
+        validate: { url: $engineConfig.baseUrl + '/validate-metric-values' + '?documentId=:documentId',
             method: 'POST', transformResponse: EngineInterceptor.response }
     });
 
@@ -2541,7 +2541,7 @@ angular.module('engine').factory('engineResolve', function () {
         validate: function validate(document, callback, errorCallback) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
-            return _document.validate({}, document, callback, errorCallback);
+            return _document.validate({ 'documentId': document.id }, document, callback, errorCallback);
         }
     };
 }).service('EngineInterceptor', function () {
@@ -2585,8 +2585,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-01T14:52:51.086Z';
-var ENGINE_VERSION = '0.6.62';
+var ENGINE_COMPILATION_DATE = '2017-02-03T12:06:06.058Z';
+var ENGINE_VERSION = '0.6.63';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);
