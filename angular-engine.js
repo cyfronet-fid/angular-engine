@@ -2348,7 +2348,7 @@ angular.module('engine').factory('engineResolve', function () {
             var res = [];
             res.$resolved = 0;
 
-            var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&documentId=' + parentDocumentId, parentDocument).then(function (response) {
+            var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query + '&attachAvailableActions=true&otherDocumentId=' + parentDocumentId + '&documentId=' + parentDocumentId).then(function (response) {
                 return response.data;
             }).then(EngineInterceptor.response).then(function (data) {
                 res = angular.merge(res, data);
@@ -2585,8 +2585,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-03T12:06:06.058Z';
-var ENGINE_VERSION = '0.6.63';
+var ENGINE_COMPILATION_DATE = '2017-02-13T16:01:04.634Z';
+var ENGINE_VERSION = '0.6.64';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);

@@ -52,9 +52,7 @@ angular.module('engine')
                 res.$resolved = 0;
 
                 var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query +
-                                   '&attachAvailableActions=true&documentId=' +
-                                   parentDocumentId,
-                                   parentDocument)
+                                   '&attachAvailableActions=true&otherDocumentId='+parentDocumentId+'&documentId='+parentDocumentId)
                     .then(function (response) {
                         return response.data;
                     })
