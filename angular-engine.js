@@ -1768,7 +1768,13 @@ angular.module('engine').provider('$engineConfig', function () {
      * Register dashboard in angular-engine, angular URL will be generated queries to declared documents
      * will be displayed using column definitions in those declarations.
      *
-     * @param {string} url Angular url to created dashboard
+     * @param {string|Object} url Angular url to created dashboard
+     * example: `/sample-dashboard`, can also be object with following shape:
+     * ```
+     * {url: '/sample-dashboard', label: 'sampleDashboard'}
+     * ```
+     * where label is additional parameter passed to ng-route
+     *
      * @param {Array} queries list of query objects
      * @param {Object} options Dashboard options
      * Available fields:
@@ -1783,7 +1789,7 @@ angular.module('engine').provider('$engineConfig', function () {
 
         options = angular.merge(_options, options);
 
-        _apiCheck([_apiCheck.string, _apiCheck.arrayOf(_apiCheck.shape({
+        _apiCheck([_apiCheck.oneOfType([_apiCheck.string, _apiCheck.object]), _apiCheck.arrayOf(_apiCheck.shape({
             queryId: _apiCheck.string,
             label: _apiCheck.string,
             documentModelId: _apiCheck.string,
@@ -1794,10 +1800,17 @@ angular.module('engine').provider('$engineConfig', function () {
 
         options.queries = queries;
 
-        $routeProvider.when(url, {
-            templateUrl: options.templateUrl, controller: 'engineDashboardCtrl',
-            options: options
-        });
+        var dashboardRoutingOptions = {};
+
+        if (_.isObject(url)) {
+            dashboardRoutingOptions = url;
+            url = url.url;
+        }
+        dashboardRoutingOptions.templateUrl = options.templateUrl;
+        dashboardRoutingOptions.controller = 'engineDashboardCtrl';
+        dashboardRoutingOptions.options = options;
+
+        $routeProvider.when(url, dashboardRoutingOptions);
 
         dashboards.push({ 'url': url, 'queries': queries, 'options': options });
     };
@@ -1883,11 +1896,19 @@ angular.module('engine').provider('$engineConfig', function () {
      *
      * @param {string} documentModelType type of document (unique ID, used to identify document between engine backend and frontend
      *
-     * @param {string} listUrl url to list, which will be added to ngRoute
-     * example: ```/simple-document/:id```
+     * @param {string|Object} listUrl url to list, which will be added to ngRoute
+     * example: ```/simple-document```, can also be object with following shape:
+     * ```
+     * {url: '/simple-document', label: 'simpleDocument'}
+     * ```
+     * where label is additional parameter passed to ng-route
      *
-     * @param {string} documentUrl url to document, which will be added to ngRoute, has to contain ```:id``` part
+     * @param {string|Object} documentUrl url to document, which will be added to ngRoute, has to contain ```:id``` part
      * example: ```/simple-document/:id```
+     * ```
+     * {url: '/simple-document/:id', label: 'simpleDocumentDetails'}
+     * ```
+     * where label is additional parameter passed to ng-route
      *
      * @param {string|Array} query Queries which will be shown on document list page (each query will be represented by a table)
      * if argument is a string it will be treated as a group **query category** and list of queries will be generated from its children
@@ -2032,32 +2053,40 @@ angular.module('engine').provider('$engineConfig', function () {
     this.document = function (documentModelType, listUrl, documentUrl, query, options) {
         options = angular.merge(angular.copy(_defaultDocumentOptions), options);
 
-        _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
+        _apiCheck.throw([_apiCheck.string, _apiCheck.oneOfType([_apiCheck.string, _apiCheck.object]), _apiCheck.oneOfType([_apiCheck.string, _apiCheck.object]), _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, listUrl, documentUrl, query, options]);
 
         assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
 
         prepareDocumentOptions(options);
 
         options.documentModelType = documentModelType;
-        options.listUrl = listUrl;
-        options.list.url = listUrl;
-        options.documentUrl = documentUrl;
-        options.document.url = documentUrl;
+        options.listUrl = listUrl.url || listUrl;
+        options.list.url = options.listUrl;
+        options.documentUrl = documentUrl.url || documentUrl;
+        options.document.url = options.documentUrl;
         options.query = query;
         options.subdocument = false;
 
+        var documentRoutingOptions = {};
+        if (_.isObject(documentUrl)) documentRoutingOptions = documentUrl;
+
+        documentRoutingOptions.templateUrl = options.list.templateUrl;
+        documentRoutingOptions.controller = 'engineListWrapperCtrl';
+        documentRoutingOptions.options = options;
+        documentRoutingOptions.reloadOnSearch = false;
+
+        var listRoutingOptions = {};
+        if (_.isObject(listUrl)) listRoutingOptions = documentUrl;
+
+        listRoutingOptions.templateUrl = options.list.templateUrl;
+        listRoutingOptions.controller = 'engineListWrapperCtrl';
+        listRoutingOptions.options = options;
+
         documents.push({ list_route: listUrl, document_route: documentUrl });
 
-        $routeProvider.when(listUrl, {
-            templateUrl: options.list.templateUrl, controller: 'engineListWrapperCtrl',
-            options: options
-        });
+        $routeProvider.when(listUrl, listRoutingOptions);
 
-        $routeProvider.when(documentUrl, {
-            templateUrl: options.document.templateUrl, controller: 'engineDocumentWrapperCtrl',
-            options: options,
-            reloadOnSearch: false
-        });
+        $routeProvider.when(documentUrl, documentRoutingOptions);
 
         documents_d[documentModelType] = options;
     };
@@ -2585,8 +2614,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-13T16:01:04.634Z';
-var ENGINE_VERSION = '0.6.64';
+var ENGINE_COMPILATION_DATE = '2017-02-23T16:00:15.328Z';
+var ENGINE_VERSION = '0.6.65';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);
