@@ -63,3 +63,4 @@ fabric.properties
 /docs/js/vendor.js
 /docs/js/vendor.js.map
 /docs/templates/out/
+/tests/e2e/driver/

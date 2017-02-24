@@ -410,8 +410,8 @@ angular.module('engine')
             if(_.isObject(documentUrl))
                 documentRoutingOptions = documentUrl;
 
-            documentRoutingOptions.templateUrl = options.list.templateUrl;
-            documentRoutingOptions.controller = 'engineListWrapperCtrl';
+            documentRoutingOptions.templateUrl = options.document.templateUrl;
+            documentRoutingOptions.controller = 'engineDocumentWrapperCtrl';
             documentRoutingOptions.options = options;
             documentRoutingOptions.reloadOnSearch = false;
 

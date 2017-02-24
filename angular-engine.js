@@ -2070,8 +2070,8 @@ angular.module('engine').provider('$engineConfig', function () {
         var documentRoutingOptions = {};
         if (_.isObject(documentUrl)) documentRoutingOptions = documentUrl;
 
-        documentRoutingOptions.templateUrl = options.list.templateUrl;
-        documentRoutingOptions.controller = 'engineListWrapperCtrl';
+        documentRoutingOptions.templateUrl = options.document.templateUrl;
+        documentRoutingOptions.controller = 'engineDocumentWrapperCtrl';
         documentRoutingOptions.options = options;
         documentRoutingOptions.reloadOnSearch = false;
 
@@ -2614,8 +2614,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-23T16:00:15.328Z';
-var ENGINE_VERSION = '0.6.65';
+var ENGINE_COMPILATION_DATE = '2017-02-24T11:46:39.374Z';
+var ENGINE_VERSION = '0.6.66';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);
