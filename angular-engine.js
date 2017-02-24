@@ -2084,9 +2084,9 @@ angular.module('engine').provider('$engineConfig', function () {
 
         documents.push({ list_route: listUrl, document_route: documentUrl });
 
-        $routeProvider.when(listUrl, listRoutingOptions);
+        $routeProvider.when(options.listUrl, listRoutingOptions);
 
-        $routeProvider.when(documentUrl, documentRoutingOptions);
+        $routeProvider.when(options.documentUrl, documentRoutingOptions);
 
         documents_d[documentModelType] = options;
     };
@@ -2614,8 +2614,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-24T11:46:39.374Z';
-var ENGINE_VERSION = '0.6.66';
+var ENGINE_COMPILATION_DATE = '2017-02-24T12:13:22.109Z';
+var ENGINE_VERSION = '0.6.67';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);

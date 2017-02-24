@@ -427,9 +427,9 @@ angular.module('engine')
 
             documents.push({list_route: listUrl, document_route: documentUrl});
 
-            $routeProvider.when(listUrl, listRoutingOptions);
+            $routeProvider.when(options.listUrl, listRoutingOptions);
 
-            $routeProvider.when(documentUrl, documentRoutingOptions);
+            $routeProvider.when(options.documentUrl, documentRoutingOptions);
 
             documents_d[documentModelType] = options;
         };
