@@ -37,7 +37,7 @@ angular.module('engine.steps', ['ngRoute']);
  */
 angular.module('engine', ['ngRoute', 'ngResource', 'formly', 'engine.formly', 'ui.bootstrap',
 //required for supporting multiselect metrics
-'checklist-model', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'pascalprecht.translate', 'engine.document']);
+'checklist-model', 'engine.common', 'engine.list', 'engine.dashboard', 'engine.steps', 'ngMessages', 'ngFileUpload', 'pascalprecht.translate', 'engine.document']);
 'use strict';
 
 angular.module('engine.formly', []);
@@ -757,6 +757,41 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
         var self = this;
 
         this.register(new DocumentField({ inputType: 'TEXT' }, function (field, metric, ctx) {
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'ATTACHMENT' }, function (field, metric, ctx) {
+            field.type = 'attachment';
+            field.controller = function ($scope, Upload, $timeout) {
+                // $scope.$watch('files', function () {
+                //     $scope.upload($scope.files);
+                // });
+                // $scope.$watch('file', function () {
+                //     if ($scope.file != null) {
+                //         $scope.files = [$scope.file];
+                //     }
+                // });
+                // $scope.log = '';
+                //
+                $scope.upload = function (file) {
+                    Upload.upload({
+                        url: 'upload/url',
+                        data: { file: file, 'username': $scope.username }
+                    }).then(function (resp) {
+                        console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+                    }, function (resp) {
+                        console.log('Error status: ' + resp.status);
+                    }, function (evt) {
+                        var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                        console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+                    });
+                };
+            };
+            return field;
+        }));
+
+        this.register(new DocumentField({ inputType: 'ATTACHMENT_LIST' }, function (field, metric, ctx) {
+            field.type = 'attachmentList';
             return field;
         }));
 
@@ -2614,7 +2649,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-24T12:13:22.109Z';
+var ENGINE_COMPILATION_DATE = '2017-03-01T10:31:28.104Z';
 var ENGINE_VERSION = '0.6.67';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
@@ -2627,6 +2662,8 @@ angular.module('engine.formly').provider('$engineFormly', function () {
 
     var _typeTemplateUrls = {
         input: '/src/formly/types/templates/input.tpl.html',
+        attachment: '/src/formly/types/templates/attachment.tpl.html',
+        attachmentList: '/src/formly/types/templates/attachmentList.tpl.html',
         select: '/src/formly/types/templates/select.tpl.html',
         checkbox: '/src/formly/types/templates/checkbox.tpl.html',
         radio: '/src/formly/types/templates/radio.tpl.html',
@@ -2735,6 +2772,18 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
     formlyConfig.setType({
         name: 'input',
         templateUrl: $engineFormly.templateUrls['input'],
+        wrapper: ['engineLabel', 'engineHasError']
+    });
+
+    formlyConfig.setType({
+        name: 'attachment',
+        templateUrl: $engineFormly.templateUrls['attachment'],
+        wrapper: ['engineLabel', 'engineHasError']
+    });
+
+    formlyConfig.setType({
+        name: 'attachmentList',
+        templateUrl: $engineFormly.templateUrls['attachmentList'],
         wrapper: ['engineLabel', 'engineHasError']
     });
 
@@ -3086,6 +3135,12 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle-o': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/types/templates/attachment.tpl.html", "<div>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th></th>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th>Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\" ng-repeat=\"model[options.key]\">\n            <td></td>\n            <td></td>\n            <td></td>\n            <td></td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\"\n            ngf-multiple=\"false\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i> {{'Select File' | translate}}\n    </button>\n    <!--on file change multiple:-->\n    <!--<div class=\"button\" ngf-select=\"upload($files)\" ngf-multiple=\"true\">Select File</div>-->\n    <!--Drop File:-->\n    <!--<div ngf-drop ngf-select ng-model=\"files\" class=\"drop-box\"-->\n        <!--ngf-drag-over-class=\"'dragover'\" ngf-multiple=\"true\" ngf-allow-dir=\"true\"-->\n        <!--accept=\"image/*,application/pdf\"-->\n        <!--ngf-pattern=\"'image/*,application/pdf'\">Drop pdfs or images here or click to upload</div>-->\n    <!--<div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>-->\n    <!--Files:-->\n    <!--<ul>-->\n        <!--<li ng-repeat=\"f in files\" style=\"font:smaller\">{{f.name}} {{f.$error}} {{f.$errorParam}}</li>-->\n    <!--</ul>-->\n    <!--Upload Log:-->\n    <!--<pre>{{log}}</pre>-->\n<!--</div>-->\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/formly/types/templates/attachmentList.tpl.html", "<input class=\"form-control\"  ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");

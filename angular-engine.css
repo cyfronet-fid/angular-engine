@@ -88,3 +88,7 @@
     font-size: 13px;
     text-transform: uppercase;
 }
+
+.btn-file {
+    width: 100%;
+}

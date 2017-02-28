@@ -1,0 +1,40 @@
+<div>
+    <!--ng-model="model[options.key]"-->
+    <!--<input type="text" ng-model="username"><br/><br/>-->
+    <!--watching model:-->
+    <table>
+        <tr>
+            <th></th>
+            <th translate>Filename</th>
+            <th>Size</th>
+            <th>Actions</th>
+        </tr>
+        <tr ng-if="model[options.key]" ng-repeat="model[options.key]">
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+
+    </table>
+
+    <button type="file" class="btn btn-primary btn-file" ngf-select="upload($file)"
+            ngf-multiple="false">
+        <i class="fa fa-cloud-upload" aria-hidden="true"></i> {{'Select File' | translate}}
+    </button>
+    <!--on file change multiple:-->
+    <!--<div class="button" ngf-select="upload($files)" ngf-multiple="true">Select File</div>-->
+    <!--Drop File:-->
+    <!--<div ngf-drop ngf-select ng-model="files" class="drop-box"-->
+        <!--ngf-drag-over-class="'dragover'" ngf-multiple="true" ngf-allow-dir="true"-->
+        <!--accept="image/*,application/pdf"-->
+        <!--ngf-pattern="'image/*,application/pdf'">Drop pdfs or images here or click to upload</div>-->
+    <!--<div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>-->
+    <!--Files:-->
+    <!--<ul>-->
+        <!--<li ng-repeat="f in files" style="font:smaller">{{f.name}} {{f.$error}} {{f.$errorParam}}</li>-->
+    <!--</ul>-->
+    <!--Upload Log:-->
+    <!--<pre>{{log}}</pre>-->
+<!--</div>-->
+</div>

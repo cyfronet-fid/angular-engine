@@ -65,6 +65,41 @@ angular.module('engine.document')
                 return field;
             }));
 
+            this.register(new DocumentField({inputType: 'ATTACHMENT'}, function (field, metric, ctx) {
+                field.type = 'attachment';
+                field.controller = function ($scope, Upload, $timeout) {
+                    // $scope.$watch('files', function () {
+                    //     $scope.upload($scope.files);
+                    // });
+                    // $scope.$watch('file', function () {
+                    //     if ($scope.file != null) {
+                    //         $scope.files = [$scope.file];
+                    //     }
+                    // });
+                    // $scope.log = '';
+                    //
+                    $scope.upload = function (file) {
+                        Upload.upload({
+                            url: 'upload/url',
+                            data: {file: file, 'username': $scope.username}
+                        }).then(function (resp) {
+                            console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+                        }, function (resp) {
+                            console.log('Error status: ' + resp.status);
+                        }, function (evt) {
+                            var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                            console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+                        });
+                    };
+                };
+                return field;
+            }));
+
+            this.register(new DocumentField({inputType: 'ATTACHMENT_LIST'}, function (field, metric, ctx) {
+                field.type = 'attachmentList';
+                return field;
+            }));
+
             this.register(new DocumentField({visualClass: 'select', inputType: 'SELECT'}, function (field, metric, ctx) {
                 field.type = 'select';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
