@@ -193,7 +193,7 @@ angular.module('engine.document')
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" '+
                 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 ' list-caption="\''+metric.label+'\'"'+
-                ' metric-id="\''+metric.id+'\'"'+
+                ' metric-id="'+metric.id+'"'+
                 ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="'+metric.onSelectBehavior+'"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
