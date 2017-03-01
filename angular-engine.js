@@ -875,7 +875,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             field = {
                 data: field.data,
                 key: metric.id, //THIS FIELD IS REQUIRED
-                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' metric-id="\'' + metric.id + '\'"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
                     document: ctx.document
@@ -2614,7 +2614,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-02-24T12:13:22.109Z';
+var ENGINE_COMPILATION_DATE = '2017-03-01T13:20:30.986Z';
 var ENGINE_VERSION = '0.6.67';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
@@ -2891,7 +2891,8 @@ angular.module('engine.list').component('engineDocumentList', {
         customButtons: '=',
         onSelectBehavior: '@',
         noDocumentsMessage: '@',
-        noParentDocumentMessage: '@'
+        noParentDocumentMessage: '@',
+        metricId: '@'
     }
 }).controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction, engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log, $injector, $rootScope, $parse) {
     var self = this;
@@ -2945,7 +2946,10 @@ angular.module('engine.list').component('engineDocumentList', {
         if (this.parentDocument == null || this.parentDocument != null && this.parentDocument.id != null) {
             $scope.documents = engineQuery.get($scope.query, this.parentDocument);
             $scope.documents.$promise.then(function (documents) {
-                var a = 0;
+                if (self.metricId != null) {
+                    if (self.parentDocument.$ext == null) self.parentDocument.$ext = {};
+                    self.parentDocument.$ext[self.metricId] = documents;
+                }
             });
         } else {
             this.noParentDocument = true;

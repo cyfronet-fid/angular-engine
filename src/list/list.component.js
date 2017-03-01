@@ -13,7 +13,8 @@ angular.module('engine.list')
         customButtons: '=',
         onSelectBehavior: '@',
         noDocumentsMessage: '@',
-        noParentDocumentMessage: '@'
+        noParentDocumentMessage: '@',
+        metricId: '@'
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
@@ -77,9 +78,14 @@ angular.module('engine.list')
     this.loadDocuments = function () {
         if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)){
             $scope.documents = engineQuery.get($scope.query, this.parentDocument);
-        $scope.documents.$promise.then(function (documents) {
-           var a =0;
-        })}
+            $scope.documents.$promise.then(function (documents) {
+                if(self.metricId != null) {
+                    if(self.parentDocument.$ext == null)
+                        self.parentDocument.$ext = {};
+                    self.parentDocument.$ext[self.metricId] = documents;
+                }
+            });
+        }
         else {
             this.noParentDocument = true;
             $scope.documents = {$resolved: 1};
