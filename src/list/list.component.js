@@ -82,7 +82,9 @@ angular.module('engine.list')
                 if(self.metricId != null) {
                     if(self.parentDocument.$ext == null)
                         self.parentDocument.$ext = {};
-                    self.parentDocument.$ext[self.metricId] = documents;
+                    if(self.parentDocument.$ext.queries == null)
+                        self.parentDocument.$ext.queries = {};
+                    self.parentDocument.$ext.queries[self.metricId] = documents;
                 }
             });
         }
