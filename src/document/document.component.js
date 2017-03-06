@@ -112,6 +112,10 @@ angular.module('engine.document')
         });
     });
 
+    $scope.$on('engine.common.document.requestSave', function (event) {
+        event.savePromise = self.save();
+    });
+
     $scope.$on('engine.common.action.after', function (event, document, action, result) {
 
     });

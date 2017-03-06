@@ -141,6 +141,7 @@ angular.module('engine.document')
                 return DocumentActionProcess(self.document, result);
             }, function (result) {
                 self.$scope.$broadcast('engine.common.action.error', {'document': self.document, 'action': self, 'result': result});
+                return $q.reject(result);
             });
         };
 

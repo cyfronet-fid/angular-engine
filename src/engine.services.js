@@ -12,6 +12,34 @@ angular.module('engine')
             return str.split('.').reduce(index, baseObject);
         };
     })
+    .factory('engAttachment', function ($engineConfig, $http, Upload) {
+        function EngineAttachment(documentId, metricId) {
+            this.documentId = documentId;
+            this.metricId = metricId;
+            this.action = null;
+            this.label = 'Select file';
+            this.ready = this.loadActions();
+        }
+        EngineAttachment.prototype.loadActions = function loadActions() {
+            var self = this;
+            return $http.post($engineConfig.baseUrl + 'action/available/attachment?documentId='+this.documentId+'&metricId='+this.metricId).then(function (response) {
+                if(response.data.data.length == 0)
+                    console.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
+                self.action = response.data.data[0];
+                self.label = self.action.label;
+            }, function (response) {
+                //TODO ERROR MANAGEMENT
+            });
+        };
+        EngineAttachment.prototype.upload = function upload(file) {
+            return Upload.upload({
+                url: $engineConfig.baseUrl + '/action/invoke/attachment?documentId='+this.documentId+'&metricId='+this.metricId+'&actionId='+this.action.id,
+                data: {file: file}
+            })
+        };
+
+        return EngineAttachment
+    })
     .factory('$engResource', function ($engineConfig) {
 
         var engResource = function () {

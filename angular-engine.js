@@ -285,6 +285,10 @@ angular.module('engine.document').component('engineDocument', {
         });
     });
 
+    $scope.$on('engine.common.document.requestSave', function (event) {
+        event.savePromise = self.save();
+    });
+
     $scope.$on('engine.common.action.after', function (event, document, action, result) {});
 
     this.$ready = this.getDocument().then(function () {
@@ -501,6 +505,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
             return DocumentActionProcess(self.document, result);
         }, function (result) {
             self.$scope.$broadcast('engine.common.action.error', { 'document': self.document, 'action': self, 'result': result });
+            return $q.reject(result);
         });
     };
 
@@ -762,7 +767,9 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ inputType: 'ATTACHMENT' }, function (field, metric, ctx) {
             field.type = 'attachment';
-            field.controller = function ($scope, Upload, $timeout) {
+            field.controller = function ($scope, Upload, $timeout, engAttachment) {
+                var self = this;
+
                 // $scope.$watch('files', function () {
                 //     $scope.upload($scope.files);
                 // });
@@ -773,19 +780,51 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
                 // });
                 // $scope.log = '';
                 //
+                $scope.error = null;
+
                 $scope.upload = function (file) {
-                    Upload.upload({
-                        url: 'upload/url',
-                        data: { file: file, 'username': $scope.username }
-                    }).then(function (resp) {
-                        console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
-                    }, function (resp) {
-                        console.log('Error status: ' + resp.status);
+                    if (file == null) return;
+
+                    $scope.progress = 0;
+                    $scope.error = null;
+                    $scope.status = STATUS.uploading;
+                    $scope.uploadPromise = $scope.attachment.upload(file).then(function (response) {
+                        console.log('Success ' + response.config.data.file.name + 'uploaded. Response: ' + response.data);
+                        $scope.status = STATUS.loading;
+                        $scope.error = null;
+
+                        ctx.document.metrics[metric.id] = response.data.data.redirectToDocument;
+
+                        var event = $scope.$emit('engine.common.document.requestSave');
+                        event.savePromise.then(function () {
+                            $scope.status = STATUS.normal;
+                        }, function () {
+                            $scope.error = 'Could not save document';
+                            $scope.status = STATUS.normal;
+                        });
+                    }, function (response) {
+                        //TODO HANDLE ERROR
+                        console.log('Error status: ' + response.status);
+                        $scope.status = STATUS.normal;
+
+                        $scope.error = "An error occurred during upload";
                     }, function (evt) {
-                        var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
-                        console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+                        $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
                     });
                 };
+
+                var STATUS = { loading: 0, uploading: 1, disabled: 2, normal: 3 };
+                $scope.STATUS = STATUS;
+                $scope.status = STATUS.loading;
+                if (ctx.document.id != null) {
+                    $scope.attachment = new engAttachment(ctx.document.id, metric.id);
+                    $scope.attachment.ready.then(function () {
+                        $scope.status = STATUS.normal;
+                    });
+                } else {
+                    $scope.status = STATUS.disabled;
+                    $scope.disable = true;
+                }
             };
             return field;
         }));
@@ -2376,6 +2415,32 @@ angular.module('engine').factory('engineResolve', function () {
         if (!str) return '';
         return str.split('.').reduce(index, baseObject);
     };
+}).factory('engAttachment', function ($engineConfig, $http, Upload) {
+    function EngineAttachment(documentId, metricId) {
+        this.documentId = documentId;
+        this.metricId = metricId;
+        this.action = null;
+        this.label = 'Select file';
+        this.ready = this.loadActions();
+    }
+    EngineAttachment.prototype.loadActions = function loadActions() {
+        var self = this;
+        return $http.post($engineConfig.baseUrl + 'action/available/attachment?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
+            if (response.data.data.length == 0) console.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
+            self.action = response.data.data[0];
+            self.label = self.action.label;
+        }, function (response) {
+            //TODO ERROR MANAGEMENT
+        });
+    };
+    EngineAttachment.prototype.upload = function upload(file) {
+        return Upload.upload({
+            url: $engineConfig.baseUrl + '/action/invoke/attachment?documentId=' + this.documentId + '&metricId=' + this.metricId + '&actionId=' + this.action.id,
+            data: { file: file }
+        });
+    };
+
+    return EngineAttachment;
 }).factory('$engResource', function ($engineConfig) {
 
     var engResource = function engResource() {
@@ -2649,7 +2714,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-01T10:31:28.104Z';
+var ENGINE_COMPILATION_DATE = '2017-03-06T17:00:33.078Z';
 var ENGINE_VERSION = '0.6.67';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
@@ -3137,7 +3202,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle-o': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/attachment.tpl.html", "<div>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th></th>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th>Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\" ng-repeat=\"model[options.key]\">\n            <td></td>\n            <td></td>\n            <td></td>\n            <td></td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\"\n            ngf-multiple=\"false\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i> {{'Select File' | translate}}\n    </button>\n    <!--on file change multiple:-->\n    <!--<div class=\"button\" ngf-select=\"upload($files)\" ngf-multiple=\"true\">Select File</div>-->\n    <!--Drop File:-->\n    <!--<div ngf-drop ngf-select ng-model=\"files\" class=\"drop-box\"-->\n        <!--ngf-drag-over-class=\"'dragover'\" ngf-multiple=\"true\" ngf-allow-dir=\"true\"-->\n        <!--accept=\"image/*,application/pdf\"-->\n        <!--ngf-pattern=\"'image/*,application/pdf'\">Drop pdfs or images here or click to upload</div>-->\n    <!--<div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>-->\n    <!--Files:-->\n    <!--<ul>-->\n        <!--<li ng-repeat=\"f in files\" style=\"font:smaller\">{{f.name}} {{f.$error}} {{f.$errorParam}}</li>-->\n    <!--</ul>-->\n    <!--Upload Log:-->\n    <!--<pre>{{log}}</pre>-->\n<!--</div>-->\n</div>");
+  $templateCache.put("/src/formly/types/templates/attachment.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th></th>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th>Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\">\n            <td></td>\n            <td></td>\n            <td></td>\n            <td></td>\n        </tr>\n\n    </table>\n\n\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n\n    <!--on file change multiple:-->\n    <!--<div class=\"button\" ngf-select=\"upload($files)\" ngf-multiple=\"true\">Select File</div>-->\n    <!--Drop File:-->\n    <!--<div ngf-drop ngf-select ng-model=\"files\" class=\"drop-box\"-->\n        <!--ngf-drag-over-class=\"'dragover'\" ngf-multiple=\"true\" ngf-allow-dir=\"true\"-->\n        <!--accept=\"image/*,application/pdf\"-->\n        <!--ngf-pattern=\"'image/*,application/pdf'\">Drop pdfs or images here or click to upload</div>-->\n    <!--<div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>-->\n    <!--Files:-->\n    <!--<ul>-->\n        <!--<li ng-repeat=\"f in files\" style=\"font:smaller\">{{f.name}} {{f.$error}} {{f.$errorParam}}</li>-->\n    <!--</ul>-->\n    <!--Upload Log:-->\n    <!--<pre>{{log}}</pre>-->\n<!--</div>-->\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/attachmentList.tpl.html", "<input class=\"form-control\"  ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");

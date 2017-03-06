@@ -92,3 +92,8 @@
 .btn-file {
     width: 100%;
 }
+
+.error-text{
+	font-size: 0.77em;
+	color: #a94442;
+}

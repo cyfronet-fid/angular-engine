@@ -67,7 +67,9 @@ angular.module('engine.document')
 
             this.register(new DocumentField({inputType: 'ATTACHMENT'}, function (field, metric, ctx) {
                 field.type = 'attachment';
-                field.controller = function ($scope, Upload, $timeout) {
+                field.controller = function ($scope, Upload, $timeout, engAttachment) {
+                    var self = this;
+
                     // $scope.$watch('files', function () {
                     //     $scope.upload($scope.files);
                     // });
@@ -78,19 +80,55 @@ angular.module('engine.document')
                     // });
                     // $scope.log = '';
                     //
+                    $scope.error = null;
+
                     $scope.upload = function (file) {
-                        Upload.upload({
-                            url: 'upload/url',
-                            data: {file: file, 'username': $scope.username}
-                        }).then(function (resp) {
-                            console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
-                        }, function (resp) {
-                            console.log('Error status: ' + resp.status);
+                        if(file == null)
+                            return;
+
+                        $scope.progress = 0;
+                        $scope.error = null;
+                        $scope.status = STATUS.uploading;
+                        $scope.uploadPromise = $scope.attachment.upload(file).then(function (response) {
+                            console.log('Success ' + response.config.data.file.name + 'uploaded. Response: ' + response.data);
+                            $scope.status = STATUS.loading;
+                            $scope.error = null;
+
+                            ctx.document.metrics[metric.id] = response.data.data.redirectToDocument;
+
+                            var event = $scope.$emit('engine.common.document.requestSave');
+                            event.savePromise.then(function () {
+                                $scope.status = STATUS.normal;
+                            }, function () {
+                                $scope.error = 'Could not save document';
+                                $scope.status = STATUS.normal;
+                            })
+
+                        }, function (response) {
+                            //TODO HANDLE ERROR
+                            console.log('Error status: ' + response.status);
+                            $scope.status = STATUS.normal;
+
+                            $scope.error = "An error occurred during upload"
+
                         }, function (evt) {
-                            var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
-                            console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+                            $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
                         });
                     };
+
+                    var STATUS = {loading: 0, uploading: 1, disabled: 2, normal: 3};
+                    $scope.STATUS = STATUS;
+                    $scope.status = STATUS.loading;
+                    if(ctx.document.id != null){
+                        $scope.attachment = new engAttachment(ctx.document.id, metric.id);
+                        $scope.attachment.ready.then(function () {
+                           $scope.status = STATUS.normal;
+                        });
+                    } else {
+                        $scope.status = STATUS.disabled;
+                        $scope.disable = true;
+                    }
+
                 };
                 return field;
             }));
