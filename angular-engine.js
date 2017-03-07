@@ -914,7 +914,9 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             field = {
                 data: _.extend(field.data, { queries: ctx.options.document.queries[metric.id] }),
                 key: metric.id, //THIS FIELD IS REQUIRED
-                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' metric-id="' + metric.id + '"' + ' single-document="options.data.queries.singleDocument"' + ' columns="options.data.queries.columns"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' metric-id="' + metric.id + '"' + ' single-document="options.data.queries.singleDocument || ' + (_.find(metric.visualClass, function (visualClass) {
+                    return visualClass == '@singleDocument';
+                }) != null ? true : false) + '"' + ' columns="options.data.queries.columns"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
                     document: ctx.document
@@ -2105,7 +2107,10 @@ angular.module('engine').provider('$engineConfig', function () {
      *    which should have different columns then the ones defined under `document` you can define them here.
      *    **queries** is a dictionary which maps `metricId` -> properties.
      *    These properties is an `Object` which can have following fields:
-     *      * **columns**: {Array}, The same as `list.columns` describet earlier in `.document` description
+     *      * **singleDocument** {Boolean} *Optional*, default false. if set to true documents in the list will
+     *      be displayed vertically (one property per colum, one table per document) instead of single table
+     *      with one document per row.
+     *      * **columns**: {Array}, The same as `list.columns` described earlier in `.document` description
      *
      *      Example:
      *      <pre>
@@ -2693,8 +2698,8 @@ angular.module('engine').factory('engineResolve', function () {
 
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-07T17:05:16.534Z';
-var ENGINE_VERSION = '0.6.72';
+var ENGINE_COMPILATION_DATE = '2017-03-07T17:33:13.136Z';
+var ENGINE_VERSION = '0.6.73';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);
