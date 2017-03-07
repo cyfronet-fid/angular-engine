@@ -116,6 +116,10 @@ angular.module('engine.document')
 
     });
 
+    $scope.$on('document.form.requestReload', function (event) {
+        $log.debug('request reload for document');
+    });
+
     this.$ready = this.getDocument().then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)}).then(this.initDocument).then(this.postinitDocument).then(function () {
         $log.debug('engineDocumentCtrl initialized: ', self);
         console.log(self.$ready.$$state.status);

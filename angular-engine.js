@@ -106,7 +106,7 @@ angular.module('engine.common').factory('DocumentEventCtx', function () {
 
 angular.module('engine.common').component('engineDocumentActions', {
     templateUrl: '/src/common/document-actions/document-actions.tpl.html',
-    controller: function controller($rootScope, $scope, DocumentActionList, $log) {
+    controller: function controller($rootScope, $scope, DocumentActionList, $log, $timeout) {
         var self = this;
 
         if (!this.documentScope) {
@@ -123,9 +123,25 @@ angular.module('engine.common').component('engineDocumentActions', {
         };
 
         $scope.$watch('$ctrl.document', function (newDocument, oldDocument) {
-            if (!_.isEmpty(newDocument) && newDocument != null) self.actionList._setDocument(newDocument);
+            if (self.actionList != null && !_.isEmpty(newDocument) && newDocument != null) self.actionList._setDocument(newDocument);
         });
-        self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
+
+        this._documentScope.$on('document.form.requestReload', function (event) {
+            $log.debug('requested reload for action list');
+            self.loadActions();
+        });
+
+        this.loadActions = function loadActions() {
+            self.loading = true;
+            $timeout(function () {
+                self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
+                self.actionList.$ready.finally(function () {
+                    self.loading = false;
+                });
+            });
+        };
+
+        self.loadActions();
     },
     bindings: {
         documentScope: '=',
@@ -299,6 +315,10 @@ angular.module('engine.document').component('engineDocument', {
     });
 
     $scope.$on('engine.common.action.after', function (event, document, action, result) {});
+
+    $scope.$on('document.form.requestReload', function (event) {
+        $log.debug('request reload for document');
+    });
 
     this.$ready = this.getDocument().then(function () {
         return $q.all(self.stepList.$ready, self.documentForm.$ready);
@@ -2641,8 +2661,8 @@ angular.module('engine').factory('engineResolve', function () {
 
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-07T12:00:07.877Z';
-var ENGINE_VERSION = '0.6.69';
+var ENGINE_COMPILATION_DATE = '2017-03-07T13:30:46.834Z';
+var ENGINE_VERSION = '0.6.70';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -3107,7 +3127,7 @@ angular.module('engine.list').controller('engineListWrapperCtrl', function ($sco
 "use strict";
 
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\r\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.steps.isLast($ctrl.step)\">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step+1).name}}</button>\r\n\r\n<button type=\"submit\" ng-if=\"$ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\r\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\r\n\r\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\r\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>\r\n\r\n<button type=\"submit\" ng-repeat=\"button in $ctrl.customButtons\" ng-if=\"$ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\r\n        class=\"btn btn-default\" ng-click=\"button.action()\" translate>{{button.label}}</button>\r\n");
+  $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.loading\">\r\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\r\n</div>\r\n<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.loading && !$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\r\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.loading && !$ctrl.steps.isLast($ctrl.step)\">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step+1).name}}</button>\r\n\r\n<button type=\"submit\" ng-if=\"!$ctrl.loading && $ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\r\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\r\n\r\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"!$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\r\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>\r\n\r\n<button type=\"submit\" ng-repeat=\"button in $ctrl.customButtons\" ng-if=\"!$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\r\n        class=\"btn btn-default\" ng-click=\"button.action()\" translate>{{button.label}}</button>\r\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<h1 translate>{{options.caption}}</h1>\r\n<div class=\"text-box\" ng-repeat=\"query in queries\">\r\n    <div class=\"text-content\">\r\n        <engine-document-list show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\r\n                              custom-buttons=\"query.customButtons\"\r\n                              no-documents-message=\"{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}\"\r\n                              no-parent-document-message=\"{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}\"\r\n                              query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\"\r\n                              list-caption=\"query.label\"></engine-document-list>\r\n\r\n    </div>\r\n</div>");
@@ -3119,7 +3139,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\r\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\r\n    <h4 ng-if=\"!documentId\" class=\"modal-title\" id=\"myModalLabel\" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>\r\n    <h4 ng-if=\"documentId\" ><span translate>{{documentOptions.name}}</span> {{engineResolve(document, documentOptions.document.titleSrc)}}</h4>\r\n\r\n</div>\r\n<div class=\"modal-body\">\r\n    <div class=\"container-fluid\">\r\n        <engine-document parent-document=\"parentDocument\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\r\n    </div>\r\n</div>\r\n<div class=\"modal-footer\">\r\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\r\n                             document=\"document\" document-scope=\"$scope\" document-parent=\"parentDocument\"\r\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\r\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.$ready.$$state.status === 0\">\r\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\r\n</div>\r\n\r\n<div ng-show=\"$ctrl.$ready.$$state.status === 1\" ng-cloak>\r\n    <div ng-repeat=\"message in $ctrl.messages\" class=\"alert alert-{{message.type}} alert-document\" role=\"alert\" translate>{{message.body}}</div>\r\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\r\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\r\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\r\n\r\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\r\n                                     document=\"$ctrl.document\" document-scope=\"documentScope\"\r\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\r\n        </formly-form>\r\n    </form>\r\n</div>\r\n\r\n<div ng-show=\"!$ctrl.$ready.$$state.status === 2\" ng-cloak translate>\r\n    REJECTED\r\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.$ready.$$state.status === 0\">\r\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\r\n</div>\r\n\r\n<div ng-show=\"$ctrl.$ready.$$state.status === 1\" ng-cloak>\r\n    <div ng-repeat=\"message in $ctrl.messages\" class=\"alert alert-{{message.type}} alert-document\" role=\"alert\" translate>{{message.body}}</div>\r\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\r\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\r\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\r\n\r\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\r\n                                     document=\"$ctrl.document\" document-scope=\"$ctrl.documentScope\"\r\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\r\n        </formly-form>\r\n    </form>\r\n</div>\r\n\r\n<div ng-show=\"!$ctrl.$ready.$$state.status === 2\" ng-cloak translate>\r\n    REJECTED\r\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\r\n    <h1>\r\n        <span ng-if=\"!document.id\" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>\r\n        <span ng-if=\"document.id\" ><span translate>{{options.name}}</span> {{engineResolve(document, options.document.titleSrc)}}</span>\r\n\r\n        <span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">: {{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span></h1>\r\n    <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\"\r\n                     document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\"\r\n                     class=\"col-md-8\" actions=\"actions\"></engine-document>\r\n    <div class=\"col-md-4\">\r\n        <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\r\n        <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\"></engine-document-details>\r\n    </div>\r\n</div>");
