@@ -36,7 +36,8 @@ angular.module('engine.list')
 
     $scope.$parse = $parse;
     $scope.options = this.options;
-    $scope.columns = this.columns || $scope.options.list.columns;
+    $scope.columns = this.columns || ((this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null) ?
+        $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
 
 
     $scope.query = self.query || $scope.options.query;

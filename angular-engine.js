@@ -912,9 +912,9 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ inputType: 'QUERIED_LIST' }, function (field, metric, ctx) {
             field = {
-                data: field.data,
+                data: _.extend(field.data, { queries: ctx.options.document.queries[metric.id] }),
                 key: metric.id, //THIS FIELD IS REQUIRED
-                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' metric-id="' + metric.id + '"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
+                template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" ' + 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' + ' list-caption="\'' + metric.label + '\'"' + ' metric-id="' + metric.id + '"' + ' columns="options.data.queries.columns"' + ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="' + metric.onSelectBehavior + '"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
                     document: ctx.document
@@ -1770,7 +1770,7 @@ angular.module('engine').provider('$engineConfig', function () {
     var documents_d = {};
 
     var _apiCheck = $engineApiCheckProvider.apiCheck;
-
+    _apiCheck.columnOptions = _apiCheck.arrayOf(_apiCheck.shape({ name: _apiCheck.string, caption: _apiCheck.string.optional, style: _apiCheck.string.optional, type: _apiCheck.string.optional })).optional;
     _apiCheck.documentOptions = _apiCheck.shape({
         documentJSON: _apiCheck.object,
         name: _apiCheck.string,
@@ -1784,7 +1784,8 @@ angular.module('engine').provider('$engineConfig', function () {
             templateUrl: _apiCheck.string,
             steps: _apiCheck.arrayOf(_apiCheck.object),
             showValidateButton: _apiCheck.bool.optional,
-            caption: _apiCheck.string.optional
+            caption: _apiCheck.string.optional,
+            queries: _apiCheck.object.optional
         })
     });
 
@@ -1838,7 +1839,7 @@ angular.module('engine').provider('$engineConfig', function () {
             queryId: _apiCheck.string,
             label: _apiCheck.string,
             documentModelId: _apiCheck.string,
-            columns: _apiCheck.arrayOf(_apiCheck.shape({ name: _apiCheck.string, label: _apiCheck.string, style: _apiCheck.string })).optional,
+            columns: _apiCheck.columnOptions,
             showCreateButton: _apiCheck.bool.optional,
             customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({ 'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string]) })).optional
         }), _apiCheck.shape({ templateUrl: _apiCheck.string, caption: _apiCheck.string.optional }))], [url, queries, options]);
@@ -1859,6 +1860,15 @@ angular.module('engine').provider('$engineConfig', function () {
 
         dashboards.push({ 'url': url, 'queries': queries, 'options': options });
     };
+
+    function _checkDocumentOptions(options) {
+        if (options.document != null) {
+            if (options.document.queries != null) _.each(options.document.queries, function (metric) {
+                _apiCheck.throw([_apiCheck.shape({ 'columns': _apiCheck.columnOptions })], [metric]);
+            });
+            if (options.document.queries == null) options.document.queries = {};
+        }
+    }
 
     /**
      * @ngdoc method
@@ -2091,6 +2101,28 @@ angular.module('engine').provider('$engineConfig', function () {
      *      Example:
      *      `[{name: 'states.documentType', caption: 'Type'}]`
      *
+     *    * **queries** {Object}, *Optional*, if this document contains `QueriedMetricList`
+     *    which should have different columns then the ones defined under `document` you can define them here.
+     *    **queries** is a dictionary which maps `metricId` -> properties.
+     *    These properties is an `Object` which can have following fields:
+     *      * **columns**: {Array}, The same as `list.columns` describet earlier in `.document` description
+     *
+     *      Example:
+     *      <pre>
+     *      queries: queries: {
+     *          proposalForProposalResubmition: { //this is metricId
+     *              columns: [
+     *                  {name: '@index', type: 'link', caption: 'ID'},
+     *                  {name: 'id', type: 'link', caption: 'ID'},
+     *                  {name: 'states.documentType', caption: 'Type'}
+     *              ]
+     *          }
+     *      }
+     *      </pre>
+     *    **WARNING** Queries may be defined in both in the definition of the document which appears *inside*
+     *    Queried metric list as well as in the document which *contains* Queried Metric List, definition in
+     *    document which contains queried metric list overrides one defined in the document being contained.
+     *
      * For example object see this method's description.
      *
      *
@@ -2103,7 +2135,7 @@ angular.module('engine').provider('$engineConfig', function () {
         assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
 
         prepareDocumentOptions(options);
-
+        _checkDocumentOptions(options);
         options.documentModelType = documentModelType;
         options.listUrl = listUrl.url || listUrl;
         options.list.url = options.listUrl;
@@ -2158,11 +2190,11 @@ angular.module('engine').provider('$engineConfig', function () {
      */
     this.subdocument = function (documentModelType, query, options) {
         options = angular.merge(angular.copy(_defaultDocumentOptions), options);
-
         _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, query, options]);
-
         assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
+
         prepareDocumentOptions(options);
+        _checkDocumentOptions(options);
 
         options.query = query;
         options.subdocument = true;
@@ -2661,8 +2693,8 @@ angular.module('engine').factory('engineResolve', function () {
 
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-07T13:30:46.834Z';
-var ENGINE_VERSION = '0.6.70';
+var ENGINE_COMPILATION_DATE = '2017-03-07T16:08:29.499Z';
+var ENGINE_VERSION = '0.6.71';
 var ENGINE_BACKEND_VERSION = '1.0.98';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -2960,7 +2992,7 @@ angular.module('engine.list').component('engineDocumentList', {
 
     $scope.$parse = $parse;
     $scope.options = this.options;
-    $scope.columns = this.columns || $scope.options.list.columns;
+    $scope.columns = this.columns || (this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null ? $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
 
     $scope.query = self.query || $scope.options.query;
     $scope.customButtons = self.customButtons || self.options.customButtons;
