@@ -1,6 +1,6 @@
 angular.module('engine.list')
 .component('engineDocumentList', {
-    templateUrl: '/src/list/list.tpl.html',
+    templateUrl: '/src/list/list.component.tpl.html',
     controller: 'engineListCtrl',
     bindings: {
         options: '=',
@@ -14,7 +14,8 @@ angular.module('engine.list')
         onSelectBehavior: '@',
         noDocumentsMessage: '@',
         noParentDocumentMessage: '@',
-        metricId: '@'
+        metricId: '@',
+        singleDocument: '='
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
@@ -33,6 +34,10 @@ angular.module('engine.list')
             self._showCreateButton = newVal;
     });
 
+    if(self.singleDocument)
+        self.template = '/src/list/list.single.tpl.html';
+    else
+        self.template = '/src/list/list.tpl.html';
 
     $scope.$parse = $parse;
     $scope.options = this.options;

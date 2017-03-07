@@ -194,6 +194,7 @@ angular.module('engine.document')
                 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 ' list-caption="\''+metric.label+'\'"'+
                 ' metric-id="'+metric.id+'"'+
+                ' single-document="options.data.queries.singleDocument"'+
                 ' columns="options.data.queries.columns"'+
                 ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="'+metric.onSelectBehavior+'"></engine-document-list>',
                 templateOptions: {

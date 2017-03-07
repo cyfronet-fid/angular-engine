@@ -157,7 +157,7 @@ angular.module('engine')
             if(options.document != null) {
                 if(options.document.queries != null)
                     _.each(options.document.queries, function (metric) {
-                        _apiCheck.throw([_apiCheck.shape({'columns': _apiCheck.columnOptions})], [metric])
+                        _apiCheck.throw([_apiCheck.shape({'columns': _apiCheck.columnOptions, 'singleDocument': _apiCheck.bool.optional})], [metric])
                     });
                 if(options.document.queries == null)
                     options.document.queries = {};
@@ -399,7 +399,10 @@ angular.module('engine')
          *    which should have different columns then the ones defined under `document` you can define them here.
          *    **queries** is a dictionary which maps `metricId` -> properties.
          *    These properties is an `Object` which can have following fields:
-         *      * **columns**: {Array}, The same as `list.columns` describet earlier in `.document` description
+         *      * **singleDocument** {Boolean} *Optional*, default false. if set to true documents in the list will
+         *      be displayed vertically (one property per colum, one table per document) instead of single table
+         *      with one document per row.
+         *      * **columns**: {Array}, The same as `list.columns` described earlier in `.document` description
          *
          *      Example:
          *      <pre>

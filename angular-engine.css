@@ -88,3 +88,10 @@
     font-size: 13px;
     text-transform: uppercase;
 }
+
+.single-document-top {
+    height: 30px;
+}
+.single-document-top td{
+    background-color: #f0f2f7;
+}
