@@ -4,6 +4,7 @@ var cp = require('child_process');
 var exec = deasync(cp.exec);
 
 var engine_docs = 'build/'+JSON.parse(fs.readFileSync('bower.json', 'utf8')).version+'/js/engine.docs.js';
+var isWin = /^win/.test(process.platform);
 
 module.exports = {
     paths: {
@@ -47,7 +48,7 @@ module.exports = {
     },
     plugins: {
         afterBrunch: [
-            'node_modules/.bin/grunt ngdocs > /dev/null',
+            isWin ? 'node_modules\\.bin\\grunt ngdocs > nul' : 'node_modules/.bin/grunt ngdocs > /dev/null',
             // 'cp docs/js/docs.js build/'+JSON.parse(fs.readFileSync('bower.json', 'utf8')).version+'/js/docs.js',
             'cp bower_components/angular-animate/angular-animate.min.js build/'+JSON.parse(fs.readFileSync('bower.json', 'utf8')).version+'/js/angular-animate.min.js'
         ],
