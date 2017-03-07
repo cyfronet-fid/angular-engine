@@ -188,12 +188,13 @@ angular.module('engine.document')
 
         this.register(new DocumentField({inputType: 'QUERIED_LIST'}, function (field, metric, ctx) {
             field = {
-                data: field.data,
+                data: _.extend(field.data, {queries: ctx.options.document.queries[metric.id]}),
                 key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" '+
                 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 ' list-caption="\''+metric.label+'\'"'+
                 ' metric-id="'+metric.id+'"'+
+                ' columns="options.data.queries.columns"'+
                 ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="'+metric.onSelectBehavior+'"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
