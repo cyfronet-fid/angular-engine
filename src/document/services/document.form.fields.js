@@ -147,13 +147,39 @@ angular.module('engine.document')
                 return field;
             }));
 
+            this.register(new DocumentField({inputType: 'INTEGER'}, function (field, metric, ctx) {
+                field.type = 'input';
+                field.templateOptions.type = 'text';
+                //this will be automatically added to input with ng-model
+                field.templateOptions.numberConvert = 'true';
+
+                field.data.prepareValue = function(value) {
+                    var parsedValue = parseInt(value);
+
+                    return _.isNaN(parsedValue) ? value : parsedValue;
+                };
+                return field;
+            }));
+
+            this.register(new DocumentField({inputType: 'FLOAT'}, function (field, metric, ctx) {
+                field.type = 'input';
+                field.templateOptions.type = 'text';
+                //this will be automatically added to input with ng-model
+                field.templateOptions.floatConvert = 'true';
+
+                field.data.prepareValue = function(value) {
+                    var parsedValue = parseFloat(value);
+
+                    return _.isNaN(parsedValue) ? value : parsedValue;
+                };
+                return field;
+            }));
+
             this.register(new DocumentField({inputType: 'NUMBER'}, function (field, metric, ctx) {
                 field.type = 'input';
                 field.templateOptions.type = 'text';
+                //this will be automatically added to input with ng-model
                 field.templateOptions.numberConvert = 'true';
-                // field.ngModelAttrs = {
-                //     numberConvert: {attribute: 'number-convert'}
-                // };
 
                 field.data.prepareValue = function(value) {
                     var parsedValue = parseInt(value);
@@ -340,7 +366,7 @@ angular.module('engine.document')
                     if(!scope.model.match(/^\d+$/))
                         scope.model = val;
                     else {
-                        var pv = parseInt(scope.model, 10);
+                        var pv = Number(scope.model);
                         if(!_.isNaN(pv))
                             scope.model = pv;
                     }
@@ -350,7 +376,39 @@ angular.module('engine.document')
                         if(!val.match(/^\d+$/))
                             scope.model = val;
                         else {
-                            var pv = parseInt(val, 10);
+                            var pv = Number(val);
+                            if(!_.isNaN(pv))
+                                scope.model = pv;
+                            else
+                                scope.model = val;
+                        }
+                    }
+                });
+            }
+        };
+    }).directive('floatConvert', function () {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            scope: {
+                model: '=ngModel'
+            },
+            link: function (scope, element, attrs, ngModelCtrl) {
+                if (scope.model && typeof scope.model == 'string') {
+                    if(!scope.model.match(/^\d+(\.\d+)?$/))
+                        scope.model = val;
+                    else {
+                        var pv = Number(scope.model);
+                        if(!_.isNaN(pv))
+                            scope.model = pv;
+                    }
+                }
+                scope.$watch('model', function(val, old) {
+                    if (typeof val == 'string') {
+                        if(!val.match(/^\d+(\.\d+)?$/))
+                            scope.model = val;
+                        else {
+                            var pv = Number(val);
                             if(!_.isNaN(pv))
                                 scope.model = pv;
                             else
