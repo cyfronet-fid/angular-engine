@@ -220,13 +220,39 @@ angular.module('engine.document')
                 return field;
             }));
 
+            this.register(new DocumentField({inputType: 'INTEGER'}, function (field, metric, ctx) {
+                field.type = 'input';
+                field.templateOptions.type = 'text';
+                //this will be automatically added to input with ng-model
+                field.templateOptions.numberConvert = 'true';
+
+                field.data.prepareValue = function(value) {
+                    var parsedValue = parseInt(value);
+
+                    return _.isNaN(parsedValue) ? value : parsedValue;
+                };
+                return field;
+            }));
+
+            this.register(new DocumentField({inputType: 'FLOAT'}, function (field, metric, ctx) {
+                field.type = 'input';
+                field.templateOptions.type = 'text';
+                //this will be automatically added to input with ng-model
+                field.templateOptions.floatConvert = 'true';
+
+                field.data.prepareValue = function(value) {
+                    var parsedValue = parseFloat(value);
+
+                    return _.isNaN(parsedValue) ? value : parsedValue;
+                };
+                return field;
+            }));
+
             this.register(new DocumentField({inputType: 'NUMBER'}, function (field, metric, ctx) {
                 field.type = 'input';
                 field.templateOptions.type = 'text';
+                //this will be automatically added to input with ng-model
                 field.templateOptions.numberConvert = 'true';
-                // field.ngModelAttrs = {
-                //     numberConvert: {attribute: 'number-convert'}
-                // };
 
                 field.data.prepareValue = function(value) {
                     var parsedValue = parseInt(value);
@@ -261,11 +287,16 @@ angular.module('engine.document')
 
         this.register(new DocumentField({inputType: 'QUERIED_LIST'}, function (field, metric, ctx) {
             field = {
-                data: field.data,
+                data: _.extend(field.data, {queries: ctx.options.document.queries[metric.id]}),
                 key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" '+
                 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 ' list-caption="\''+metric.label+'\'"'+
+                ' metric-id="'+metric.id+'"'+
+                ' single-document="options.data.queries.singleDocument || '+(_.find(metric.visualClass, function (visualClass) {
+                    return visualClass == '@singleDocument'
+                }) != null ? true : false)+'"'+
+                ' columns="options.data.queries.columns"'+
                 ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="'+metric.onSelectBehavior+'"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),
@@ -408,7 +439,7 @@ angular.module('engine.document')
                     if(!scope.model.match(/^\d+$/))
                         scope.model = val;
                     else {
-                        var pv = parseInt(scope.model, 10);
+                        var pv = Number(scope.model);
                         if(!_.isNaN(pv))
                             scope.model = pv;
                     }
@@ -418,7 +449,39 @@ angular.module('engine.document')
                         if(!val.match(/^\d+$/))
                             scope.model = val;
                         else {
-                            var pv = parseInt(val, 10);
+                            var pv = Number(val);
+                            if(!_.isNaN(pv))
+                                scope.model = pv;
+                            else
+                                scope.model = val;
+                        }
+                    }
+                });
+            }
+        };
+    }).directive('floatConvert', function () {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            scope: {
+                model: '=ngModel'
+            },
+            link: function (scope, element, attrs, ngModelCtrl) {
+                if (scope.model && typeof scope.model == 'string') {
+                    if(!scope.model.match(/^\d+(\.\d+)?$/))
+                        scope.model = val;
+                    else {
+                        var pv = Number(scope.model);
+                        if(!_.isNaN(pv))
+                            scope.model = pv;
+                    }
+                }
+                scope.$watch('model', function(val, old) {
+                    if (typeof val == 'string') {
+                        if(!val.match(/^\d+(\.\d+)?$/))
+                            scope.model = val;
+                        else {
+                            var pv = Number(val);
                             if(!_.isNaN(pv))
                                 scope.model = pv;
                             else

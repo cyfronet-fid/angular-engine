@@ -1,6 +1,6 @@
 angular.module('engine.list')
 .component('engineDocumentList', {
-    templateUrl: '/src/list/list.tpl.html',
+    templateUrl: '/src/list/list.component.tpl.html',
     controller: 'engineListCtrl',
     bindings: {
         options: '=',
@@ -13,7 +13,9 @@ angular.module('engine.list')
         customButtons: '=',
         onSelectBehavior: '@',
         noDocumentsMessage: '@',
-        noParentDocumentMessage: '@'
+        noParentDocumentMessage: '@',
+        metricId: '@',
+        singleDocument: '='
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
@@ -32,10 +34,15 @@ angular.module('engine.list')
             self._showCreateButton = newVal;
     });
 
+    if(self.singleDocument)
+        self.template = '/src/list/list.single.tpl.html';
+    else
+        self.template = '/src/list/list.tpl.html';
 
     $scope.$parse = $parse;
     $scope.options = this.options;
-    $scope.columns = this.columns || $scope.options.list.columns;
+    $scope.columns = this.columns || ((this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null) ?
+        $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
 
 
     $scope.query = self.query || $scope.options.query;
@@ -77,9 +84,16 @@ angular.module('engine.list')
     this.loadDocuments = function () {
         if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)){
             $scope.documents = engineQuery.get($scope.query, this.parentDocument);
-        $scope.documents.$promise.then(function (documents) {
-           var a =0;
-        })}
+            $scope.documents.$promise.then(function (documents) {
+                if(self.metricId != null) {
+                    if(self.parentDocument.$ext == null)
+                        self.parentDocument.$ext = {};
+                    if(self.parentDocument.$ext.queries == null)
+                        self.parentDocument.$ext.queries = {};
+                    self.parentDocument.$ext.queries[self.metricId] = documents;
+                }
+            });
+        }
         else {
             this.noParentDocument = true;
             $scope.documents = {$resolved: 1};

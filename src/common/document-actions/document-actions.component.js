@@ -1,7 +1,7 @@
 angular.module('engine.common')
 .component('engineDocumentActions', {
     templateUrl: '/src/common/document-actions/document-actions.tpl.html',
-    controller: function ($rootScope, $scope, DocumentActionList,$log) {
+    controller: function ($rootScope, $scope, DocumentActionList, $log, $timeout) {
         var self = this;
 
         if(!this.documentScope){
@@ -20,10 +20,24 @@ angular.module('engine.common')
         };
 
         $scope.$watch('$ctrl.document', function (newDocument, oldDocument) {
-            if(!_.isEmpty(newDocument) && newDocument != null)
+            if(self.actionList != null && !_.isEmpty(newDocument) && newDocument != null)
                 self.actionList._setDocument(newDocument);
         });
-        self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
+
+        this._documentScope.$on('document.form.requestReload', function (event) {
+            $log.debug('requested reload for action list');
+            self.loadActions();
+        });
+
+        this.loadActions = function loadActions() {
+            self.loading = true;
+            $timeout(function () {
+                self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
+                self.actionList.$ready.finally(function () { self.loading = false; });
+            });
+        };
+
+        self.loadActions();
     },
     bindings: {
         documentScope: '=',

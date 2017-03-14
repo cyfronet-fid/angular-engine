@@ -58,7 +58,7 @@ angular.module('engine')
         var documents_d = {};
 
         var _apiCheck = $engineApiCheckProvider.apiCheck;
-
+        _apiCheck.columnOptions = _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, caption: _apiCheck.string.optional, style: _apiCheck.string.optional, type: _apiCheck.string.optional})).optional;
         _apiCheck.documentOptions = _apiCheck.shape({
             documentJSON: _apiCheck.object,
             name: _apiCheck.string,
@@ -72,7 +72,8 @@ angular.module('engine')
                 templateUrl: _apiCheck.string,
                 steps: _apiCheck.arrayOf(_apiCheck.object),
                 showValidateButton: _apiCheck.bool.optional,
-                caption: _apiCheck.string.optional
+                caption: _apiCheck.string.optional,
+                queries: _apiCheck.object.optional
             })
         });
 
@@ -129,7 +130,7 @@ angular.module('engine')
                     queryId: _apiCheck.string,
                     label: _apiCheck.string,
                     documentModelId: _apiCheck.string,
-                    columns: _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, label: _apiCheck.string, style: _apiCheck.string})).optional,
+                    columns: _apiCheck.columnOptions,
                     showCreateButton: _apiCheck.bool.optional,
                     customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional
                 }),
@@ -151,6 +152,17 @@ angular.module('engine')
 
             dashboards.push({'url': url, 'queries': queries, 'options': options});
         };
+
+        function _checkDocumentOptions(options) {
+            if(options.document != null) {
+                if(options.document.queries != null)
+                    _.each(options.document.queries, function (metric) {
+                        _apiCheck.throw([_apiCheck.shape({'columns': _apiCheck.columnOptions, 'singleDocument': _apiCheck.bool.optional})], [metric])
+                    });
+                if(options.document.queries == null)
+                    options.document.queries = {};
+            }
+        }
 
         /**
          * @ngdoc method
@@ -383,6 +395,31 @@ angular.module('engine')
          *      Example:
          *      `[{name: 'states.documentType', caption: 'Type'}]`
          *
+         *    * **queries** {Object}, *Optional*, if this document contains `QueriedMetricList`
+         *    which should have different columns then the ones defined under `document` you can define them here.
+         *    **queries** is a dictionary which maps `metricId` -> properties.
+         *    These properties is an `Object` which can have following fields:
+         *      * **singleDocument** {Boolean} *Optional*, default false. if set to true documents in the list will
+         *      be displayed vertically (one property per colum, one table per document) instead of single table
+         *      with one document per row.
+         *      * **columns**: {Array}, The same as `list.columns` described earlier in `.document` description
+         *
+         *      Example:
+         *      <pre>
+         *      queries: queries: {
+         *          proposalForProposalResubmition: { //this is metricId
+         *              columns: [
+         *                  {name: '@index', type: 'link', caption: 'ID'},
+         *                  {name: 'id', type: 'link', caption: 'ID'},
+         *                  {name: 'states.documentType', caption: 'Type'}
+         *              ]
+         *          }
+         *      }
+         *      </pre>
+         *    **WARNING** Queries may be defined in both in the definition of the document which appears *inside*
+         *    Queried metric list as well as in the document which *contains* Queried Metric List, definition in
+         *    document which contains queried metric list overrides one defined in the document being contained.
+         *
          * For example object see this method's description.
          *
          *
@@ -397,7 +434,7 @@ angular.module('engine')
             assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
 
             prepareDocumentOptions(options);
-
+            _checkDocumentOptions(options);
             options.documentModelType = documentModelType;
             options.listUrl = listUrl.url || listUrl;
             options.list.url = options.listUrl;
@@ -456,11 +493,11 @@ angular.module('engine')
          */
         this.subdocument = function (documentModelType, query, options) {
             options = angular.merge(angular.copy(_defaultDocumentOptions), options);
-
             _apiCheck.throw([_apiCheck.string, _apiCheck.typeOrArrayOf(_apiCheck.string), _apiCheck.documentOptions], [documentModelType, query, options]);
-
             assert(options.document.steps.length > 0, 'options.document.steps has length == 0, please define at least one step for document');
+
             prepareDocumentOptions(options);
+            _checkDocumentOptions(options);
 
             options.query = query;
             options.subdocument = true;

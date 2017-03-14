@@ -9,7 +9,7 @@
                      options="$ctrl.documentForm.formlyOptions" form="$ctrl.documentForm.formlyState">
 
             <engine-document-actions show-validation-button="$ctrl.showValidationButton" ng-if="!$ctrl.options.subdocument"
-                                     document="$ctrl.document" document-scope="documentScope"
+                                     document="$ctrl.document" document-scope="$ctrl.documentScope"
                                      steps="$ctrl.stepList" step="$ctrl.step" class="btn-group"></engine-document-actions>
         </formly-form>
     </form>

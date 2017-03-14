@@ -97,3 +97,10 @@
 	font-size: 0.77em;
 	color: #a94442;
 }
+
+.single-document-top {
+    height: 30px;
+}
+.single-document-top td{
+    background-color: #f0f2f7;
+}
