@@ -4,6 +4,8 @@ angular.module('engine.formly')
 
     var _typeTemplateUrls = {
         input: '/src/formly/types/templates/input.tpl.html',
+        attachment: '/src/formly/types/templates/attachment.tpl.html',
+        attachmentList: '/src/formly/types/templates/attachmentList.tpl.html',
         select: '/src/formly/types/templates/select.tpl.html',
         checkbox: '/src/formly/types/templates/checkbox.tpl.html',
         radio: '/src/formly/types/templates/radio.tpl.html',

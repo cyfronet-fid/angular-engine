@@ -24,5 +24,6 @@ angular.module('engine',
     'engine.dashboard',
     'engine.steps',
     'ngMessages',
+    'ngFileUpload',
     'pascalprecht.translate',
     'engine.document']);

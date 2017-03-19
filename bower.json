@@ -1,6 +1,6 @@
 {
   "name": "angular-engine",
-  "version": "0.6.74",
+  "version": "0.6.75",
   "authors": [
     "Michał Szostak <szostak.m.f@gmail.com>"
   ],
@@ -53,7 +53,8 @@
     "angular-translate": "^2.13.1",
     "angular-messages": "~1.5.8",
     "assert": "^0.1.0",
-    "checklist-model": "^0.10.0"
+    "checklist-model": "^0.10.0",
+    "ng-file-upload": "^12.2.13"
   },
   "devDependencies": {
     "angular-mocks": "~1.5.8"

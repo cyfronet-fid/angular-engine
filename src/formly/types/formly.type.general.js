@@ -9,6 +9,18 @@ angular.module('engine.formly')
         });
 
         formlyConfig.setType({
+            name: 'attachment',
+            templateUrl: $engineFormly.templateUrls['attachment'],
+            wrapper: ['engineLabel', 'engineHasError']
+        });
+
+        formlyConfig.setType({
+            name: 'attachmentList',
+            templateUrl: $engineFormly.templateUrls['attachmentList'],
+            wrapper: ['engineLabel', 'engineHasError']
+        });
+
+        formlyConfig.setType({
             name: 'checkbox',
             templateUrl: $engineFormly.templateUrls['checkbox'],
             wrapper: ['engineHasError']
