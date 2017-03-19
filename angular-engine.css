@@ -104,3 +104,11 @@
 .single-document-top td{
     background-color: #f0f2f7;
 }
+
+.attachment-actions {
+    text-align: right;
+}
+
+.attachment-actions a{
+    margin-right: 4px;
+}

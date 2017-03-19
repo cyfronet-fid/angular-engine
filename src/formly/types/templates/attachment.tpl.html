@@ -5,16 +5,16 @@
     <!--watching model:-->
     <table>
         <tr>
-            <th></th>
             <th translate>Filename</th>
             <th>Size</th>
-            <th>Actions</th>
+            <th class="attachment-actions">Actions</th>
         </tr>
         <tr ng-if="model[options.key]">
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td><a href="{{attachment.getDownloadLink()}}">{{ attachment.data.fileName }}</a></td>
+            <td>{{ getAttachmentSize() }}kB</td>
+            <td class="attachment-actions">
+                <a href="" class="" ng-click="delete()"><span class="fa fa-trash-o"></span></a>
+            </td>
         </tr>
 
     </table>
@@ -22,7 +22,7 @@
 
 
     <button type="file" class="btn btn-primary btn-file" ngf-select="upload($file)" ng-disabled="status != STATUS.normal"
-            ngf-multiple="false">
+            ngf-multiple="false" ng-show="model[options.key] == null">
         <i class="fa fa-cloud-upload" aria-hidden="true"></i>
         <span ng-if="status == STATUS.uploading">{{ 'Uploading' | translate}} {{progress}}%</span>
         <span ng-if="status == STATUS.normal">{{ (attachment.label || 'Select File') | translate}}</span>

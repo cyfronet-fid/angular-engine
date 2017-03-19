@@ -120,8 +120,9 @@ angular.module('engine.document')
 
     });
 
-    $scope.$on('document.form.requestReload', function (event) {
+    $scope.$on('engine.common.document.requestReload', function (event) {
         $log.debug('request reload for document');
+        event.reloadPromise = self.getDocument();
     });
 
     this.$ready = this.getDocument().then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)}).then(this.initDocument).then(this.postinitDocument).then(function () {

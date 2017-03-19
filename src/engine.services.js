@@ -12,14 +12,38 @@ angular.module('engine')
             return str.split('.').reduce(index, baseObject);
         };
     })
-    .factory('engAttachment', function ($engineConfig, $http, Upload) {
+    .factory('engAttachment', function ($engineConfig, $http, Upload, $q) {
         function EngineAttachment(documentId, metricId) {
+            var self = this;
             this.documentId = documentId;
             this.metricId = metricId;
             this.action = null;
+            this.data = null;
             this.label = 'Select file';
-            this.ready = this.loadActions();
+            this.ready = $q.all([this.loadActions(), $q.when(function(){
+                if(self.documentId == null)
+                    return;
+
+                return self.loadMetadata();
+            }())]);
         }
+        EngineAttachment.prototype.clear = function clear() {
+            this.data = null;
+        };
+        EngineAttachment.prototype.getDownloadLink = function getDownloadLink() {
+            return $engineConfig.baseUrl + 'attachment/download?documentId='+this.documentId+'&metricId='+this.metricId;
+        };
+        EngineAttachment.prototype.loadMetadata = function loadMetadata() {
+            var self = this;
+            this.data = null;
+            return $http.get($engineConfig.baseUrl + 'attachment?documentId='+this.documentId+'&metricId='+this.metricId).then(function (response) {
+                self.data = response.data.data;
+                return response.data.data;
+            }, function (response) {
+                // if(response.status == 404)
+                    //no attachment
+            });
+        };
         EngineAttachment.prototype.loadActions = function loadActions() {
             var self = this;
             return $http.post($engineConfig.baseUrl + 'action/available/attachment?documentId='+this.documentId+'&metricId='+this.metricId).then(function (response) {
