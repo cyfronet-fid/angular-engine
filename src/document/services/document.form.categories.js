@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentCategoryFactory', function (DocumentCategory, $log) {
+    .factory('DocumentCategoryFactory', function (DocumentCategory, $log, $parse) {
         function DocumentCategoryFactory() {
             this._categoryTypeList = [];
             this._defaultCategory = new DocumentCategory();
@@ -20,13 +20,21 @@ angular.module('engine.document')
             return this._defaultCategory.makeCategory(category, ctx);
         };
 
-        DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory() {
+        DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory(step) {
             var formStepStructure = {
                 fieldGroup: null,
                 templateOptions: {'disabled': true},
-                data: {hide: true},
+                data: {
+                    'step': step,
+                    'hide': true,
+                    '$parse': $parse
+                },
                 wrapper: 'step'
             };
+
+            formStepStructure.data.hasEntries = function(){
+                return formStepStructure.data.step.data.summary.entries != null && formStepStructure.data.step.data.summary.entries.length > 0;
+            }
 
             return formStepStructure;
         };

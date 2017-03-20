@@ -373,6 +373,11 @@ angular.module('engine')
          *          return document.states.documentType == 'draft' && document.id != null;
          *      }
          *      ```
+         *      * **summary** {Object} If specified on top of specified step document summary will be shown
+         *      entries in the summary can be specified via `entries` key (this works the same as global **details**
+         *      so you can look there for more details.
+         *      **NOTICE** the only difference between **step's summary** and **details** is that step's summary
+         *      does not have save button, so it ignores **saveCaption** value.
          *
          *    * **showValidationButton** {Boolean}, *Optional*, default `true` if true shows 'Validate' button at
          *    the end of document form

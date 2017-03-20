@@ -108,6 +108,7 @@ angular.module('engine.document')
             this.$valid = false;
             this.name = data.name;
             this.index = index;
+            this.data = data;
         }
 
         Step.STATE_VALID = 'valid';

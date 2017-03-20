@@ -206,7 +206,7 @@ angular.module('engine.document')
         var _categoriesToPostProcess = [];
 
         _.forEach(this.steps.getSteps(), function (step) {
-            var formStepStructure = DocumentCategoryFactory.makeStepCategory();
+            var formStepStructure = DocumentCategoryFactory.makeStepCategory(step);
             formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
 
             self.formStructure.push(formStepStructure);

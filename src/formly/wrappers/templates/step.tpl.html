@@ -1,3 +1,15 @@
 <div ng-hide="options.data.hide">
+    <div class="text-box" ng-if="options.data.hasEntries()">
+        <div class="{{::options.templateOptions.wrapperInnerClass}}">
+            <h2 ng-if="options.data.step.data.summary.caption" translate>{{options.data.step.data.summary.caption}}</h2>
+            <table class="table">
+                <tr ng-repeat="entry in options.data.step.data.summary.entries">
+                    <td translate>{{entry.caption || entry.name}}</td>
+                    <td translate>{{options.data.$parse(entry.name)(model) || 'Not specified yet'}}</td>
+                </tr>
+            </table>
+        </div>
+        <div class=clearfix"></div>
+    </div>
     <formly-transclude></formly-transclude>
 </div>
