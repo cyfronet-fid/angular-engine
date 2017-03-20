@@ -574,7 +574,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
 });
 'use strict';
 
-angular.module('engine.document').factory('DocumentCategoryFactory', function (DocumentCategory, $log) {
+angular.module('engine.document').factory('DocumentCategoryFactory', function (DocumentCategory, $log, $parse) {
     function DocumentCategoryFactory() {
         this._categoryTypeList = [];
         this._defaultCategory = new DocumentCategory();
@@ -594,12 +594,20 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
         return this._defaultCategory.makeCategory(category, ctx);
     };
 
-    DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory() {
+    DocumentCategoryFactory.prototype.makeStepCategory = function makeStepCategory(step) {
         var formStepStructure = {
             fieldGroup: null,
             templateOptions: { 'disabled': true },
-            data: { hide: true },
+            data: {
+                'step': step,
+                'hide': true,
+                '$parse': $parse
+            },
             wrapper: 'step'
+        };
+
+        formStepStructure.data.hasEntries = function () {
+            return formStepStructure.data.step.data.summary.entries != null && formStepStructure.data.step.data.summary.entries.length > 0;
         };
 
         return formStepStructure;
@@ -1398,7 +1406,7 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         var _categoriesToPostProcess = [];
 
         _.forEach(this.steps.getSteps(), function (step) {
-            var formStepStructure = DocumentCategoryFactory.makeStepCategory();
+            var formStepStructure = DocumentCategoryFactory.makeStepCategory(step);
             formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
 
             self.formStructure.push(formStepStructure);
@@ -1598,6 +1606,7 @@ angular.module('engine.document').factory('StepList', function (Step, $q, engine
         this.$valid = false;
         this.name = data.name;
         this.index = index;
+        this.data = data;
     }
 
     Step.STATE_VALID = 'valid';
@@ -2207,6 +2216,11 @@ angular.module('engine').provider('$engineConfig', function () {
      *          return document.states.documentType == 'draft' && document.id != null;
      *      }
      *      ```
+     *      * **summary** {Object} If specified on top of specified step document summary will be shown
+     *      entries in the summary can be specified via `entries` key (this works the same as global **details**
+     *      so you can look there for more details.
+     *      **NOTICE** the only difference between **step's summary** and **details** is that step's summary
+     *      does not have save button, so it ignores **saveCaption** value.
      *
      *    * **showValidationButton** {Boolean}, *Optional*, default `true` if true shows 'Validate' button at
      *    the end of document form
@@ -2871,8 +2885,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-19T23:47:45.461Z';
-var ENGINE_VERSION = '0.6.75';
+var ENGINE_COMPILATION_DATE = '2017-03-20T00:42:16.055Z';
+var ENGINE_VERSION = '0.6.76';
 var ENGINE_BACKEND_VERSION = '1.0.117';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -3424,7 +3438,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/row.tpl.html", "<div ng-if=\"options.data.hasMetrics()\">\n    <p class=\"row-label\" ng-if=\"to.label\" translate>{{to.label}}</p>\n    <div class=\"row  {{options.templateOptions.wrapperClass}}\">\n        <formly-transclude></formly-transclude>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/wrappers/templates/step.tpl.html", "<div ng-hide=\"options.data.hide\">\n    <formly-transclude></formly-transclude>\n</div>");
+  $templateCache.put("/src/formly/wrappers/templates/step.tpl.html", "<div ng-hide=\"options.data.hide\">\n    <div class=\"text-box\" ng-if=\"options.data.hasEntries()\">\n        <div class=\"{{::options.templateOptions.wrapperInnerClass}}\">\n            <h2 ng-if=\"options.data.step.data.summary.caption\" translate>{{options.data.step.data.summary.caption}}</h2>\n            <table class=\"table\">\n                <tr ng-repeat=\"entry in options.data.step.data.summary.entries\">\n                    <td translate>{{entry.caption || entry.name}}</td>\n                    <td translate>{{options.data.$parse(entry.name)(model) || 'Not specified yet'}}</td>\n                </tr>\n            </table>\n        </div>\n        <div class=clearfix\"></div>\n    </div>\n    <formly-transclude></formly-transclude>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/wrappers/templates/unit.tpl.html", "<div class=\"input-group\">\n    <formly-transclude></formly-transclude>\n    <span class=\"input-group-addon\" >{{::options.data.unit}}</span>\n</div>");
