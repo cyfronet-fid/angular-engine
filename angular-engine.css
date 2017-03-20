@@ -83,6 +83,8 @@
     left: -130px;
 }
 
+.cog-dropdown i {margin-top: 4px;}
+
 .row-label {
     font-family: 'ek_muktabold';
     font-size: 13px;

@@ -1,4 +1,8 @@
-<h1 translate>{{options.caption}}</h1>
+<div class="row">
+    <div class="col-md-12">
+        <h1 translate>{{options.caption}}</h1>
+    </div>
+</div>
 <div class="text-box" ng-repeat="query in queries">
     <div class="text-content">
         <engine-document-list show-create-button="query.showCreateButton" columns="query.columns"
