@@ -1,13 +1,13 @@
-<div class="text-box" style="margin-right: 30px">
+<div class="text-box">
     <div class="text-content" ng-clock>
         <h3 style="margin-top: 0px">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>
 
-        <table class="table">
-            <tr ng-repeat="entry in $ctrl.options.document.details.entries">
-                <td translate>{{entry.caption || entry.name}}</td>
-                <td translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</td>
-            </tr>
-        </table>
+        <ul class="list-group">
+            <li ng-repeat="entry in $ctrl.options.document.details.entries" class="list-group-item">
+                <span translate>{{entry.caption || entry.name}}</span>
+                <span translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</span>
+            </li>
+        </ul>
         <button style="width: 100%" type="submit" class="btn btn-default" ng-if="$ctrl.actions.getSaveAction() != null"
                 ng-click="$ctrl.saveDocument()">
             <i class="fa fa-spinner fa-spin" aria-hidden="true" ng-show="$ctrl.savePromise.$$state.status === 0"></i>

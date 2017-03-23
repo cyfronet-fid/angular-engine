@@ -34,46 +34,8 @@
 
 }
 
-/* multi select with images */
+/* multi select with images style moved to main.css in duo*/
 
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    height: 80px;
-    line-height:20px;
-}
-.alert span{
-    width: 80%;
-    display: inline-block;
-    line-height: 14px;}
-
-.alert-default {
-    color: #484a50;
-    background-color: #ffffff;
-    border-color: #bfc4da;
-}
-
-.alert-proposal{
-    font-size: 1.063em;
-    padding: 25px;
-    padding-left: 90px;
-    font-family: 'ek_muktabold';
-    text-transform: uppercase;
-    cursor: pointer;
-}
-.alert-proposal .fa{
-    font-size: 1.5em;
-    float: right;
-}
-.alert-default .fa{
-    color: #bfc4da;}
-
-.alert-proposal.alert-success, .alert-proposal.alert-success .fa{
-    color: #75ad40;
-    background-color: #ffffff;
-    border-color: #75ad40;}
 
 .cog-dropdown .dropdown{
     position: relative;
@@ -82,6 +44,8 @@
     position: absolute;
     left: -130px;
 }
+
+.cog-dropdown i {margin-top: 4px;}
 
 .row-label {
     font-family: 'ek_muktabold';
