@@ -117,7 +117,7 @@ angular.module('engine.document')
                                                                                  'promises': promises});
 
                     if(event.defaultPrevented) {
-                        self.$scope.$broadcast('engine.common.action.prevented', {'document': this.document,
+                        self.$scope.$broadcast('engine.common.save.prevented', {'document': this.document,
                                                                                   'action': this,
                                                                                   'event': event});
                         return;

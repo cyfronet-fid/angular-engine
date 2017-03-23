@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log) {
+    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log, attachmentCtrl, engAttachmentListCtrl) {
         function DocumentFieldFactory() {
             this._fieldTypeList = [];
             this._defaultField = new DocumentField();
@@ -67,102 +67,14 @@ angular.module('engine.document')
 
             this.register(new DocumentField({inputType: 'ATTACHMENT'}, function (field, metric, ctx) {
                 field.type = 'attachment';
-                field.controller = function ($scope, Upload, $timeout, engAttachment) {
-                    var self = this;
-                    var STATUS = {loading: 0, uploading: 1, disabled: 2, normal: 3};
-
-                    $scope.$watch('model.'+metric.id, function (newValue, oldValue) {
-                        if(newValue == null || newValue == oldValue)
-                            return;
-
-                        if (ctx.document.id == null)
-                            return;
-
-                        if ($scope.attachment == null)
-                            return;
-
-                        $scope.attachment.loadMetadata();
-                    });
-
-                    $scope.getAttachmentSize = function() {
-                        if($scope.attachment.data == null)
-                            return '- '
-                        return Math.floor($scope.attachment.data.length / 1024)
-                    };
-
-                    $scope.delete = function () {
-                        $scope.status = STATUS.loading;
-                        $scope.model[$scope.options.key] = null;
-                        $scope.attachment.clear();
-
-                        var event = $scope.$emit('engine.common.document.requestSave');
-
-                        event.savePromise.then(function () {
-                            $scope.error = null;
-                            $scope.status = STATUS.normal;
-                        }, function () {
-                            $scope.error = 'Could not save document';
-                            $scope.status = STATUS.normal;
-                        })
-                    };
-
-                    $scope.upload = function (file) {
-                        if (file == null)
-                            return;
-
-                        var event = $scope.$emit('engine.common.document.requestSave');
-
-                        event.savePromise.then(function () {
-                            $scope.progress = 0;
-                            $scope.error = null;
-                            $scope.status = STATUS.uploading;
-                            $scope.uploadPromise = $scope.attachment.upload(file).then(function (response) {
-                                console.log('Success ' + response.config.data.file.name + 'uploaded. Response: ' + response.data);
-                                $scope.status = STATUS.normal;
-                                $scope.error = null;
-
-                                ctx.document.metrics[metric.id] = response.data.data.redirectToDocument;
-
-                                var event = $scope.$emit('engine.common.document.requestReload');
-                            }, function (response) {
-                                //TODO HANDLE ERROR
-                                console.log('Error status: ' + response.status);
-                                $scope.status = STATUS.normal;
-
-                                $scope.error = "An error occurred during upload"
-
-                            }, function (evt) {
-                                $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
-                            });
-                        }, function () {
-                            $scope.error = 'Could not save document';
-                            $scope.status = STATUS.normal;
-                        })
-                    };
-
-                    function _init() {
-                        $scope.error = null;
-                        $scope.STATUS = STATUS;
-                        $scope.status = STATUS.loading;
-                        if (ctx.document.id != null) {
-                            $scope.attachment = new engAttachment(ctx.document.id, metric.id);
-                            $scope.attachment.ready.then(function () {
-                                $scope.status = STATUS.normal;
-                            });
-                        } else {
-                            $scope.status = STATUS.disabled;
-                            $scope.disable = true;
-                        }
-                    }
-
-                    _init();
-                };
+                field.controller = engAttachmentCtrl;
                 return field;
             }));
 
             this.register(new DocumentField({inputType: 'ATTACHMENT_LIST'}, function (field, metric, ctx) {
                 throw new Error("ATTACHMENT_LIST metric type is not supported yet!")
                 field.type = 'attachmentList';
+                field.controller = engAttachmentListCtrl;
                 return field;
             }));
 
