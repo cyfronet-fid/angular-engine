@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log, attachmentCtrl, engAttachmentListCtrl) {
+    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log, createAttachmentCtrl) {
         function DocumentFieldFactory() {
             this._fieldTypeList = [];
             this._defaultField = new DocumentField();
@@ -67,14 +67,13 @@ angular.module('engine.document')
 
             this.register(new DocumentField({inputType: 'ATTACHMENT'}, function (field, metric, ctx) {
                 field.type = 'attachment';
-                field.controller = engAttachmentCtrl;
+                field.controller = createAttachmentCtrl(metric, ctx, false);
                 return field;
             }));
 
             this.register(new DocumentField({inputType: 'ATTACHMENT_LIST'}, function (field, metric, ctx) {
-                throw new Error("ATTACHMENT_LIST metric type is not supported yet!")
                 field.type = 'attachmentList';
-                field.controller = engAttachmentListCtrl;
+                field.controller = createAttachmentCtrl(metric, ctx, true);
                 return field;
             }));
 

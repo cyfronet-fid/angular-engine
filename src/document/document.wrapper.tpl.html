@@ -19,10 +19,10 @@
         </div>
     </div>
 
-    <div class="document-navi-toggle">
+    <div class="document-navi-toggle" ng-click="toggleSideMenu()" ng-class="{active: sideMenuVisible}">
         <i class="fa fa-file-text" aria-hidden="true"></i>
     </div>
-    <div class="sidebar-document-rwd">
+    <div class="sidebar-document-rwd" ng-show="sideMenuVisible">
         <engine-steps ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
         <engine-document-details ng-model="document" options="options" actions="actions"></engine-document-details>
     </div>

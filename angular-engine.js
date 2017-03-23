@@ -376,6 +376,11 @@ angular.module('engine.document').controller('engineDocumentWrapperCtrl', functi
     $scope.documentId = $routeParams.id;
     if ($routeParams.step === undefined) $routeParams.step = 0;else $routeParams.step = parseInt($routeParams.step);
 
+    $scope.sideMenuVisible = true;
+    $scope.toggleSideMenu = function () {
+        $scope.sideMenuVisible = !$scope.sideMenuVisible;
+    };
+
     $scope.$routeParams = $routeParams;
 
     $scope.$watch('$routeParams.step', function (newVal, oldVal) {
@@ -506,7 +511,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
                     'promises': promises });
 
                 if (event.defaultPrevented) {
-                    self.$scope.$broadcast('engine.common.action.prevented', { 'document': this.document,
+                    self.$scope.$broadcast('engine.common.save.prevented', { 'document': this.document,
                         'action': this,
                         'event': event });
                     return;
@@ -574,6 +579,167 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
 });
 'use strict';
 
+angular.module('engine.document').factory('engAttachment', function ($engineConfig, $http, Upload, $q) {
+    var listUrl = 'attachment-list';
+    var singleUrl = 'attachment';
+
+    function EngineAttachment(documentId, metricId, isList) {
+        var self = this;
+        this.isList = isList || false;
+        this.baseUrl = this.isList ? listUrl : singleUrl;
+        this.documentId = documentId;
+        this.metricId = metricId;
+        this.action = null;
+        this.data = null;
+        this.label = 'Select file';
+        this.ready = $q.all([this.loadActions(), $q.when(function () {
+            if (self.documentId == null) return;
+
+            return self.loadMetadata();
+        }())]);
+    }
+
+    EngineAttachment.prototype.clear = function clear() {
+        this.data = null;
+    };
+
+    EngineAttachment.prototype.getDownloadLink = function getDownloadLink() {
+        return $engineConfig.baseUrl + this.baseUrl + '/download?documentId=' + this.documentId + '&metricId=' + this.metricId;
+    };
+    EngineAttachment.prototype.loadMetadata = function loadMetadata() {
+        var self = this;
+        this.data = null;
+        return $http.get($engineConfig.baseUrl + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
+            self.data = response.data.data;
+            return response.data.data;
+        }, function (response) {
+            // if(response.status == 404)
+            //no attachment
+        });
+    };
+    EngineAttachment.prototype.loadActions = function loadActions() {
+        var self = this;
+        return $http.post($engineConfig.baseUrl + 'action/available/' + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
+            if (response.data.data.length == 0) console.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
+            self.action = response.data.data[0];
+            self.label = self.action.label;
+        }, function (response) {
+            //TODO ERROR MANAGEMENT
+        });
+    };
+    EngineAttachment.prototype.upload = function upload(file) {
+        var self = this;
+        return Upload.upload({
+            url: $engineConfig.baseUrl + '/action/invoke/' + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId + '&actionId=' + this.action.id,
+            data: { file: file }
+        });
+    };
+
+    return EngineAttachment;
+});
+
+angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $timeout, engAttachment) {
+    var self = this;
+    var STATUS = { loading: 0, uploading: 1, disabled: 2, normal: 3 };
+
+    $scope.$watch('model.' + $scope.metric.id, function (newValue, oldValue) {
+        if (newValue == null || newValue == oldValue) return;
+
+        if ($scope.ctx.document.id == null) return;
+
+        if ($scope.attachment == null) return;
+
+        $scope.attachment.loadMetadata();
+    });
+
+    $scope.getAttachmentSize = function () {
+        if ($scope.attachment.data == null) return '- ';
+        return Math.floor($scope.attachment.data.length / 1024);
+    };
+
+    $scope.delete = function () {
+        $scope.status = STATUS.loading;
+        $scope.model[$scope.options.key] = null;
+        $scope.attachment.clear();
+
+        var event = $scope.$emit('engine.common.document.requestSave');
+
+        event.savePromise.then(function () {
+            $scope.error = null;
+            $scope.status = STATUS.normal;
+        }, function () {
+            $scope.error = 'Could not save document';
+            $scope.status = STATUS.normal;
+        });
+    };
+
+    $scope.upload = function (file) {
+        if (file == null) return;
+
+        var event = $scope.$emit('engine.common.document.requestSave');
+
+        event.savePromise.then(function () {
+            $scope.progress = 0;
+            $scope.error = null;
+            $scope.status = STATUS.uploading;
+            $scope.uploadPromise = $scope.attachment.upload(file).then(function (response) {
+                console.log('Success ' + response.config.data.file.name + 'uploaded. Response: ' + response.data);
+                $scope.status = STATUS.normal;
+                $scope.error = null;
+
+                $scope.ctx.document.metrics[$scope.metric.id] = response.data.data.redirectToDocument;
+
+                var event = $scope.$emit('engine.common.document.requestReload');
+            }, function (response) {
+                //TODO HANDLE ERROR
+                console.log('Error status: ' + response.status);
+                $scope.status = STATUS.normal;
+
+                $scope.error = "An error occurred during upload";
+            }, function (evt) {
+                $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
+            });
+        }, function () {
+            $scope.error = 'Could not save document';
+            $scope.status = STATUS.normal;
+        });
+    };
+
+    function _init() {
+        $scope.error = null;
+        $scope.STATUS = STATUS;
+        $scope.status = STATUS.loading;
+        if ($scope.ctx.document.id != null) {
+            $scope.attachment = new engAttachment($scope.ctx.document.id, $scope.metric.id, $scope.isList);
+            $scope.attachment.ready.then(function () {
+                $scope.status = STATUS.normal;
+            });
+        } else {
+            $scope.status = STATUS.disabled;
+            $scope.disable = true;
+        }
+    }
+
+    _init();
+});
+
+angular.module('engine.document').factory('createAttachmentCtrl', function () {
+    return function (metric, ctx, isList) {
+        return function ($scope, Upload, $timeout, engAttachment, $controller) {
+            $scope.isList = isList;
+            $scope.metric = metric;
+            $scope.ctx = ctx;
+            angular.extend(this, $controller('engAttachmentCtrl', {
+                $scope: $scope,
+                Upload: Upload,
+                $timeout: $timeout,
+                engAttachment: engAttachment
+            }));
+        };
+    };
+});
+'use strict';
+
 angular.module('engine.document').factory('DocumentCategoryFactory', function (DocumentCategory, $log, $parse) {
     function DocumentCategoryFactory() {
         this._categoryTypeList = [];
@@ -607,6 +773,7 @@ angular.module('engine.document').factory('DocumentCategoryFactory', function (D
         };
 
         formStepStructure.data.hasEntries = function () {
+            if (formStepStructure.data.step.data.summary == null) return false;
             return formStepStructure.data.step.data.summary.entries != null && formStepStructure.data.step.data.summary.entries.length > 0;
         };
 
@@ -729,7 +896,7 @@ angular.module('engine.document').factory('ConditionBuilder', function ($engineA
 });
 'use strict';
 
-angular.module('engine.document').factory('DocumentFieldFactory', function (DocumentField, $engine, $log) {
+angular.module('engine.document').factory('DocumentFieldFactory', function (DocumentField, $engine, $log, createAttachmentCtrl) {
     function DocumentFieldFactory() {
         this._fieldTypeList = [];
         this._defaultField = new DocumentField();
@@ -796,96 +963,13 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         this.register(new DocumentField({ inputType: 'ATTACHMENT' }, function (field, metric, ctx) {
             field.type = 'attachment';
-            field.controller = function ($scope, Upload, $timeout, engAttachment) {
-                var self = this;
-                var STATUS = { loading: 0, uploading: 1, disabled: 2, normal: 3 };
-
-                $scope.$watch('model.' + metric.id, function (newValue, oldValue) {
-                    if (newValue == null || newValue == oldValue) return;
-
-                    if (ctx.document.id == null) return;
-
-                    if ($scope.attachment == null) return;
-
-                    $scope.attachment.loadMetadata();
-                });
-
-                $scope.getAttachmentSize = function () {
-                    if ($scope.attachment.data == null) return '- ';
-                    return Math.floor($scope.attachment.data.length / 1024);
-                };
-
-                $scope.delete = function () {
-                    $scope.status = STATUS.loading;
-                    $scope.model[$scope.options.key] = null;
-                    $scope.attachment.clear();
-
-                    var event = $scope.$emit('engine.common.document.requestSave');
-
-                    event.savePromise.then(function () {
-                        $scope.error = null;
-                        $scope.status = STATUS.normal;
-                    }, function () {
-                        $scope.error = 'Could not save document';
-                        $scope.status = STATUS.normal;
-                    });
-                };
-
-                $scope.upload = function (file) {
-                    if (file == null) return;
-
-                    var event = $scope.$emit('engine.common.document.requestSave');
-
-                    event.savePromise.then(function () {
-                        $scope.progress = 0;
-                        $scope.error = null;
-                        $scope.status = STATUS.uploading;
-                        $scope.uploadPromise = $scope.attachment.upload(file).then(function (response) {
-                            console.log('Success ' + response.config.data.file.name + 'uploaded. Response: ' + response.data);
-                            $scope.status = STATUS.normal;
-                            $scope.error = null;
-
-                            ctx.document.metrics[metric.id] = response.data.data.redirectToDocument;
-
-                            var event = $scope.$emit('engine.common.document.requestReload');
-                        }, function (response) {
-                            //TODO HANDLE ERROR
-                            console.log('Error status: ' + response.status);
-                            $scope.status = STATUS.normal;
-
-                            $scope.error = "An error occurred during upload";
-                        }, function (evt) {
-                            $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
-                        });
-                    }, function () {
-                        $scope.error = 'Could not save document';
-                        $scope.status = STATUS.normal;
-                    });
-                };
-
-                function _init() {
-                    $scope.error = null;
-                    $scope.STATUS = STATUS;
-                    $scope.status = STATUS.loading;
-                    if (ctx.document.id != null) {
-                        $scope.attachment = new engAttachment(ctx.document.id, metric.id);
-                        $scope.attachment.ready.then(function () {
-                            $scope.status = STATUS.normal;
-                        });
-                    } else {
-                        $scope.status = STATUS.disabled;
-                        $scope.disable = true;
-                    }
-                }
-
-                _init();
-            };
+            field.controller = createAttachmentCtrl(metric, ctx, false);
             return field;
         }));
 
         this.register(new DocumentField({ inputType: 'ATTACHMENT_LIST' }, function (field, metric, ctx) {
-            throw new Error("ATTACHMENT_LIST metric type is not supported yet!");
             field.type = 'attachmentList';
+            field.controller = createAttachmentCtrl(metric, ctx, true);
             return field;
         }));
 
@@ -2563,55 +2647,6 @@ angular.module('engine').factory('engineResolve', function () {
         if (!str) return '';
         return str.split('.').reduce(index, baseObject);
     };
-}).factory('engAttachment', function ($engineConfig, $http, Upload, $q) {
-    function EngineAttachment(documentId, metricId) {
-        var self = this;
-        this.documentId = documentId;
-        this.metricId = metricId;
-        this.action = null;
-        this.data = null;
-        this.label = 'Select file';
-        this.ready = $q.all([this.loadActions(), $q.when(function () {
-            if (self.documentId == null) return;
-
-            return self.loadMetadata();
-        }())]);
-    }
-    EngineAttachment.prototype.clear = function clear() {
-        this.data = null;
-    };
-    EngineAttachment.prototype.getDownloadLink = function getDownloadLink() {
-        return $engineConfig.baseUrl + 'attachment/download?documentId=' + this.documentId + '&metricId=' + this.metricId;
-    };
-    EngineAttachment.prototype.loadMetadata = function loadMetadata() {
-        var self = this;
-        this.data = null;
-        return $http.get($engineConfig.baseUrl + 'attachment?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
-            self.data = response.data.data;
-            return response.data.data;
-        }, function (response) {
-            // if(response.status == 404)
-            //no attachment
-        });
-    };
-    EngineAttachment.prototype.loadActions = function loadActions() {
-        var self = this;
-        return $http.post($engineConfig.baseUrl + 'action/available/attachment?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
-            if (response.data.data.length == 0) console.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
-            self.action = response.data.data[0];
-            self.label = self.action.label;
-        }, function (response) {
-            //TODO ERROR MANAGEMENT
-        });
-    };
-    EngineAttachment.prototype.upload = function upload(file) {
-        return Upload.upload({
-            url: $engineConfig.baseUrl + '/action/invoke/attachment?documentId=' + this.documentId + '&metricId=' + this.metricId + '&actionId=' + this.action.id,
-            data: { file: file }
-        });
-    };
-
-    return EngineAttachment;
 }).factory('$engResource', function ($engineConfig) {
 
     var engResource = function engResource() {
@@ -2885,7 +2920,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-20T00:42:16.055Z';
+var ENGINE_COMPILATION_DATE = '2017-03-23T13:19:31.123Z';
 var ENGINE_VERSION = '0.6.76';
 var ENGINE_BACKEND_VERSION = '1.0.117';
 
@@ -3363,10 +3398,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.loading\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.loading && !$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\" ng-if=\"!$ctrl.loading && !$ctrl.steps.isLast($ctrl.step)\">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step+1).name}}</button>\n\n<button type=\"submit\" ng-if=\"!$ctrl.loading && $ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\n        class=\"btn btn-default\" ng-click=\"$ctrl.validate()\" translate>Validate</button>\n\n<button type=\"submit\" ng-repeat=\"action in $ctrl.actionList.actions\" ng-if=\"!$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"action.call()\" translate>{{action.label}}</button>\n\n<button type=\"submit\" ng-repeat=\"button in $ctrl.customButtons\" ng-if=\"!$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\" style=\"margin-left: 5px\"\n        class=\"btn btn-default\" ng-click=\"button.action()\" translate>{{button.label}}</button>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/dashboard/dashboard.tpl.html", "<h1 translate>{{options.caption}}</h1>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                              custom-buttons=\"query.customButtons\"\n                              no-documents-message=\"{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}\"\n                              no-parent-document-message=\"{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}\"\n                              query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\"\n                              list-caption=\"query.label\"></engine-document-list>\n\n    </div>\n</div>");
+  $templateCache.put("/src/dashboard/dashboard.tpl.html", "<div class=\"row\">\n    <div class=\"col-md-12\">\n        <h1 translate>{{options.caption}}</h1>\n    </div>\n</div>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                              custom-buttons=\"query.customButtons\"\n                              no-documents-message=\"{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}\"\n                              no-parent-document-message=\"{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}\"\n                              query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\"\n                              list-caption=\"query.label\"></engine-document-list>\n\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/details/details.tpl.html", "<div class=\"text-box\" style=\"margin-right: 30px\">\n    <div class=\"text-content\" ng-clock>\n        <h3 style=\"margin-top: 0px\">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>\n\n        <table class=\"table\">\n            <tr ng-repeat=\"entry in $ctrl.options.document.details.entries\">\n                <td translate>{{entry.caption || entry.name}}</td>\n                <td translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</td>\n            </tr>\n        </table>\n        <button style=\"width: 100%\" type=\"submit\" class=\"btn btn-default\" ng-if=\"$ctrl.actions.getSaveAction() != null\"\n                ng-click=\"$ctrl.saveDocument()\">\n            <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\" ng-show=\"$ctrl.savePromise.$$state.status === 0\"></i>\n            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>\n        </button>\n    </div>\n</div>");
+  $templateCache.put("/src/document/details/details.tpl.html", "<div class=\"text-box\">\n    <div class=\"text-content\" ng-clock>\n        <h3 style=\"margin-top: 0px\">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>\n\n        <ul class=\"list-group\">\n            <li ng-repeat=\"entry in $ctrl.options.document.details.entries\" class=\"list-group-item\">\n                <span translate>{{entry.caption || entry.name}}</span>\n                <span translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</span>\n            </li>\n        </ul>\n        <button style=\"width: 100%\" type=\"submit\" class=\"btn btn-default\" ng-if=\"$ctrl.actions.getSaveAction() != null\"\n                ng-click=\"$ctrl.saveDocument()\">\n            <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\" ng-show=\"$ctrl.savePromise.$$state.status === 0\"></i>\n            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>\n        </button>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 ng-if=\"!documentId\" class=\"modal-title\" id=\"myModalLabel\" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>\n    <h4 ng-if=\"documentId\" ><span translate>{{documentOptions.name}}</span> {{engineResolve(document, documentOptions.document.titleSrc)}}</h4>\n\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document=\"parentDocument\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent=\"parentDocument\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
@@ -3375,16 +3410,16 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.$ready.$$state.status === 0\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n\n<div ng-show=\"$ctrl.$ready.$$state.status === 1\" ng-cloak>\n    <div ng-repeat=\"message in $ctrl.messages\" class=\"alert alert-{{message.type}} alert-document\" role=\"alert\" translate>{{message.body}}</div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.documentForm.formlyOptions\" form=\"$ctrl.documentForm.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"$ctrl.documentScope\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>\n\n<div ng-show=\"!$ctrl.$ready.$$state.status === 2\" ng-cloak translate>\n    REJECTED\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <h1>\n        <span ng-if=\"!document.id\" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>\n        <span ng-if=\"document.id\" ><span translate>{{options.name}}</span> {{engineResolve(document, options.document.titleSrc)}}</span>\n\n        <span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">: {{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span></h1>\n    <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\"\n                     document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\"\n                     class=\"col-md-8\" actions=\"actions\"></engine-document>\n    <div class=\"col-md-4\">\n        <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n        <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\"></engine-document-details>\n    </div>\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <div class=\"row\">\n        <div class=\"col-md-12\">\n            <h1>\n                <span ng-if=\"!document.id\" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>\n                <span ng-if=\"document.id\" ><span translate>{{options.name}}</span> {{engineResolve(document, options.document.titleSrc)}}</span>\n\n                <span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">: {{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span>\n            </h1>\n        </div>\n    </div>\n    <div class=\"row\">\n        <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\"\n                         document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\"\n                         class=\"col-lg-8 col-md-8 col-sm-12 engine-document\" actions=\"actions\"></engine-document>\n        <div class=\"col-lg-4 col-md-4 hidden-sm sidebar-document\">\n            <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n            <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\"></engine-document-details>\n        </div>\n    </div>\n\n    <div class=\"document-navi-toggle\" ng-click=\"toggleSideMenu()\" ng-class=\"{active: sideMenuVisible}\">\n        <i class=\"fa fa-file-text\" aria-hidden=\"true\"></i>\n    </div>\n    <div class=\"sidebar-document-rwd\" ng-show=\"sideMenuVisible\">\n        <engine-steps ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n        <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\"></engine-document-details>\n    </div>\n\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle-o': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/attachment.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th class=\"attachment-actions\">Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\">\n            <td><a href=\"{{attachment.getDownloadLink()}}\">{{ attachment.data.fileName }}</a></td>\n            <td>{{ getAttachmentSize() }}kB</td>\n            <td class=\"attachment-actions\">\n                <a href=\"\" class=\"\" ng-click=\"delete()\"><span class=\"fa fa-trash-o\"></span></a>\n            </td>\n        </tr>\n\n    </table>\n\n\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\" ng-show=\"model[options.key] == null\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n\n    <!--on file change multiple:-->\n    <!--<div class=\"button\" ngf-select=\"upload($files)\" ngf-multiple=\"true\">Select File</div>-->\n    <!--Drop File:-->\n    <!--<div ngf-drop ngf-select ng-model=\"files\" class=\"drop-box\"-->\n        <!--ngf-drag-over-class=\"'dragover'\" ngf-multiple=\"true\" ngf-allow-dir=\"true\"-->\n        <!--accept=\"image/*,application/pdf\"-->\n        <!--ngf-pattern=\"'image/*,application/pdf'\">Drop pdfs or images here or click to upload</div>-->\n    <!--<div ngf-no-file-drop>File Drag/Drop is not supported for this browser</div>-->\n    <!--Files:-->\n    <!--<ul>-->\n        <!--<li ng-repeat=\"f in files\" style=\"font:smaller\">{{f.name}} {{f.$error}} {{f.$errorParam}}</li>-->\n    <!--</ul>-->\n    <!--Upload Log:-->\n    <!--<pre>{{log}}</pre>-->\n<!--</div>-->\n</div>");
+  $templateCache.put("/src/formly/types/templates/attachment.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th class=\"attachment-actions\">Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\">\n            <td><a href=\"{{attachment.getDownloadLink()}}\">{{ attachment.data.fileName }}</a></td>\n            <td>{{ getAttachmentSize() }}kB</td>\n            <td class=\"attachment-actions\">\n                <a href=\"\" class=\"\" ng-click=\"delete()\"><span class=\"fa fa-trash-o\"></span></a>\n            </td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\" ng-show=\"model[options.key] == null\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/attachmentList.tpl.html", "<input class=\"form-control\"  ng-model=\"model[options.key]\" placeholder=\"{{options.templateOptions.placeholder | translate}}\">");
+  $templateCache.put("/src/formly/types/templates/attachmentList.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th class=\"attachment-actions\">Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\" ng-repeat=\"file in model[options.key]\">\n            <td><a href=\"{{attachment.getDownloadLink()}}\">{{ attachment.data.fileName }}</a></td>\n            <td>{{ getAttachmentSize() }}kB</td>\n            <td class=\"attachment-actions\">\n                <a href=\"\" class=\"\" ng-click=\"delete(file)\"><span class=\"fa fa-trash-o\"></span></a>\n            </td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\" ng-show=\"model[options.key] == null\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");
@@ -3402,7 +3437,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiSelect.tpl.html", "<div>\n    <div class=\"radio-box\" ng-class=\"{'radio-box-last': $last, 'radio-box-first': $first, 'radio-box-active': model[options.key] == option.value}\"\n         ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <span class=\"radio-desc\">{{::option.name}}</span>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/multiSelectImage.tpl.html", "<!--<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>-->\n\n<div>\n    <div class=\"content\">\n        <div class=\"row\">\n            <div ng-repeat=\"col in options.templateOptions.cols\" class=\"{{::options.templateOptions.colClass}}\">\n               <div class=\"alert alert-proposal {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}\"\n                     role=\"alert\" ng-repeat=\"element in col\"\n                     ng-click=\"addRemoveModel(element.value)\">\n                    <span>{{::element.label}}</span>\n                    <i class=\"fa fa-check-circle\" aria-hidden=\"true\"></i>\n                </div>\n            </div>\n        </div>\n    </div>\n</div>\n");
+  $templateCache.put("/src/formly/types/templates/multiSelectImage.tpl.html", "<!--<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>-->\n\n<div>\n    <div class=\"content\">\n        <div class=\"row\">\n            <div ng-repeat=\"col in options.templateOptions.cols\" class=\"{{::options.templateOptions.colClass}}\">\n               <div class=\"multiselect-image {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}\"\n                     role=\"alert\" ng-repeat=\"element in col\"\n                     ng-click=\"addRemoveModel(element.value)\">\n                    <span>{{::element.label}}</span>\n                    <i class=\"fa fa-check-circle\" aria-hidden=\"true\"></i>\n                </div>\n            </div>\n        </div>\n    </div>\n</div>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/multiSelectVertical.tpl.html", "<div>\n    <div ng-repeat=\"option in to.options\">\n        <input type=\"checkbox\" id=\"{{id}}_{{::option.value}}\" checklist-model=\"model[options.key]\" checklist-value=\"option.value\">\n        <label class=\"\" style=\"top: -3px; position: relative;\" for=\"{{id}}_{{::option.value}}\">\n            <span class=\"\" >{{::option.name}}</span>\n        </label>\n    </div>\n</div>");
@@ -3465,7 +3500,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.single.tpl.html", "<h2 ng-if=\"$ctrl.listCaption\" translate>{{ $ctrl.listCaption }}</h2>\n<div>\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved || $ctrl.noParentDocument\" ng-cloak>\n        <table ng-repeat=\"document_entry in documents\" ng-if=\"!documents.$error && !$ctrl.noParentDocument\" ng-init=\"$row=$index\" class=\"proposal-list\">\n            <tr class=\"single-document-top\">\n                <td class=\"text-left\"></td>\n                <td class=\"text-right cog-dropdown\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\" translate>{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\" translate>No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n            <tr ng-repeat=\"column in columns\" class=\"{{column.css}} {{column.style}}\">\n                <td class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" translate>{{column.caption || column.name}}</td>\n                <td ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n            </tr>\n        </table>\n\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"documents.$error\" translate>\n            {{documents.$errorMessage || 'An error occurred during document loading'}}\n        </div>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"$ctrl.noParentDocument\" translate>\n            {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}\n        </div>\n        <div class=\"alert alert-info\" role=\"alert\" ng-if=\"documents.$resolved && documents.length == 0 && !documents.$error\" translate>\n            {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}\n        </div>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\" translate>Create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.tpl.html", "<h2 ng-if=\"$ctrl.listCaption\" translate>{{ $ctrl.listCaption }}</h2>\n<div>\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved || $ctrl.noParentDocument\" ng-cloak>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\" translate>{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\" ng-if=\"!documents.$error && !$ctrl.noParentDocument\" ng-init=\"$row=$index\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}} {{column.style}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right cog-dropdown\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\" translate>{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\" translate>No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"documents.$error\" translate>\n            {{documents.$errorMessage || 'An error occurred during document loading'}}\n        </div>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"$ctrl.noParentDocument\" translate>\n            {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}\n        </div>\n        <div class=\"alert alert-info\" role=\"alert\" ng-if=\"documents.$resolved && documents.length == 0 && !documents.$error\" translate>\n            {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}\n        </div>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\" translate>Create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");
+  $templateCache.put("/src/list/list.tpl.html", "<h2 ng-if=\"$ctrl.listCaption\" translate>{{ $ctrl.listCaption }}</h2>\n<div>\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved || $ctrl.noParentDocument\" ng-cloak>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\" translate>{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\" ng-if=\"!documents.$error && !$ctrl.noParentDocument\" ng-init=\"$row=$index\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}} {{column.style}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right cog-dropdown\">\n                    <div class=\"dropdown\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><i class=\"fa fa-cog\" aria-hidden=\"true\"></i></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\" translate>{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\" translate>No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"documents.$error\" translate>\n            {{documents.$errorMessage || 'An error occurred during document loading'}}\n        </div>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"$ctrl.noParentDocument\" translate>\n            {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}\n        </div>\n        <div class=\"alert alert-info\" role=\"alert\" ng-if=\"documents.$resolved && documents.length == 0 && !documents.$error\" translate>\n            {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}\n        </div>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\" translate>Create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.wrapper.tpl.html", "<h1 translate>{{::options.list.caption}}</h1>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list\n                no-documents-message=\"{{query.noDocumentsMessage || options.list.noDocumentsMessage || ''}}\"\n                no-parent-document-message=\"{{query.noParentDocumentMessage || options.list.noParentDocumentMessage || ''}}\"\n                show-create-button=\"$last\" query=\"query.id\" options=\"options\"></engine-document-list>\n    </div>\n</div>");

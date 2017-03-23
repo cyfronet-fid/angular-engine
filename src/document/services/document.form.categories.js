@@ -33,8 +33,10 @@ angular.module('engine.document')
             };
 
             formStepStructure.data.hasEntries = function(){
+                if(formStepStructure.data.step.data.summary == null)
+                    return false;
                 return formStepStructure.data.step.data.summary.entries != null && formStepStructure.data.step.data.summary.entries.length > 0;
-            }
+            };
 
             return formStepStructure;
         };

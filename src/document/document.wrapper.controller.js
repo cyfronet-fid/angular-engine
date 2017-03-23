@@ -12,6 +12,11 @@ angular.module('engine.document')
         else
             $routeParams.step = parseInt($routeParams.step);
 
+        $scope.sideMenuVisible = true;
+        $scope.toggleSideMenu = function () {
+             $scope.sideMenuVisible = !$scope.sideMenuVisible;
+        };
+
         $scope.$routeParams = $routeParams;
 
         $scope.$watch('$routeParams.step', function (newVal, oldVal) {
