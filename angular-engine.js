@@ -221,7 +221,7 @@ angular.module('engine.document').component('engineDocument', {
     this.actionList = null;
     this.documentForm = new DocumentForm();
 
-    this.getDocument = function () {
+    this.getDocument = function (noReloadSteps) {
         var _actionsToPerform = [];
         //if the document exists, the first action will be retrieving it
         if (self.documentId && self.documentId != 'new') {
@@ -236,7 +236,7 @@ angular.module('engine.document').component('engineDocument', {
                 self.document.name = (self.options.name || 'Document') + ' initiated on ' + new Date();
             }
         return $q.all(_actionsToPerform).then(function () {
-            self.stepList.setDocument(self.document);
+            if (!noReloadSteps) self.stepList.setDocument(self.document);
         });
     };
     /**
@@ -309,7 +309,10 @@ angular.module('engine.document').component('engineDocument', {
 
     $scope.$on('engine.common.document.requestReload', function (event) {
         $log.debug('request reload for document');
-        event.reloadPromise = self.getDocument();
+        event.reloadPromise = self.getDocument(true).then(function () {
+            self.documentForm._setDocument(self.document);
+            self.actionList._setDocument(self.document);
+        });
     });
 
     this.$ready = this.getDocument().then(function () {
@@ -447,7 +450,8 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
         // if(!prevDoc && prevDoc != null && !_.isEmpty(prevDoc))
         this.markInit();
         // else
-        if (this.$ready.$$state.status === 0) this.$ready = this.loadActions();
+        // if(this.$ready.$$state.status === 0)
+        this.$ready = this.loadActions();
     };
     DocumentActionList.prototype.getSaveAction = function getSaveAction() {
         return _.find(this.actions, function (action) {
@@ -587,6 +591,7 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
         var self = this;
         this.isList = isList || false;
         this.baseUrl = this.isList ? listUrl : singleUrl;
+        if (this.isList) self.dataDict = {};
         this.documentId = documentId;
         this.metricId = metricId;
         this.action = null;
@@ -603,23 +608,41 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
         this.data = null;
     };
 
-    EngineAttachment.prototype.getDownloadLink = function getDownloadLink() {
-        return $engineConfig.baseUrl + this.baseUrl + '/download?documentId=' + this.documentId + '&metricId=' + this.metricId;
+    EngineAttachment.prototype.getDownloadLink = function getDownloadLink(file) {
+        return $engineConfig.baseUrl + this.baseUrl + '/download?documentId=' + this.documentId + '&metricId=' + this.metricId + '&fileId=' + file;
     };
+
+    EngineAttachment.prototype.getFilename = function getFilename(file) {
+        if (file == null) {
+            if (this.data != null) return this.data.fileName;
+            return null;
+        } else return (this.dataDict[file] || {}).fileName;
+    };
+
+    EngineAttachment.prototype.getSize = function getSize(file) {
+        if (file == null) {
+            if (this.data != null) return this.data.length;
+            return null;
+        } else return (this.dataDict[file] || {}).length;
+    };
+
     EngineAttachment.prototype.loadMetadata = function loadMetadata() {
         var self = this;
         this.data = null;
         return $http.get($engineConfig.baseUrl + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
             self.data = response.data.data;
-            return response.data.data;
+
+            if (self.isList) self.dataDict = _.indexBy(self.data, 'id');
+
+            return self.data;
         }, function (response) {
-            // if(response.status == 404)
             //no attachment
+            if (response.status == 404) self.data = [];
         });
     };
     EngineAttachment.prototype.loadActions = function loadActions() {
         var self = this;
-        return $http.post($engineConfig.baseUrl + 'action/available/' + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
+        return $http.post($engineConfig.baseUrl + 'action/available/attachment' + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
             if (response.data.data.length == 0) console.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
             self.action = response.data.data[0];
             self.label = self.action.label;
@@ -629,18 +652,30 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
     };
     EngineAttachment.prototype.upload = function upload(file) {
         var self = this;
+
+        data = self.isList ? { files: file } : { file: file };
+
         return Upload.upload({
             url: $engineConfig.baseUrl + '/action/invoke/' + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId + '&actionId=' + this.action.id,
-            data: { file: file }
+            data: data
         });
     };
 
     return EngineAttachment;
 });
 
+angular.module('engine.document').filter('formatFileSize', function () {
+    return function (input) {
+        if (input == null) return '- ';
+        return Math.floor(input / 1024) + 'kB';
+    };
+});
+
 angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $timeout, engAttachment) {
     var self = this;
     var STATUS = { loading: 0, uploading: 1, disabled: 2, normal: 3 };
+
+    if ($scope.model[$scope.metric.id] == null) $scope.model[$scope.metric.id] = $scope.isList ? [] : null;
 
     $scope.$watch('model.' + $scope.metric.id, function (newValue, oldValue) {
         if (newValue == null || newValue == oldValue) return;
@@ -652,14 +687,9 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
         $scope.attachment.loadMetadata();
     });
 
-    $scope.getAttachmentSize = function () {
-        if ($scope.attachment.data == null) return '- ';
-        return Math.floor($scope.attachment.data.length / 1024);
-    };
-
     $scope.delete = function () {
         $scope.status = STATUS.loading;
-        $scope.model[$scope.options.key] = null;
+        $scope.model[$scope.options.key] = $scope.isList ? [] : null;
         $scope.attachment.clear();
 
         var event = $scope.$emit('engine.common.document.requestSave');
@@ -683,13 +713,18 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
             $scope.error = null;
             $scope.status = STATUS.uploading;
             $scope.uploadPromise = $scope.attachment.upload(file).then(function (response) {
-                console.log('Success ' + response.config.data.file.name + 'uploaded. Response: ' + response.data);
+                console.log('Success ' + response.config.data[$scope.isList ? 'files' : 'file'].name + 'uploaded. Response: ' + response.data);
                 $scope.status = STATUS.normal;
                 $scope.error = null;
 
-                $scope.ctx.document.metrics[$scope.metric.id] = response.data.data.redirectToDocument;
+                // This is no longer advised, data is loaded from document now
+                // $scope.ctx.document.metrics[$scope.metric.id] = response.data.data.redirectToDocument;
 
                 var event = $scope.$emit('engine.common.document.requestReload');
+
+                event.reloadPromise.then(function () {
+                    $scope.attachment.loadMetadata();
+                });
             }, function (response) {
                 //TODO HANDLE ERROR
                 console.log('Error status: ' + response.status);
@@ -729,12 +764,12 @@ angular.module('engine.document').factory('createAttachmentCtrl', function () {
             $scope.isList = isList;
             $scope.metric = metric;
             $scope.ctx = ctx;
-            angular.extend(this, $controller('engAttachmentCtrl', {
+            $controller('engAttachmentCtrl', {
                 $scope: $scope,
                 Upload: Upload,
                 $timeout: $timeout,
                 engAttachment: engAttachment
-            }));
+            });
         };
     };
 });
@@ -1418,7 +1453,12 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
         });
     };
     DocumentForm.prototype._setDocument = function setDocument(document) {
-        this.document = document;
+        if (this.document != null) {
+            this.document = document;
+            _.forEach(this.fieldList, function (field) {
+                field.model = document.metrics;
+            });
+        } else this.document = document;
     };
     DocumentForm.prototype._setActions = function setActions(actions) {
         this.actions = actions;
@@ -2920,8 +2960,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-23T13:19:31.123Z';
-var ENGINE_VERSION = '0.6.76';
+var ENGINE_COMPILATION_DATE = '2017-03-23T17:37:14.813Z';
+var ENGINE_VERSION = '0.6.77';
 var ENGINE_BACKEND_VERSION = '1.0.117';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -3416,10 +3456,10 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle-o': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/attachment.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th class=\"attachment-actions\">Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\">\n            <td><a href=\"{{attachment.getDownloadLink()}}\">{{ attachment.data.fileName }}</a></td>\n            <td>{{ getAttachmentSize() }}kB</td>\n            <td class=\"attachment-actions\">\n                <a href=\"\" class=\"\" ng-click=\"delete()\"><span class=\"fa fa-trash-o\"></span></a>\n            </td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\" ng-show=\"model[options.key] == null\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n</div>");
+  $templateCache.put("/src/formly/types/templates/attachment.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th class=\"attachment-actions\">Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\">\n            <td><a href=\"{{attachment.getDownloadLink()}}\">{{ attachment.getFilename() }}</a></td>\n            <td>{{ attachment.getSize() | formatFileSize }}</td>\n            <td class=\"attachment-actions\">\n                <a href=\"\" class=\"\" ng-click=\"delete()\"><span class=\"fa fa-trash-o\"></span></a>\n            </td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\" ng-show=\"model[options.key] == null\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/formly/types/templates/attachmentList.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th class=\"attachment-actions\">Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\" ng-repeat=\"file in model[options.key]\">\n            <td><a href=\"{{attachment.getDownloadLink()}}\">{{ attachment.data.fileName }}</a></td>\n            <td>{{ getAttachmentSize() }}kB</td>\n            <td class=\"attachment-actions\">\n                <a href=\"\" class=\"\" ng-click=\"delete(file)\"><span class=\"fa fa-trash-o\"></span></a>\n            </td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\" ng-show=\"model[options.key] == null\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n</div>");
+  $templateCache.put("/src/formly/types/templates/attachmentList.tpl.html", "<div>\n    <span ng-if=\"error\" class=\"error-text\">{{error}}</span>\n    <!--ng-model=\"model[options.key]\"-->\n    <!--<input type=\"text\" ng-model=\"username\"><br/><br/>-->\n    <!--watching model:-->\n    <table>\n        <tr>\n            <th translate>Filename</th>\n            <th>Size</th>\n            <th class=\"attachment-actions\">Actions</th>\n        </tr>\n        <tr ng-if=\"model[options.key]\" ng-repeat=\"file in model[options.key]\">\n            <td><a href=\"{{attachment.getDownloadLink(file)}}\">{{ attachment.getFilename(file) }}</a></td>\n            <td>{{ attachment.getSize(file) | formatFileSize }}</td>\n            <td class=\"attachment-actions\">\n                <a href=\"\" class=\"\" ng-click=\"delete(file)\"><span class=\"fa fa-trash-o\"></span></a>\n            </td>\n        </tr>\n\n    </table>\n\n    <button type=\"file\" class=\"btn btn-primary btn-file\" ngf-select=\"upload($file)\" ng-disabled=\"status != STATUS.normal\"\n            ngf-multiple=\"false\">\n        <i class=\"fa fa-cloud-upload\" aria-hidden=\"true\"></i>\n        <span ng-if=\"status == STATUS.uploading\">{{ 'Uploading' | translate}} {{progress}}%</span>\n        <span ng-if=\"status == STATUS.normal\">{{ (attachment.label || 'Select File') | translate}}</span>\n        <span ng-if=\"status == STATUS.disabled\">{{ 'You must save document first' | translate}}</span>\n    </button>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/formly/types/templates/checkbox.tpl.html", "<div class=\"checkbox\">\n\t<label>\n\t\t<input type=\"checkbox\"\n           class=\"formly-field-checkbox\"\n\t\t       ng-model=\"model[options.key]\">\n\t\t{{to.label}}\n\t\t{{to.required ? '*' : ''}}\n\t</label>\n</div>\n");

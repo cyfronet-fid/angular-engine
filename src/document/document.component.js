@@ -28,7 +28,7 @@ angular.module('engine.document')
     this.actionList = null;
     this.documentForm = new DocumentForm();
 
-    this.getDocument = function () {
+    this.getDocument = function (noReloadSteps) {
         var _actionsToPerform = [];
         //if the document exists, the first action will be retrieving it
         if (self.documentId && self.documentId != 'new') {
@@ -43,7 +43,8 @@ angular.module('engine.document')
             self.document.name = (self.options.name || 'Document') + ' initiated on ' + (new Date());
         }
         return $q.all(_actionsToPerform).then(function () {
-            self.stepList.setDocument(self.document);
+            if(!noReloadSteps)
+                self.stepList.setDocument(self.document);
         });
     };
     /**
@@ -122,7 +123,10 @@ angular.module('engine.document')
 
     $scope.$on('engine.common.document.requestReload', function (event) {
         $log.debug('request reload for document');
-        event.reloadPromise = self.getDocument();
+        event.reloadPromise = self.getDocument(true).then(function () {
+            self.documentForm._setDocument(self.document);
+            self.actionList._setDocument(self.document);
+        });
     });
 
     this.$ready = this.getDocument().then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)}).then(this.initDocument).then(this.postinitDocument).then(function () {

@@ -10,8 +10,8 @@
             <th class="attachment-actions">Actions</th>
         </tr>
         <tr ng-if="model[options.key]">
-            <td><a href="{{attachment.getDownloadLink()}}">{{ attachment.data.fileName }}</a></td>
-            <td>{{ getAttachmentSize() }}kB</td>
+            <td><a href="{{attachment.getDownloadLink()}}">{{ attachment.getFilename() }}</a></td>
+            <td>{{ attachment.getSize() | formatFileSize }}</td>
             <td class="attachment-actions">
                 <a href="" class="" ng-click="delete()"><span class="fa fa-trash-o"></span></a>
             </td>

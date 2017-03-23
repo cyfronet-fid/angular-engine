@@ -130,7 +130,14 @@ angular.module('engine.document')
         });
     };
     DocumentForm.prototype._setDocument = function setDocument(document) {
-        this.document = document;
+        if(this.document != null) {
+            this.document = document;
+            _.forEach(this.fieldList, function (field) {
+                field.model = document.metrics;
+            });
+        }
+        else
+            this.document = document;
     };
     DocumentForm.prototype._setActions = function setActions(actions) {
         this.actions = actions;

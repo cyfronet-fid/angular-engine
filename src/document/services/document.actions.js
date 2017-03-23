@@ -51,8 +51,9 @@ angular.module('engine.document')
             // if(!prevDoc && prevDoc != null && !_.isEmpty(prevDoc))
             this.markInit();
             // else
-            if(this.$ready.$$state.status === 0)
-                this.$ready = this.loadActions();
+            // if(this.$ready.$$state.status === 0)
+            this.$ready = this.loadActions();
+
         };
         DocumentActionList.prototype.getSaveAction = function getSaveAction() {
             return _.find(this.actions, function (action) {
