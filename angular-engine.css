@@ -1,10 +1,25 @@
+/*==========================================*/
+/*#### DEFAULT STYLE FOR ANGULAR ENGINE ####*/
+/*==========================================*/
+
+@import url('https://fonts.googleapis.com/css?family=Lato');
+body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
+
+.table > thead > tr > th,
+.table > tbody > tr > th,
+.table > tfoot > tr > th {
+    border-top: none;
+    border-bottom: 2px solid #ddd;
+    }
+
+.sidebar-document-rwd {display: none;}
+.sidebar-details {margin-top: 20px;}
+
+/* PREVIOUS STYLES to check & delete **/
 .row-compensate {
     margin-right: 0px;
     margin-left: 0px;
-}
-.datepicker {
-    width:150px !important;
-}
+    }
 
 .modal-body .text-box {
     background-color: transparent;
@@ -13,37 +28,37 @@
     box-shadow: none;
     padding: 0px 0px 15px 0px;
     border-bottom: rgba(144, 150, 160, 0.5) solid 2px;
-}
+    }
 
 .eng-loading-box {
     text-align: center;
     margin-top: 15px;
     margin-bottom: 15px;
-}
+    }
 
 .eng-loading-box i {
     font-size: 20px;
-}
+    }
 
 .id {
     font-family: monospace;
     font-size: 12px;
-}
+    }
 
 .alert-document {
 
-}
+    }
 
 /* multi select with images style moved to main.css in duo*/
 
 
 .cog-dropdown .dropdown{
     position: relative;
-}
+    }
 .cog-dropdown .dropdown-menu{
     position: absolute;
     left: -130px;
-}
+    }
 
 .cog-dropdown i {margin-top: 4px;}
 
