@@ -18,7 +18,10 @@ angular.module('engine.document')
         DocumentFieldFactory.prototype._engineOptionsToFormly = function _engineOptionsToFormly(engineOptions) {
             var r = [];
             _.forEach(engineOptions, function (option) {
-                r.push({name: option.value, value: option.value, extraField: true});
+
+                r.push({name: option.attributes != null && option.attributes.label != null ? option.attributes.label : option.value,
+                        value: option.value,
+                        extraField: true});
             });
             return r;
         };
