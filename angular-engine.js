@@ -950,7 +950,10 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
     DocumentFieldFactory.prototype._engineOptionsToFormly = function _engineOptionsToFormly(engineOptions) {
         var r = [];
         _.forEach(engineOptions, function (option) {
-            r.push({ name: option.value, value: option.value, extraField: true });
+
+            r.push({ name: option.attributes != null && option.attributes.label != null ? option.attributes.label : option.value,
+                value: option.value,
+                extraField: true });
         });
         return r;
     };
@@ -2960,9 +2963,9 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-03-23T17:37:14.813Z';
-var ENGINE_VERSION = '0.6.77';
-var ENGINE_BACKEND_VERSION = '1.0.117';
+var ENGINE_COMPILATION_DATE = '2017-04-06T12:21:53.991Z';
+var ENGINE_VERSION = '0.6.78';
+var ENGINE_BACKEND_VERSION = '1.0.119';
 
 angular.module('engine').value('version', ENGINE_VERSION);
 angular.module('engine').value('backendVersion', ENGINE_BACKEND_VERSION);
