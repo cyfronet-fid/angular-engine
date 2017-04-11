@@ -1,6 +1,6 @@
 angular.module('engine.list')
 .component('engineDocumentList', {
-    templateUrl: '/src/list/list.component.tpl.html',
+    template: '<ng-include src="$ctrl.contentTemplateUrl || \'/src/list/list.component.tpl.html\'"></ng-include>',
     controller: 'engineListCtrl',
     bindings: {
         options: '=',
@@ -15,12 +15,14 @@ angular.module('engine.list')
         noDocumentsMessage: '@',
         noParentDocumentMessage: '@',
         metricId: '@',
-        singleDocument: '='
+        singleDocument: '=',
+        controller: '@',
+        contentTemplateUrl: '='
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
                                         engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log,
-                                        $injector, $rootScope, $parse) {
+                                        $injector, $rootScope, $parse, $controller) {
     var self = this;
 
     self.engineResolve = engineResolve;
@@ -205,4 +207,7 @@ angular.module('engine.list')
     }
 
     init();
+
+    if(this.controller)
+        $controller(this.controller, {$scope: $scope});
 });
