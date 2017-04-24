@@ -17,16 +17,16 @@ body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
 
 /* PREVIOUS STYLES to check & delete **/
 .row-compensate {
-    margin-right: 0px;
-    margin-left: 0px;
+    margin-right:0;
+    margin-left:0;
     }
 
 .modal-body .text-box {
     background-color: transparent;
-    border-radius: 0px;
+    border-radius:0;
     margin-bottom: 25px;
     box-shadow: none;
-    padding: 0px 0px 15px 0px;
+    padding:0 0  15px0;
     border-bottom: rgba(144, 150, 160, 0.5) solid 2px;
     }
 
@@ -104,7 +104,7 @@ body{
 
 /*--OGOLNE--*/
 .text-content ul{
-    padding-left: 0px;
+    padding-left:0;
     }
 
 .button-content{
@@ -148,8 +148,8 @@ h3 {
 
 .text-box-header{
     padding: 20px;
-    padding-top: 0px;
-    padding-left: 0px;
+    padding-top:0;
+    padding-left:0;
     }
 
 .text-box header{
@@ -171,7 +171,7 @@ h3 {
     }
 
 .text-box h3{
-    margin-top: 0px;
+    margin-top:0;
     }
 
 .text-box > h2:first-child {margin-top: 10px;}
@@ -532,7 +532,7 @@ input[type=file] {
     }
 
 .form-group.newsletter-group {
-    margin-bottom: 0px;
+    margin-bottom:0;
     }
 
 .radio input[type=radio] {
@@ -582,13 +582,13 @@ input[type="checkbox"] {
 /*--PROPOSAL STEPS--*/
 
 .text-box-nav{
-    padding: 0px;
+    padding:0;
     }
 
 .nav-steps li.active a {
     background-color: #f1cb30;
     color: #ffffff;
-    border-radius: 0px;
+    border-radius:0;
     }
 
 .document-navi-toggle {
@@ -713,7 +713,7 @@ input[type="checkbox"] {
     }
 
 .text-box .uib-datepicker-popup.dropdown-menu{
-    padding-top: 0px;
+    padding-top:0;
     }
 
 .datepicker table tr td span {
@@ -722,7 +722,7 @@ input[type="checkbox"] {
     }
 
 .datepicker table tr td {
-    padding: 0px !important;
+    padding:0  !important;
     }
 
 .datepicker table	tr:last-child td{
@@ -750,7 +750,7 @@ input[type="checkbox"] {
     border: none;
     }
 .uib-datepicker-popup.engine-popup table{
-    margin-bottom: 0px !important;
+    margin-bottom:0  !important;
     }
 
 .uib-datepicker-popup.engine-popup .input-group-datepicker .btn.btn-default{
@@ -774,7 +774,7 @@ input[type="checkbox"] {
 /*--FILTERS--*/
 
 .filters {
-    padding: 0px 15px;
+    padding:0  15px;
     background: #fecc00;
     border-radius: 2px;
     margin-bottom: 15px;
@@ -848,7 +848,7 @@ input[type="checkbox"] {
     }
 
 li.ng-scope{
-    margin-bottom: 0px;
+    margin-bottom:0;
     }
 
 .box-bottom-space{
@@ -869,14 +869,6 @@ li.ng-scope{
 
 .show-header{
     width: 60px;
-    }
-
-.logo a {
-    display: block !important;
-    background: url(../img/logo.png) top left no-repeat !important;
-    width: 41px !important;
-    height: 42px !important;
-    margin: 0 auto;
     }
 
 /* styles for Sample Chemical Risks*/
@@ -1017,8 +1009,8 @@ label + table{
     }
 
 .row-compensate{
-    margin-right: 0px;
-    margin-left: 0px;
+    margin-right:0;
+    margin-left:0;
     }
 
 .row-label {
@@ -1075,7 +1067,7 @@ label + table{
     }
 
 .general-box > h2:first-child {
-    margin-top: 0px;
+    margin-top:0;
     }
 
 .blue-header{
@@ -1125,7 +1117,7 @@ label + table{
 @media screen and (max-width: 1200px) {
 
     .aff-actions {
-        margin-top: 0px;
+        margin-top:0;
         }
     .call{
         width: 100%;
