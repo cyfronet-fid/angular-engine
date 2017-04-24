@@ -7,6 +7,8 @@
     <div class="text-content">
         <engine-document-list show-create-button="query.showCreateButton" columns="query.columns"
                               custom-buttons="query.customButtons"
+                              content-template-url="query.contentTemplateUrl"
+                              controller="{{query.controller || ''}}"
                               no-documents-message="{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}"
                               no-parent-document-message="{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}"
                               query="query.queryId" options="$engine.getOptions(query.documentModelId)"

@@ -129,7 +129,9 @@ angular.module('engine')
                 _apiCheck.arrayOf(_apiCheck.shape({
                     queryId: _apiCheck.string,
                     label: _apiCheck.string,
-                    documentModelId: _apiCheck.string,
+                    controller: _apiCheck.string,
+                    contentTemplateUrl: _apiCheck.string.optional,
+                    documentModelId: _apiCheck.string.optional,
                     columns: _apiCheck.columnOptions,
                     showCreateButton: _apiCheck.bool.optional,
                     customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional

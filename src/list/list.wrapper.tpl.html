@@ -1,7 +1,8 @@
 <h1 translate>{{::options.list.caption}}</h1>
 <div class="text-box" ng-repeat="query in queries">
     <div class="text-content">
-        <engine-document-list
+        <engine-document-list content-template-url="query.contentTemplateUrl"
+                controller="{{query.controller || ''}}"
                 no-documents-message="{{query.noDocumentsMessage || options.list.noDocumentsMessage || ''}}"
                 no-parent-document-message="{{query.noParentDocumentMessage || options.list.noParentDocumentMessage || ''}}"
                 show-create-button="$last" query="query.id" options="options"></engine-document-list>
