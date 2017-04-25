@@ -17,8 +17,7 @@ body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
 
 /* PREVIOUS STYLES to check & delete **/
 .row-compensate {
-    margin-right:0;
-    margin-left:0;
+    margin: auto 0;
     }
 
 .modal-body .text-box {
