@@ -126,7 +126,7 @@ angular.module('engine.document')
                             field.model[field.key].splice(field.model[field.key].indexOf(element), 1);
                         else
                             field.model[field.key].push(element);
-                        $scope.options.templateOptions.onChange(field.model, field, $scope);
+                        $scope.options.templateOptions.onChange(field.model[field.key], field, $scope);
                     };
                 };
 
