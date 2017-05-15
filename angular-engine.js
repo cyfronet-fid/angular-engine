@@ -1053,7 +1053,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             field.controller = function ($scope) {
                 $scope.addRemoveModel = function (element) {
                     if (_.contains(field.model[field.key], element)) field.model[field.key].splice(field.model[field.key].indexOf(element), 1);else field.model[field.key].push(element);
-                    $scope.options.templateOptions.onChange(field.model, field, $scope);
+                    $scope.options.templateOptions.onChange(field.model[field.key], field, $scope);
                 };
             };
 
@@ -1261,13 +1261,19 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         //if validateOnChange is true all other metrics should be validated after this one changes
         if (metric.validateOnChange == true) {
-            formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
-            formlyField.templateOptions.onBlur = DocumentField.onValidate;
+            if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+                formlyField.templateOptions.onBlur = DocumentField.onValidate;
+            } else {
+                formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
+            }
         }
         //otherwise only this metrics
         else {
-                formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
-                formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
+                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+                    formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
+                } else {
+                    formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
+                }
             }
 
         var ret = this.fieldCustomizer(formlyField, metric, ctx);
@@ -1437,6 +1443,18 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
                 self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, function (metric) {
                     return metric.data.position;
                 });
+
+                for (var i = 0; i < self.steps.getSteps().length; ++i) {
+                    var step = self.steps.getStep(i);
+                    if (self.categoriesDict[field.data.categoryId] === undefined) {
+                        $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!', 'field', field, 'categoryId', field.data.categoryId);
+                        continue;
+                    }
+                    if (step.metrics[field.data.categoryId] === undefined) continue;
+
+                    step.fields[field.data.id] = field;
+                    break;
+                }
             });
         }).$promise;
     };
@@ -2965,8 +2983,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-04-11T17:04:15.533Z';
-var ENGINE_VERSION = '0.6.79';
+var ENGINE_COMPILATION_DATE = '2017-05-15T12:49:35.884Z';
+var ENGINE_VERSION = '0.6.81';
 var ENGINE_BACKEND_VERSION = '1.0.119';
 
 angular.module('engine').value('version', ENGINE_VERSION);
