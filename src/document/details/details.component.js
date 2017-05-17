@@ -14,4 +14,15 @@ angular.module('engine.document')
             options: '=',
             actions: '='
         }
-    });
+    })
+.filter('conditionFulfiled', function ($parse) {
+   return function (items, document) {
+       var filtered = [];
+
+       angular.forEach(items, function (item) {
+           if(item.condition == null || $parse(item.condition)(document) === true)
+               filtered.push(item);
+       });
+       return filtered;
+   }
+});

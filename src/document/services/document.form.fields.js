@@ -126,7 +126,7 @@ angular.module('engine.document')
                             field.model[field.key].splice(field.model[field.key].indexOf(element), 1);
                         else
                             field.model[field.key].push(element);
-                        $scope.options.templateOptions.onChange(field.model, field, $scope);
+                        $scope.options.templateOptions.onChange(field.model[field.key], field, $scope);
                     };
                 };
 
@@ -349,13 +349,19 @@ angular.module('engine.document')
 
             //if validateOnChange is true all other metrics should be validated after this one changes
             if (metric.validateOnChange == true) {
-                formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
-                formlyField.templateOptions.onBlur = DocumentField.onValidate;
+                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+                    formlyField.templateOptions.onBlur = DocumentField.onValidate;
+                } else {
+                    formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
+                }
             }
             //otherwise only this metrics
             else {
-                formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
-                formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
+                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+                    formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
+                } else {
+                    formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
+                }
             }
 
             var ret = this.fieldCustomizer(formlyField, metric, ctx);
