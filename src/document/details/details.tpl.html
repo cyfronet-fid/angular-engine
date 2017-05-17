@@ -3,7 +3,7 @@
         <h3 style="margin-top: 0px">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>
 
         <ul class="list-group">
-            <li ng-repeat="entry in $ctrl.options.document.details.entries" class="list-group-item">
+            <li ng-repeat="entry in $ctrl.options.document.details.entries | conditionFulfiled : $ctrl.ngModel" class="list-group-item">
                 <span translate>{{entry.caption || entry.name}}</span>
                 <span translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</span>
             </li>
