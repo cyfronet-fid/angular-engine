@@ -107,10 +107,21 @@ angular.module('engine.document')
                 self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, function (metric) {
                     return metric.data.position;
                 });
+
+                for(var i = 0; i < self.steps.getSteps().length; ++i) {
+                    var step = self.steps.getStep(i);
+                    if (self.categoriesDict[field.data.categoryId] === undefined) {
+                        $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
+                            'field', field, 'categoryId', field.data.categoryId);
+                        continue;
+                    }
+                    if (step.metrics[field.data.categoryId] === undefined)
+                        continue;
+
+                    step.fields[field.data.id] = field;
+                    break;
+                }
             })
-
-
-
         }).$promise;
     };
 

@@ -398,9 +398,10 @@ angular.module('engine')
          *      element of the array should conform to the following format:
          *        * **name** {String}, id of the element displayed (eg. `states.documentType`) dotted notation is supported
          *        * **caption** {String}, caption for the given entry
+         *        * **condition** {String}, condition which has to be passed in order for entry to appear
          *
          *      Example:
-         *      `[{name: 'states.documentType', caption: 'Type'}]`
+         *      `[{name: 'states.documentType', caption: 'Type', condition: 'states.documentType != "draft"'}]`
          *
          *    * **queries** {Object}, *Optional*, if this document contains `QueriedMetricList`
          *    which should have different columns then the ones defined under `document` you can define them here.
