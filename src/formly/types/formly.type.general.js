@@ -131,5 +131,11 @@ angular.module('engine.formly')
         //             return options;
         //         }
         // });
+
+        formlyConfig.setType({
+            name: 'link',
+            templateUrl: $engineFormly.templateUrls['link'],
+            wrapper: ['engineLabel', 'engineHasError']
+        });
     });
 

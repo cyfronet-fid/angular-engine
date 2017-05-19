@@ -213,12 +213,17 @@ angular.module('engine.document')
             }));
 
         this.register(new DocumentField({inputType: 'EXTERNAL'}, function (field, metric, ctx) {
+            field.data.onChange = DocumentField.onChange;
+            field.data.onReload = DocumentField.onReload;
+            // field.data.onValidate = DocumentField.onValidate;
+            // field.data.onValidateSelf = DocumentField.onValidateSelf;
             return {
                 data: field.data,
                 key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' +
                 'options="options.templateOptions.options" metric="options.data.metric" errors="fc.$error" '+
                 'class="' + metric.visualClass.join(' ') + '" ' +
+                // 'ng-class="{\'has-errors\': \'fc.$error\'}"' +
                 'ng-disabled="options.data.form.disabled" '+
                 'formly-options="options" '+
                 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
@@ -246,6 +251,10 @@ angular.module('engine.document')
                 }//, expressionProperties: {'templateOptions.disabled': 'false'}
             };
 
+            return field;
+        }));
+
+        this.register(new DocumentField({inputType: 'LINK'}, function (field, metric, ctx) {
             return field;
         }));
     };
