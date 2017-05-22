@@ -255,7 +255,12 @@ angular.module('engine.document')
         }));
 
         this.register(new DocumentField({inputType: 'LINK'}, function (field, metric, ctx) {
-            return field;
+            return {
+                data: field.data,
+                key: metric.id, //THIS FIELD IS REQUIRED
+                template: '<engine-link><a href="'+metric.linkToFile+'" target="'+metric.target+'">{{model[options.key]}}</a></engine-link>',
+                templateOptions: {ngModel: ctx.document, options: ctx.options}
+            };
         }));
     };
 

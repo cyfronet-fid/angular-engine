@@ -15,7 +15,6 @@ angular.module('engine.formly')
         multiCheckbox: '/src/formly/types/templates/multiCheckbox.tpl.html',
         multiSelect: '/src/formly/types/templates/multiSelect.tpl.html',
         multiSelectImage: '/src/formly/types/templates/multiSelectImage.tpl.html',
-        link: '/src/formly/types/templates/link.tpl.html',
         multiSelectVertical: '/src/formly/types/templates/multiSelectVertical.tpl.html'
     };
     var _wrapperTemplateUrls = {
