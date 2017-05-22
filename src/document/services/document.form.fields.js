@@ -223,7 +223,6 @@ angular.module('engine.document')
                 template: '<' + metric.externalType + ' ng-model="options.templateOptions.ngModel" ' +
                 'options="options.templateOptions.options" metric="options.data.metric" errors="fc.$error" '+
                 'class="' + metric.visualClass.join(' ') + '" ' +
-                // 'ng-class="{\'has-errors\': \'fc.$error\'}"' +
                 'ng-disabled="options.data.form.disabled" '+
                 'formly-options="options" '+
                 'metric-id="' + metric.id + '">' + '</' + metric.externalType + '>',
@@ -258,7 +257,7 @@ angular.module('engine.document')
             return {
                 data: field.data,
                 key: metric.id, //THIS FIELD IS REQUIRED
-                template: '<engine-link><a href="'+metric.linkToFile+'" target="'+metric.target+'">{{model[options.key]}}</a></engine-link>',
+                template: '<engine-link><a href="'+metric.linkToFile+'" target="'+metric.target+'">{{metric.fileName}}</a></engine-link>',
                 templateOptions: {ngModel: ctx.document, options: ctx.options}
             };
         }));
