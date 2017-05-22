@@ -257,7 +257,7 @@ angular.module('engine.document')
             return {
                 data: field.data,
                 key: metric.id, //THIS FIELD IS REQUIRED
-                template: '<engine-link><a href="'+metric.linkToFile+'" target="'+metric.target+'">"'+metric.target+'"</a></engine-link>',
+                template: '<engine-link><a href="'+metric.linkToFile+'" target="'+metric.target+'">"'+metric.fileName+'"</a></engine-link>',
                 templateOptions: {ngModel: ctx.document, options: ctx.options}
             };
         }));
