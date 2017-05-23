@@ -193,6 +193,15 @@ angular.module('engine.document').component('engineDocumentDetails', {
         options: '=',
         actions: '='
     }
+}).filter('conditionFulfiled', function ($parse) {
+    return function (items, document) {
+        var filtered = [];
+
+        angular.forEach(items, function (item) {
+            if (item.condition == null || $parse(item.condition)(document) === true) filtered.push(item);
+        });
+        return filtered;
+    };
 });
 'use strict';
 
@@ -1053,7 +1062,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
             field.controller = function ($scope) {
                 $scope.addRemoveModel = function (element) {
                     if (_.contains(field.model[field.key], element)) field.model[field.key].splice(field.model[field.key].indexOf(element), 1);else field.model[field.key].push(element);
-                    $scope.options.templateOptions.onChange(field.model, field, $scope);
+                    $scope.options.templateOptions.onChange(field.model[field.key], field, $scope);
                 };
             };
 
@@ -1261,13 +1270,19 @@ angular.module('engine.document').factory('DocumentFieldFactory', function (Docu
 
         //if validateOnChange is true all other metrics should be validated after this one changes
         if (metric.validateOnChange == true) {
-            formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
-            formlyField.templateOptions.onBlur = DocumentField.onValidate;
+            if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+                formlyField.templateOptions.onBlur = DocumentField.onValidate;
+            } else {
+                formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
+            }
         }
         //otherwise only this metrics
         else {
-                formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
-                formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
+                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+                    formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
+                } else {
+                    formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);
+                }
             }
 
         var ret = this.fieldCustomizer(formlyField, metric, ctx);
@@ -1437,6 +1452,18 @@ angular.module('engine.document').factory('DocumentForm', function (engineMetric
                 self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, function (metric) {
                     return metric.data.position;
                 });
+
+                for (var i = 0; i < self.steps.getSteps().length; ++i) {
+                    var step = self.steps.getStep(i);
+                    if (self.categoriesDict[field.data.categoryId] === undefined) {
+                        $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!', 'field', field, 'categoryId', field.data.categoryId);
+                        continue;
+                    }
+                    if (step.metrics[field.data.categoryId] === undefined) continue;
+
+                    step.fields[field.data.id] = field;
+                    break;
+                }
             });
         }).$promise;
     };
@@ -2368,9 +2395,10 @@ angular.module('engine').provider('$engineConfig', function () {
      *      element of the array should conform to the following format:
      *        * **name** {String}, id of the element displayed (eg. `states.documentType`) dotted notation is supported
      *        * **caption** {String}, caption for the given entry
+     *        * **condition** {String}, condition which has to be passed in order for entry to appear
      *
      *      Example:
-     *      `[{name: 'states.documentType', caption: 'Type'}]`
+     *      `[{name: 'states.documentType', caption: 'Type', condition: 'states.documentType != "draft"'}]`
      *
      *    * **queries** {Object}, *Optional*, if this document contains `QueriedMetricList`
      *    which should have different columns then the ones defined under `document` you can define them here.
@@ -2965,8 +2993,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-04-11T17:04:15.533Z';
-var ENGINE_VERSION = '0.6.79';
+var ENGINE_COMPILATION_DATE = '2017-05-17T14:45:04.033Z';
+var ENGINE_VERSION = '0.6.83';
 var ENGINE_BACKEND_VERSION = '1.0.119';
 
 angular.module('engine').value('version', ENGINE_VERSION);
@@ -3450,7 +3478,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<div class=\"row\">\n    <div class=\"col-md-12\">\n        <h1 translate>{{options.caption}}</h1>\n    </div>\n</div>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                              custom-buttons=\"query.customButtons\"\n                              content-template-url=\"query.contentTemplateUrl\"\n                              controller=\"{{query.controller || ''}}\"\n                              no-documents-message=\"{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}\"\n                              no-parent-document-message=\"{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}\"\n                              query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\"\n                              list-caption=\"query.label\"></engine-document-list>\n\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/details/details.tpl.html", "<div class=\"text-box\">\n    <div class=\"text-content\" ng-clock>\n        <h3 style=\"margin-top: 0px\">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>\n\n        <ul class=\"list-group\">\n            <li ng-repeat=\"entry in $ctrl.options.document.details.entries\" class=\"list-group-item\">\n                <span translate>{{entry.caption || entry.name}}</span>\n                <span translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</span>\n            </li>\n        </ul>\n        <button style=\"width: 100%\" type=\"submit\" class=\"btn btn-default\" ng-if=\"$ctrl.actions.getSaveAction() != null\"\n                ng-click=\"$ctrl.saveDocument()\">\n            <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\" ng-show=\"$ctrl.savePromise.$$state.status === 0\"></i>\n            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>\n        </button>\n    </div>\n</div>");
+  $templateCache.put("/src/document/details/details.tpl.html", "<div class=\"text-box sidebar-details\">\n    <div class=\"text-content\" ng-clock>\n        <h3 style=\"margin-top: 0px\">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>\n\n        <ul class=\"list-group\">\n            <li ng-repeat=\"entry in $ctrl.options.document.details.entries | conditionFulfiled : $ctrl.ngModel\" class=\"list-group-item\">\n                <span translate>{{entry.caption || entry.name}}</span>\n                <span translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</span>\n            </li>\n        </ul>\n        <button style=\"width: 100%\" type=\"submit\" class=\"btn btn-primary\" ng-if=\"$ctrl.actions.getSaveAction() != null\"\n                ng-click=\"$ctrl.saveDocument()\">\n            <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\" ng-show=\"$ctrl.savePromise.$$state.status === 0\"></i>\n            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>\n        </button>\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 ng-if=\"!documentId\" class=\"modal-title\" id=\"myModalLabel\" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>\n    <h4 ng-if=\"documentId\" ><span translate>{{documentOptions.name}}</span> {{engineResolve(document, documentOptions.document.titleSrc)}}</h4>\n\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document=\"parentDocument\" step-list=\"stepList\" document=\"document\" document-id=\"{{::documentId}}\" step=\"step\" options=\"documentOptions\"></engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"$scope\" document-parent=\"parentDocument\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-left\"></engine-document-actions>\n</div>");
@@ -3549,7 +3577,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.single.tpl.html", "<h2 ng-if=\"$ctrl.listCaption\" translate>{{ $ctrl.listCaption }}</h2>\n<div>\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved || $ctrl.noParentDocument\" ng-cloak>\n        <table ng-repeat=\"document_entry in documents\" ng-if=\"!documents.$error && !$ctrl.noParentDocument\" ng-init=\"$row=$index\" class=\"proposal-list\">\n            <tr class=\"single-document-top\">\n                <td class=\"text-left\"></td>\n                <td class=\"text-right cog-dropdown\" style=\"padding-top: 5px\">\n                    <div class=\"dropdown\" style=\"height: 9px;\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><span class=\"glyphicon glyphicon-cog\"></span></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\" translate>{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\" translate>No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n            <tr ng-repeat=\"column in columns\" class=\"{{column.css}} {{column.style}}\">\n                <td class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" translate>{{column.caption || column.name}}</td>\n                <td ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n            </tr>\n        </table>\n\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"documents.$error\" translate>\n            {{documents.$errorMessage || 'An error occurred during document loading'}}\n        </div>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"$ctrl.noParentDocument\" translate>\n            {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}\n        </div>\n        <div class=\"alert alert-info\" role=\"alert\" ng-if=\"documents.$resolved && documents.length == 0 && !documents.$error\" translate>\n            {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}\n        </div>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\" translate>Create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/list/list.tpl.html", "<h2 ng-if=\"$ctrl.listCaption\" translate>{{ $ctrl.listCaption }}</h2>\n<div>\n    <div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n        <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n    </div>\n    <div ng-if=\"documents.$resolved || $ctrl.noParentDocument\" ng-cloak>\n        <table class=\"proposal-list\">\n            <tr>\n                <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\" translate>{{column.caption || column.name}}</th>\n                <th class=\"text-right\"></th>\n            </tr>\n            <tr ng-repeat=\"document_entry in documents\" ng-if=\"!documents.$error && !$ctrl.noParentDocument\" ng-init=\"$row=$index\">\n                <td ng-repeat=\"column in columns\" class=\"{{column.css}} {{column.style}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n                <td class=\"text-right cog-dropdown\">\n                    <div class=\"dropdown\" ng-if=\"document_entry.actions.length > 0\">\n                        <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><i class=\"fa fa-cog\" aria-hidden=\"true\"></i></a>\n                        <ul class=\"dropdown-menu\">\n                            <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\" translate>{{action.label}}</a></li>\n                            <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\" translate>No actions available</span></li>\n                        </ul>\n                    </div>\n                </td>\n            </tr>\n        </table>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"documents.$error\" translate>\n            {{documents.$errorMessage || 'An error occurred during document loading'}}\n        </div>\n        <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"$ctrl.noParentDocument\" translate>\n            {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}\n        </div>\n        <div class=\"alert alert-info\" role=\"alert\" ng-if=\"documents.$resolved && documents.length == 0 && !documents.$error\" translate>\n            {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}\n        </div>\n    </div>\n</div>\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\" translate>Create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");
+  $templateCache.put("/src/list/list.tpl.html", "<h2 ng-if=\"$ctrl.listCaption\" translate>{{ $ctrl.listCaption }}</h2>\n\n<div class=\"eng-loading-box\" ng-show=\"!documents.$resolved\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n<div ng-if=\"documents.$resolved || $ctrl.noParentDocument\" ng-cloak>\n    <table class=\"proposal-list table\">\n        <tr>\n            <th class=\"{{column.css_header || column.css}}\" style=\"text-transform: uppercase;\" ng-repeat=\"column in columns\" translate>{{column.caption || column.name}}</th>\n            <th class=\"text-right\"></th>\n        </tr>\n        <tr ng-repeat=\"document_entry in documents\" ng-if=\"!documents.$error && !$ctrl.noParentDocument\" ng-init=\"$row=$index\">\n            <td ng-repeat=\"column in columns\" class=\"{{column.css}} {{column.style}}\" ng-include=\"getCellTemplate(document_entry.document, column)\"></td>\n            <td class=\"text-right cog-dropdown\">\n                <div class=\"dropdown\" ng-if=\"document_entry.actions.length > 0\">\n                    <a href=\"\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"true\"><i class=\"fa fa-cog\" aria-hidden=\"true\"></i></a>\n                    <ul class=\"dropdown-menu\">\n                        <li ng-repeat=\"action in document_entry.actions\"><a href=\"\" ng-click=\"engineAction(action, document_entry.document)\" translate>{{action.label}}</a></li>\n                        <li ng-if=\"!document_entry.actions\"><span style=\"margin-left: 5px; margin-right: 5px;\" translate>No actions available</span></li>\n                    </ul>\n                </div>\n            </td>\n        </tr>\n    </table>\n    <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"documents.$error\" translate>\n        {{documents.$errorMessage || 'An error occurred during document loading'}}\n    </div>\n    <div class=\"alert alert-warning\" role=\"alert\" ng-if=\"$ctrl.noParentDocument\" translate>\n        {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}\n    </div>\n    <div class=\"alert alert-info\" role=\"alert\" ng-if=\"documents.$resolved && documents.length == 0 && !documents.$error\" translate>\n        {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}\n    </div>\n</div>\n\n<a href=\"\" ng-if=\"$ctrl._showCreateButton && canCreateDocument()\" ng-click=\"onCreateDocument()\" class=\"btn btn-primary\">\n    <span ng-if=\"!$ctrl.options.list.createButtonLabel\" translate>Create {{options.name}}</span>\n    <span ng-if=\"$ctrl.options.list.createButtonLabel\">{{$ctrl.options.list.createButtonLabel | translate}}</span>\n</a>\n<a href=\"\" ng-click=\"customButton.callback($ctrl.options)\" class=\"btn btn-primary\" ng-repeat=\"customButton in customButtons\">\n    <span>{{customButton.label | translate}}</span>\n</a>\n");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/list/list.wrapper.tpl.html", "<h1 translate>{{::options.list.caption}}</h1>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list content-template-url=\"query.contentTemplateUrl\"\n                controller=\"{{query.controller || ''}}\"\n                no-documents-message=\"{{query.noDocumentsMessage || options.list.noDocumentsMessage || ''}}\"\n                no-parent-document-message=\"{{query.noParentDocumentMessage || options.list.noParentDocumentMessage || ''}}\"\n                show-create-button=\"$last\" query=\"query.id\" options=\"options\"></engine-document-list>\n    </div>\n</div>");
