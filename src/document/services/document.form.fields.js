@@ -213,6 +213,8 @@ angular.module('engine.document')
             }));
 
         this.register(new DocumentField({inputType: 'EXTERNAL'}, function (field, metric, ctx) {
+            field.data.onChange = DocumentField.onChange;
+            field.data.onReload = DocumentField.onReload;
             return {
                 data: field.data,
                 key: metric.id, //THIS FIELD IS REQUIRED
