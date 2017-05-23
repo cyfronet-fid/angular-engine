@@ -215,6 +215,10 @@ angular.module('engine.document')
         this.register(new DocumentField({inputType: 'EXTERNAL'}, function (field, metric, ctx) {
             field.data.onChange = DocumentField.onChange;
             field.data.onReload = DocumentField.onReload;
+
+            // field.data.onValidate = DocumentField.onValidate;
+            // field.data.onValidateSelf = DocumentField.onValidateSelf;
+
             return {
                 data: field.data,
                 key: metric.id, //THIS FIELD IS REQUIRED
@@ -249,6 +253,15 @@ angular.module('engine.document')
             };
 
             return field;
+        }));
+
+        this.register(new DocumentField({inputType: 'LINK'}, function (field, metric, ctx) {
+            return {
+                data: field.data,
+                key: metric.id, //THIS FIELD IS REQUIRED
+                template: '<engine-link><a class="' + metric.visualClass.join(' ') + '" href="'+metric.linkToFile+'" target="'+metric.target+'">"'+metric.fileName+'"</a></engine-link>',
+                templateOptions: {ngModel: ctx.document, options: ctx.options}
+            };
         }));
     };
 
