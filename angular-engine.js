@@ -409,7 +409,7 @@ angular.module('engine.document').controller('engineDocumentWrapperCtrl', functi
 });
 'use strict';
 
-angular.module('engine.document').factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log, $http) {
+angular.module('engine.document').factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log, $http, $rootScope) {
     function DocumentActionList(actions, document, parentDocument, $scope) {
         $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
 
@@ -480,7 +480,7 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
     };
 
     return DocumentActionList;
-}).factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q) {
+}).factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q, $rootScope) {
     function DocumentAction(engAction, document, parentDocument, $scope) {
         $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
         this.document = document;
@@ -499,6 +499,17 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
     DocumentAction.prototype.SAVE_ACTIONS = [DocumentAction.prototype.TYPE_CREATE, DocumentAction.prototype.TYPE_UPDATE];
     DocumentAction.prototype.LINK_ACTIONS = [DocumentAction.prototype.TYPE_LINK];
 
+    /**
+     * Broadcast notification event (notification events should not be listened by angular-engine
+     * components, and should only be used to show notifications by the host application
+     *
+     * @param notificationId notification id eg. 'engine.notification.action.prevented'
+     * @type String
+     */
+    DocumentAction.prototype.broadcastNotification = function broadcastNotification(notificationId) {
+        $rootScope.$broadcast(notificationId, this.document, this);
+    };
+
     DocumentAction.prototype.call = function call() {
         var self = this;
         var event = null;
@@ -510,11 +521,14 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
             event = this.$scope.$broadcast('engine.common.action.before', { 'document': this.document,
                 'action': this,
                 'promises': promises });
+            this.broadcastNotification('engine.notification.action.before');
 
             if (event.defaultPrevented) {
                 this.$scope.$broadcast('engine.common.action.prevented', { 'document': this.document,
                     'action': this,
                     'event': event });
+
+                this.broadcastNotification('engine.notification.action.prevented');
                 return;
             }
 
@@ -523,10 +537,14 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
                     'action': this,
                     'promises': promises });
 
+                this.broadcastNotification('engine.notification.save.before');
+
                 if (event.defaultPrevented) {
                     self.$scope.$broadcast('engine.common.save.prevented', { 'document': this.document,
                         'action': this,
                         'event': event });
+
+                    self.broadcastNotification('engine.notification.save.prevented');
                     return;
                 }
             }
@@ -539,11 +557,17 @@ angular.module('engine.document').factory('DocumentActionList', function (Docume
                 var ev1 = self.$scope.$broadcast('engine.common.action.after', { 'document': self.document, 'action': self, 'result': result });
                 var ev2 = self.$scope.$broadcast('engine.common.save.after', { 'document': self.document, 'action': self, 'result': result });
 
+                self.broadcastNotification('engine.notification.action.after');
+
+                if (self.isSave()) self.broadcastNotification('engine.notification.save.after');
+
                 if (ev1.defaultPrevented || ev2.defaultPrevented) return result;
             }
             return DocumentActionProcess(self.document, result);
         }, function (result) {
             self.$scope.$broadcast('engine.common.action.error', { 'document': self.document, 'action': self, 'result': result });
+            self.broadcastNotification('engine.notification.action.error');
+            if (self.isSave()) self.broadcastNotification('engine.notification.save.error');
             return $q.reject(result);
         });
     };
@@ -2395,9 +2419,10 @@ angular.module('engine').provider('$engineConfig', function () {
      *      element of the array should conform to the following format:
      *        * **name** {String}, id of the element displayed (eg. `states.documentType`) dotted notation is supported
      *        * **caption** {String}, caption for the given entry
+     *        * **condition** {String}, condition which has to be passed in order for entry to appear
      *
      *      Example:
-     *      `[{name: 'states.documentType', caption: 'Type'}]`
+     *      `[{name: 'states.documentType', caption: 'Type', condition: 'states.documentType != "draft"'}]`
      *
      *    * **queries** {Object}, *Optional*, if this document contains `QueriedMetricList`
      *    which should have different columns then the ones defined under `document` you can define them here.
@@ -2992,8 +3017,8 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-05-17T11:26:36.010Z';
-var ENGINE_VERSION = '0.6.82';
+var ENGINE_COMPILATION_DATE = '2017-05-23T12:50:34.796Z';
+var ENGINE_VERSION = '0.6.84';
 var ENGINE_BACKEND_VERSION = '1.0.119';
 
 angular.module('engine').value('version', ENGINE_VERSION);
