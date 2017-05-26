@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log, $http) {
+    .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log, $http, $rootScope) {
         function DocumentActionList(actions, document, parentDocument, $scope) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
 
@@ -74,7 +74,7 @@ angular.module('engine.document')
 
         return DocumentActionList;
     })
-    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q) {
+    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q, $rootScope) {
         function DocumentAction(engAction, document, parentDocument, $scope) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
             this.document = document;
@@ -93,6 +93,17 @@ angular.module('engine.document')
         DocumentAction.prototype.SAVE_ACTIONS = [DocumentAction.prototype.TYPE_CREATE, DocumentAction.prototype.TYPE_UPDATE];
         DocumentAction.prototype.LINK_ACTIONS = [DocumentAction.prototype.TYPE_LINK];
 
+        /**
+         * Broadcast notification event (notification events should not be listened by angular-engine
+         * components, and should only be used to show notifications by the host application
+         *
+         * @param notificationId notification id eg. 'engine.notification.action.prevented'
+         * @type String
+         */
+        DocumentAction.prototype.broadcastNotification = function broadcastNotification(notificationId) {
+            $rootScope.$broadcast(notificationId, this.document, this);
+        };
+
         DocumentAction.prototype.call = function call() {
             var self = this;
             var event = null;
@@ -104,11 +115,14 @@ angular.module('engine.document')
                 event = this.$scope.$broadcast('engine.common.action.before', {'document': this.document,
                                                                                'action': this,
                                                                                'promises': promises});
+                this.broadcastNotification('engine.notification.action.before');
 
                 if(event.defaultPrevented) {
                     this.$scope.$broadcast('engine.common.action.prevented', {'document': this.document,
                                                                               'action': this,
                                                                               'event': event});
+
+                    this.broadcastNotification('engine.notification.action.prevented');
                     return;
                 }
 
@@ -117,10 +131,14 @@ angular.module('engine.document')
                                                                                  'action': this,
                                                                                  'promises': promises});
 
+                    this.broadcastNotification('engine.notification.save.before');
+
                     if(event.defaultPrevented) {
                         self.$scope.$broadcast('engine.common.save.prevented', {'document': this.document,
                                                                                   'action': this,
                                                                                   'event': event});
+
+                        self.broadcastNotification('engine.notification.save.prevented');
                         return;
                     }
                 }
@@ -136,12 +154,20 @@ angular.module('engine.document')
                     var ev1 = self.$scope.$broadcast('engine.common.action.after', {'document': self.document, 'action': self, 'result': result});
                     var ev2 = self.$scope.$broadcast('engine.common.save.after', {'document': self.document, 'action': self, 'result': result});
 
+                    self.broadcastNotification('engine.notification.action.after');
+
+                    if(self.isSave())
+                        self.broadcastNotification('engine.notification.save.after');
+
                     if(ev1.defaultPrevented || ev2.defaultPrevented)
                         return result;
                 }
                 return DocumentActionProcess(self.document, result);
             }, function (result) {
                 self.$scope.$broadcast('engine.common.action.error', {'document': self.document, 'action': self, 'result': result});
+                self.broadcastNotification('engine.notification.action.error');
+                if(self.isSave())
+                    self.broadcastNotification('engine.notification.save.error');
                 return $q.reject(result);
             });
         };
