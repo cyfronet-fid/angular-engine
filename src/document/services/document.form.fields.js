@@ -130,6 +130,10 @@ angular.module('engine.document')
                     };
                 };
 
+                field.data.isDisabled = function () {
+                    return field.data.form.disabled;
+                }
+
                 field.data.isActive = function(element) {
                     return _.contains(field.model[field.key], element)
                 };
