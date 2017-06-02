@@ -83,3 +83,9 @@ docs/build/build.sh
 Result of the script is documentation for all angular-engine versions
 created in `buid/` directory in respective dirs mirroring versions of
 angular-engine package
+
+
+##Changelog
+
+* **0.6.83** Added basic custom style to angular engine. It overrides bootstrap styles,
+so in deployment bootstrap.css should be placed before angular-engine.css

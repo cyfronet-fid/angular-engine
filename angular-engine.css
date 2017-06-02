@@ -26,7 +26,7 @@ body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
     border-radius:0;
     margin-bottom: 25px;
     box-shadow: none;
-    padding: 0px 0px 15px 0px;
+    padding:0 0  15px0;
     border-bottom: rgba(144, 150, 160, 0.5) solid 2px;
     }
 
@@ -63,7 +63,6 @@ body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
 .cog-dropdown i {margin-top: 4px;}
 
 .row-label {
-    font-family: 'ek_muktabold';
     font-size: 13px;
     text-transform: uppercase;
 }
@@ -892,6 +891,7 @@ li.ng-scope{
     border-color: #bfc4da;
 }
 
+
 /*.multiselect-imagel{*/
     /*font-size: 1.063em;*/
     /*padding: 25px;*/
@@ -909,7 +909,8 @@ li.ng-scope{
 
 .multiselect-image.alert-success, .multiselect-image.alert-success .fa{
     color: #75ad40;
-    border-color: #75ad40;}
+    border-color: #75ad40;
+}
 
 .multiselect-image.disabled {
     background-color: #eee !important;
@@ -919,7 +920,6 @@ li.ng-scope{
 .multiselect-image.disabled .fa {
     background: transparent !important;
 }
-
 
 .pr-category .btn-default, .input-group-datepicker .btn-default{
     border-color:#bec5dc;
