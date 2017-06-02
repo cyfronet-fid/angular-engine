@@ -98,6 +98,10 @@ angular.module('engine.document')
                 field.type = 'multiSelectVertical';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
+                field.data.isDisabled = function () {
+                    return field.data.form.disabled;
+                }
+
                 return field;
             }));
 
