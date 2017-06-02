@@ -87,7 +87,7 @@ angular.module('engine.document')
                 return field;
             }));
 
-            this.register(new DocumentField({visualClass: 'select', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
+            this.register(new DocumentField({visualClass: 'multiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelect';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
