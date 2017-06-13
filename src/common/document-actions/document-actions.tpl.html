@@ -4,7 +4,7 @@
 <button type="submit" class="btn btn-primary dark-blue-btn" ng-click="$ctrl.changeStep($ctrl.step+1)" ng-if="!$ctrl.loading && !$ctrl.steps.isLast($ctrl.step)" translate>Next Step:</button>
 <button type="submit" class="btn btn-primary" ng-click="$ctrl.changeStep($ctrl.step+1)" ng-if="!$ctrl.loading && !$ctrl.steps.isLast($ctrl.step)">{{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step+1).name}}</button>
 
-<button type="submit" ng-if="!$ctrl.loading && $ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)"
+<button type="submit" ng-if="!$ctrl.loading && $ctrl.actionList.getSaveAction()!=null && $ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)"
         class="btn btn-default" ng-click="$ctrl.validate()" translate>Validate</button>
 
 <button type="submit" ng-repeat="action in $ctrl.actionList.actions" ng-if="!$ctrl.loading && $ctrl.steps.isLast($ctrl.step)" style="margin-left: 5px"
