@@ -8,10 +8,11 @@
                 <span translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</span>
             </li>
         </ul>
-        <button style="width: 100%" type="submit" class="btn btn-primary" ng-if="$ctrl.actions.getSaveAction() != null"
-                ng-click="$ctrl.saveDocument()">
-            <i class="fa fa-spinner fa-spin" aria-hidden="true" ng-show="$ctrl.savePromise.$$state.status === 0"></i>
-            <span translate>{{$ctrl.options.document.details.saveCaption || 'Save' }}</span>
-        </button>
+
+        <action-button style="width: 100%" btn-class="btn-primary full-width" ng-if="$ctrl.actions.getSaveAction() != null"
+                       on-click="$ctrl.saveDocument()"
+                       label="{{$ctrl.options.document.details.saveCaption || 'Save' }}">
+        </action-button>
+
     </div>
 </div>

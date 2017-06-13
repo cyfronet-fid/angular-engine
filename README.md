@@ -87,6 +87,13 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.87** Changed all actions button to newly designed components, now double 
+clicking executing action should not be possible anymore.
+Additionall features:
+    * Validation button not showing if document is not editable
+    * Multiselects fixes (now disable works, also some other minor fixes)
+    * Fixes to LINK metric
+
 * **0.6.86** Created two types of build (production & development) - for production
 a couple of optimizations has been introduced which should decrease lag and increase
 responsiveness of the application.

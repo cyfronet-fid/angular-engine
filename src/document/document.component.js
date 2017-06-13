@@ -106,8 +106,8 @@ angular.module('engine.document')
         return self.actionList.callSave();
     };
 
-    $scope.$on('engine.common.document.validate', function () {
-        self.documentForm.validate(null, true).then(function (valid) {
+    $scope.$on('engine.common.document.validate', function (event) {
+        event.$promise = self.documentForm.validate(null, true).then(function (valid) {
             if(!valid)
                 self.step = self.stepList.getFirstInvalidIndex();
         });

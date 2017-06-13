@@ -7,6 +7,7 @@ angular.module('engine.document')
 
             this.saveDocument = function () {
                 self.savePromise = self.actions.callSave();
+                return self.savePromise;
             };
         },
         bindings: {

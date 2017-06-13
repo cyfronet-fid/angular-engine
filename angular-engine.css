@@ -1142,3 +1142,10 @@ label + table{
     .sidebar-document {display: none;}
     .engine-document {width: 100%;}
 }
+
+action-button {
+    margin-left: 5px;
+}
+.full-width {
+    width: 100%;
+}

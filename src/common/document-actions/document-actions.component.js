@@ -12,7 +12,7 @@ angular.module('engine.common')
             this._documentScope = this.documentScope;
 
         this.validate = function () {
-            $scope.$emit('engine.common.document.validate');
+            return $scope.$emit('engine.common.document.validate').$promise;
         };
 
         this.changeStep = function (newStep) {
