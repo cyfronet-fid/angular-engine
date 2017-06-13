@@ -87,7 +87,7 @@ angular.module('engine.document')
                 return field;
             }));
 
-            this.register(new DocumentField({visualClass: 'select', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
+            this.register(new DocumentField({visualClass: 'multiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelect';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
@@ -97,6 +97,10 @@ angular.module('engine.document')
             this.register(new DocumentField({visualClass: '@verticalMultiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelectVertical';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+                field.data.isDisabled = function () {
+                    return field.data.form.disabled;
+                }
 
                 return field;
             }));
@@ -129,6 +133,10 @@ angular.module('engine.document')
                         $scope.options.templateOptions.onChange(field.model[field.key], field, $scope);
                     };
                 };
+
+                field.data.isDisabled = function () {
+                    return field.data.form.disabled;
+                }
 
                 field.data.isActive = function(element) {
                     return _.contains(field.model[field.key], element)
