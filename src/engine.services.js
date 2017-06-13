@@ -44,7 +44,7 @@ angular.module('engine')
             request_processors: request_processors,
             response_processors: response_processors,
             get: function (query, parentDocument, callback, errorCallback) {
-                $engineApiCheck.throw([apiCheck.string, apiCheck.object.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
+                $engineApiCheck.throw([$engineApiCheck.string, $engineApiCheck.object.optional, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
                 var parentDocumentId = parentDocument != null && parentDocument.id != null ? parentDocument.id : '';
 
@@ -95,12 +95,12 @@ angular.module('engine')
 
         return {
             fromList: function (queryIds) {
-                $engineApiCheck([apiCheck.arrayOf(apiCheck.string)], arguments)
+                $engineApiCheck([$engineApiCheck.arrayOf($engineApiCheck.string)], arguments)
 
 
             },
             fromCategory: function (queryCategoryId, callback, errorCallback) {
-                $engineApiCheck([apiCheck.string], arguments);
+                $engineApiCheck([$engineApiCheck.string], arguments);
 
                 return _queryCategory.get({'queryCategoryId': queryCategoryId}, callback, errorCallback);
             }
@@ -119,7 +119,7 @@ angular.module('engine')
         });
 
         return function (documentJSON, callback, errorCallback) {
-            $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
             return _query.post(documentJSON, callback, errorCallback);
         }
@@ -184,7 +184,7 @@ angular.module('engine')
 
         return {
             forDocument: function (document, callback, errorCallback) {
-                $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+                $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
                 return _action.post({documentId: document.id}, document, callback, errorCallback)
             },
@@ -203,7 +203,7 @@ angular.module('engine')
         });
 
         return function (actionId, document, callback, errorCallback, parentDocumentId, documentId) {
-            $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+            $engineApiCheck([$engineApiCheck.string, $engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
             return _action.post({actionId: actionId, documentId: documentId || document.id, otherDocumentId:parentDocumentId}, document, callback, errorCallback);
         }

@@ -87,5 +87,9 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.86** Created two types of build (production & development) - for production
+a couple of optimizations has been introduced which should decrease lag and increase
+responsiveness of the application.
+
 * **0.6.83** Added basic custom style to angular engine. It overrides bootstrap styles,
 so in deployment bootstrap.css should be placed before angular-engine.css

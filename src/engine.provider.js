@@ -14,16 +14,17 @@ angular.module('engine')
             }
         }
     })
-    .provider('$engineApiCheck', function () {
-
-        this.apiCheck = apiCheck({});
-
-        var _apiCheck = this.apiCheck;
-
-        this.apiCheck = _apiCheck;
+    .provider('$engineApiCheck', function (productionMode) {
+        var self = this;
+        this.apiCheck = apiCheck({
+            output: {
+                prefix: 'angular-engine'
+            },
+            disabled: productionMode
+        });
 
         this.$get = function () {
-            return _apiCheck
+            return self.apiCheck;
         }
     })
     .service('engineResourceLoader', function ($rootScope, $log) {
