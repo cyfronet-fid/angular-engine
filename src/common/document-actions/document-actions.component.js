@@ -45,7 +45,6 @@ angular.module('engine.common')
         options: '=',
         steps: '=',
         step: '=',
-        actions: '=',
         showValidationButton: '=',
         customButtons: '=',
         documentParent: '='
