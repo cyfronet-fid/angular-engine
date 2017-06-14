@@ -87,6 +87,9 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.89** Removed console logs in production by default, they still can be turned on in the
+application via $engLogProvider.serLogLevel()
+
 * **0.6.88** Added waiting indicator on categories when additional metrics are loaded (reloaded).
  During loading time user can not input new data.
 

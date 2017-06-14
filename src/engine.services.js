@@ -124,7 +124,7 @@ angular.module('engine')
             return _query.post(documentJSON, callback, errorCallback);
         }
     })
-    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log) {
+    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $engLog) {
         var categorySorter = function (data, headersGetter, status) {
             var data = EngineInterceptor.response(data, headersGetter, status);
             // data = _.sortBy(data, 'position');
@@ -163,13 +163,13 @@ angular.module('engine')
                 _metricCategories[metricCategory.id] = metricCategory;
             });
             collectMetrics(data);
-            console.debug(_metricCategories);
+            $engLog.debug(_metricCategories);
             return {
                 $resolved: true,
                 metrics: _metricCategories,
                 getNames: function (metricCategoryId) {
                     if (!(metricCategoryId in _names))
-                        $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricCategoryId);
+                        $engLog.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricCategoryId);
                     return _names[metricCategoryId]
                 }
             };
@@ -267,7 +267,7 @@ angular.module('engine')
                 return _document.validate({'documentId': document.id}, document, callback, errorCallback);
             }
         }
-    }).service('EngineInterceptor', function () {
+    }).service('EngineInterceptor', function ($engLog) {
 
     function processData(data) {
         if (data == null)
@@ -301,7 +301,7 @@ angular.module('engine')
         },
         request: function (data, headersGetter) {
             var site = data.site;
-            console.log('parsing request');
+            $engLog.log('parsing request');
             if (site && site.id) {
                 data.site = site.id;
                 data.siteName = site.value.provider_id;

@@ -21,7 +21,7 @@ angular.module('engine.list')
     }
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
-                                        engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $log,
+                                        engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $engLog,
                                         $injector, $rootScope, $parse, $controller) {
     var self = this;
 
@@ -143,7 +143,7 @@ angular.module('engine.list')
                 if(linkAction != null)
                     $scope.engineAction(linkAction, documentEntry.document);
                 else
-                    $log.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
+                    $engLog.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
             } else {
                 if($scope.options.subdocument == true)
                     DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
@@ -182,7 +182,7 @@ angular.module('engine.list')
     $scope.$on('engine.list.reload', function (event, query) {
         // if($scope == event.currentScope)
         //     return;
-        $log.debug('engine.list.reload received, reloading documents', 'queryId', $scope.query);
+        $engLog.debug('engine.list.reload received, reloading documents', 'queryId', $scope.query);
         self.loadDocuments();
     });
 

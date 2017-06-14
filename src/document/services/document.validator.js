@@ -7,7 +7,7 @@ angular.module('engine.document')
  * Document validation service
  *
  */
-    .factory('DocumentValidator', function (engineDocument, $engineApiCheck, $log, Step) {
+    .factory('DocumentValidator', function (engineDocument, $engineApiCheck, $engLog, Step) {
     function DocumentValidator(document, stepList, formStructure) {
         this.stepList = stepList;
         this.formStructure = formStructure;
@@ -83,7 +83,7 @@ angular.module('engine.document')
 
         var self = this;
 
-        $log.debug('DocumentValidator.validate called');
+        $engLog.debug('DocumentValidator.validate called');
 
         var stepsToValidate = [];
 
@@ -103,7 +103,7 @@ angular.module('engine.document')
         var documentForValidation = this.makeDocumentForValidation(this.document, stepsToValidate, fillNull);
 
         return engineDocument.validate(documentForValidation).$promise.then(function (validationData) {
-            $log.debug(validationData);
+            $engLog.debug(validationData);
 
             var _validatedMetrics = _.indexBy(validationData.results, 'metricId');
 
@@ -117,7 +117,7 @@ angular.module('engine.document')
                     }
                 });
 
-                $log.debug(self.formStructure.$error);
+                $engLog.debug(self.formStructure.$error);
 
                 if(step.getState() == Step.STATE_LOADING)
                     step.setState(Step.STATE_VALID);
@@ -129,7 +129,6 @@ angular.module('engine.document')
 
         //
         // engineDocument.validate($scope.document, function (data) {
-        //     console.log(data);
         //     self.form.form.$externalValidated = true;
         //     self.form.backendValidation = data;
         //

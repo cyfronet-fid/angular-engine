@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log, createAttachmentCtrl) {
+    .factory('DocumentFieldFactory', function (DocumentField, $engine, $engLog, createAttachmentCtrl) {
         function DocumentFieldFactory() {
             this._fieldTypeList = [];
             this._defaultField = new DocumentField();
@@ -45,7 +45,7 @@ angular.module('engine.document')
             }
             if(!this.allowDefaultField){
                 var message = "DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ";
-                $log.error(message, "Metric", metric, "Registered types", this._fieldTypeList);
+                $engLog.error(message, "Metric", metric, "Registered types", this._fieldTypeList);
                 throw new Error(message);
             }
             return this._defaultField.makeField(metricList, metric, ctx);

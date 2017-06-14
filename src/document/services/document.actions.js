@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $log, $http, $rootScope) {
+    .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $engLog, $http, $rootScope) {
         function DocumentActionList(actions, document, parentDocument, $scope) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
 
@@ -65,16 +65,16 @@ angular.module('engine.document')
             var saveAction = this.getSaveAction();
 
             if(saveAction == null) {
-                $log.warn('engine.document.actions No save action specified for document', this.document);
+                $engLog.warn('engine.document.actions No save action specified for document', this.document);
                 return $q.reject();
             }
-            $log.debug('engine.document.actions Called save for document', this.document);
+            $engLog.debug('engine.document.actions Called save for document', this.document);
             return saveAction.call();
         };
 
         return DocumentActionList;
     })
-    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $log, $q, $rootScope) {
+    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $engLog, $q, $rootScope) {
         function DocumentAction(engAction, document, parentDocument, $scope) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
             this.document = document;
@@ -107,7 +107,7 @@ angular.module('engine.document')
         DocumentAction.prototype.call = function call() {
             var self = this;
             var event = null;
-            $log.debug('engine.document.actions', 'action called', this);
+            $engLog.debug('engine.document.actions', 'action called', this);
 
             if(this.$scope) {
                 var promises = [];
@@ -149,7 +149,7 @@ angular.module('engine.document')
                 else
                     return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise;
             }).then(function (result) {
-                $log.debug('engine.document.actions', 'action call returned', result);
+                $engLog.debug('engine.document.actions', 'action call returned', result);
                 if(self.$scope) {
                     var ev1 = self.$scope.$broadcast('engine.common.action.after', {'document': self.document, 'action': self, 'result': result});
                     var ev2 = self.$scope.$broadcast('engine.common.save.after', {'document': self.document, 'action': self, 'result': result});
@@ -182,7 +182,7 @@ angular.module('engine.document')
 
         return DocumentAction;
     })
-.factory('DocumentActionProcess', function ($location, $engine, engineDocument, $log, $q) {
+.factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
 
     return function DocumentActionHandler(document, actionResponse) {
         if(actionResponse.type == 'REDIRECT') {
@@ -202,7 +202,7 @@ angular.module('engine.document')
                     var message = 'Document type to which redirection was requested has not been registrated! ' +
                                   'Make sure to register it in $engineProvider';
 
-                    $log.error(message, 'DocumentType=', data.document.states.documentType);
+                    $engLog.error(message, 'DocumentType=', data.document.states.documentType);
 
                     throw new Error(message)
                 }

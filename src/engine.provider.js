@@ -1,10 +1,60 @@
 angular.module('engine')
+    .provider('$engLog', function () {
+        var _logLevel = 'debug';
+        var _provider = this;
+        this.setLogLevel = function (level) {
+            _logLevel = level
+        };
+
+        var _logLevels = ['debug', 'log', 'info', 'warning', 'error', null];
+
+        function canLog(level) {
+            return _logLevels.indexOf(level) >= _logLevels.indexOf(_logLevel);
+        }
+
+        this.$get = function ($log) {
+            return new function () {
+                this.setLogLevel = _provider.setLogLevel;
+
+                this.debug = function () {
+
+                    if (canLog('debug'))
+                        $log.debug(arguments)
+                };
+                this.info = function () {
+
+                    if (canLog('info'))
+                        $log.info(arguments)
+                };
+                this.log = function () {
+
+                    if (canLog('log'))
+                        $log.log(arguments)
+                };
+                this.warn = function () {
+
+                    if (canLog('warning'))
+                        $log.warn(arguments)
+                };
+                this.error = function () {
+
+                    if (canLog('error'))
+                        $log.error(arguments)
+                };
+                this.warning = this.warn;
+            };
+        };
+    })
     .provider('$engineConfig', function () {
         var self = this;
         var _baseUrl = '';
-
+        var _loggingLevel = 'debug';
         this.setBaseUrl = function (url) {
             _baseUrl = url;
+        };
+
+        this.setLoggingLevel = function (level) {
+            _loggingLevel = level;
         };
 
         this.$get = function () {
@@ -27,13 +77,13 @@ angular.module('engine')
             return self.apiCheck;
         }
     })
-    .service('engineResourceLoader', function ($rootScope, $log) {
+    .service('engineResourceLoader', function ($rootScope, $engLog) {
         var _resourcesCount = 0;
 
 
         return {
             register: function (promise) {
-                $log.debug('registered resource', promise);
+                $engLog.debug('registered resource', promise);
                 ++_resourcesCount;
                 promise.then(function () {
                     --_resourcesCount;
@@ -59,7 +109,12 @@ angular.module('engine')
         var documents_d = {};
 
         var _apiCheck = $engineApiCheckProvider.apiCheck;
-        _apiCheck.columnOptions = _apiCheck.arrayOf(_apiCheck.shape({name: _apiCheck.string, caption: _apiCheck.string.optional, style: _apiCheck.string.optional, type: _apiCheck.string.optional})).optional;
+        _apiCheck.columnOptions = _apiCheck.arrayOf(_apiCheck.shape({
+            name: _apiCheck.string,
+            caption: _apiCheck.string.optional,
+            style: _apiCheck.string.optional,
+            type: _apiCheck.string.optional
+        })).optional;
         _apiCheck.documentOptions = _apiCheck.shape({
             documentJSON: _apiCheck.object,
             name: _apiCheck.string,
@@ -67,7 +122,10 @@ angular.module('engine')
                 caption: _apiCheck.string,
                 templateUrl: _apiCheck.string,
                 createButtonLabel: _apiCheck.string.optional,
-                customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional
+                customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({
+                    'label': _apiCheck.string,
+                    'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])
+                })).optional
             }),
             document: _apiCheck.shape({
                 templateUrl: _apiCheck.string,
@@ -89,10 +147,10 @@ angular.module('engine')
         };
 
         function prepareDocumentOptions(options) {
-            if(options.list.customButtons == null)
+            if (options.list.customButtons == null)
                 options.list.customButtons = [];
 
-            if(!_.isArray(options.list.customButtons))
+            if (!_.isArray(options.list.customButtons))
                 options.list.customButtons = [options.list.customButtons];
         }
 
@@ -128,22 +186,28 @@ angular.module('engine')
 
             _apiCheck([_apiCheck.oneOfType([_apiCheck.string, _apiCheck.object]),
                 _apiCheck.arrayOf(_apiCheck.shape({
-                    queryId: _apiCheck.string,
-                    label: _apiCheck.string,
-                    controller: _apiCheck.string,
-                    contentTemplateUrl: _apiCheck.string.optional,
-                    documentModelId: _apiCheck.string.optional,
-                    columns: _apiCheck.columnOptions,
-                    showCreateButton: _apiCheck.bool.optional,
-                    customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({'label': _apiCheck.string, 'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])})).optional
-                }),
-                _apiCheck.shape({templateUrl: _apiCheck.string, caption: _apiCheck.string.optional}))], [url, queries, options]);
+                        queryId: _apiCheck.string,
+                        label: _apiCheck.string,
+                        controller: _apiCheck.string,
+                        contentTemplateUrl: _apiCheck.string.optional,
+                        documentModelId: _apiCheck.string.optional,
+                        columns: _apiCheck.columnOptions,
+                        showCreateButton: _apiCheck.bool.optional,
+                        customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({
+                            'label': _apiCheck.string,
+                            'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])
+                        })).optional
+                    }),
+                    _apiCheck.shape({
+                        templateUrl: _apiCheck.string,
+                        caption: _apiCheck.string.optional
+                    }))], [url, queries, options]);
 
             options.queries = queries;
 
             var dashboardRoutingOptions = {};
 
-            if(_.isObject(url)) {
+            if (_.isObject(url)) {
                 dashboardRoutingOptions = url;
                 url = url.url;
             }
@@ -157,12 +221,15 @@ angular.module('engine')
         };
 
         function _checkDocumentOptions(options) {
-            if(options.document != null) {
-                if(options.document.queries != null)
+            if (options.document != null) {
+                if (options.document.queries != null)
                     _.each(options.document.queries, function (metric) {
-                        _apiCheck.throw([_apiCheck.shape({'columns': _apiCheck.columnOptions, 'singleDocument': _apiCheck.bool.optional})], [metric])
+                        _apiCheck.throw([_apiCheck.shape({
+                            'columns': _apiCheck.columnOptions,
+                            'singleDocument': _apiCheck.bool.optional
+                        })], [metric])
                     });
-                if(options.document.queries == null)
+                if (options.document.queries == null)
                     options.document.queries = {};
             }
         }
@@ -453,7 +520,7 @@ angular.module('engine')
             options.subdocument = false;
 
             var documentRoutingOptions = {};
-            if(_.isObject(documentUrl))
+            if (_.isObject(documentUrl))
                 documentRoutingOptions = documentUrl;
 
             documentRoutingOptions.templateUrl = options.document.templateUrl;
@@ -463,7 +530,7 @@ angular.module('engine')
 
 
             var listRoutingOptions = {};
-            if(_.isObject(listUrl))
+            if (_.isObject(listUrl))
                 listRoutingOptions = documentUrl;
 
             listRoutingOptions.templateUrl = options.list.templateUrl;
@@ -535,7 +602,10 @@ angular.module('engine')
             _baseUrl = url;
         };
 
-        var _visibleDocumentFields = [{name: 'id', caption: 'ID', type: 'link', style: 'monospace'}, {name: 'name', caption: 'Name'}];
+        var _visibleDocumentFields = [{name: 'id', caption: 'ID', type: 'link', style: 'monospace'}, {
+            name: 'name',
+            caption: 'Name'
+        }];
 
         /**
          * @ngdoc method
@@ -581,7 +651,7 @@ angular.module('engine')
          * (If you want to just use angular-engine see {@link engine.provider:$engineProvider $engineProvider}
          *
          */
-        this.$get = function ($engineFormly, engineDocument, $rootScope, $log, engineQuery) {
+        this.$get = function ($engineFormly, engineDocument, $rootScope, $engLog, engineQuery) {
             var _engineProvider = self;
 
             return new function () {
@@ -629,7 +699,7 @@ angular.module('engine')
                     _engineProvider._debug = true;
                     $rootScope.$on('engine.common.error', function (event, errorEvent) {
                         if (_engineProvider._debug)
-                            $log.error(errorEvent);
+                            $engLog.error(errorEvent);
                     })
 
                 };

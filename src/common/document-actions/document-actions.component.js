@@ -1,11 +1,11 @@
 angular.module('engine.common')
 .component('engineDocumentActions', {
     templateUrl: '/src/common/document-actions/document-actions.tpl.html',
-    controller: function ($rootScope, $scope, DocumentActionList, $log, $timeout) {
+    controller: function ($rootScope, $scope, DocumentActionList, $engLog, $timeout) {
         var self = this;
 
         if(!this.documentScope){
-            $log.warn('engineDocumentActions document-scope argument not specified, using local $scope, which may be not what you want');
+            $engLog.warn('engineDocumentActions document-scope argument not specified, using local $scope, which may be not what you want');
             this._documentScope = $scope;
         }
         else
@@ -25,7 +25,7 @@ angular.module('engine.common')
         });
 
         this._documentScope.$on('document.form.requestReload', function (event) {
-            $log.debug('requested reload for action list');
+            $engLog.debug('requested reload for action list');
             self.loadActions();
         });
 

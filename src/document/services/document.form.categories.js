@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentCategoryFactory', function (DocumentCategory, $log, $parse) {
+    .factory('DocumentCategoryFactory', function (DocumentCategory, $engLog, $parse) {
         function DocumentCategoryFactory() {
             this._categoryTypeList = [];
             this._defaultCategory = new DocumentCategory();

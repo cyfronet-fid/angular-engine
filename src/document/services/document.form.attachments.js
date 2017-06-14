@@ -1,4 +1,4 @@
-angular.module('engine.document').factory('engAttachment', function ($engineConfig, $http, Upload, $q) {
+angular.module('engine.document').factory('engAttachment', function ($engineConfig, $http, Upload, $q, $engLog) {
     var listUrl = 'attachment-list';
     var singleUrl = 'attachment';
 
@@ -69,7 +69,7 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
         var self = this;
         return $http.post($engineConfig.baseUrl + 'action/available/attachment' + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
             if (response.data.data.length == 0)
-                console.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
+                $engLog.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
             self.action = response.data.data[0];
             self.label = self.action.label;
         }, function (response) {
@@ -98,7 +98,7 @@ angular.module('engine.document').filter('formatFileSize', function () {
     };
 });
 
-angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $timeout, engAttachment) {
+angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $timeout, engAttachment, $engLog) {
     var self = this;
     var STATUS = {loading: 0, uploading: 1, disabled: 2, normal: 3};
 
@@ -145,7 +145,7 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
             $scope.error = null;
             $scope.status = STATUS.uploading;
             $scope.uploadPromise = $scope.attachment.upload(file).then(function (response) {
-                console.log('Success ' + response.config.data[$scope.isList ? 'files' : 'file'].name + 'uploaded. Response: ' + response.data);
+                $engLog.log('Success ' + response.config.data[$scope.isList ? 'files' : 'file'].name + 'uploaded. Response: ' + response.data);
                 $scope.status = STATUS.normal;
                 $scope.error = null;
 
@@ -160,7 +160,7 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
 
             }, function (response) {
                 //TODO HANDLE ERROR
-                console.log('Error status: ' + response.status);
+                $engLog.log('Error status: ' + response.status);
                 $scope.status = STATUS.normal;
 
                 $scope.error = "An error occurred during upload"

@@ -29,13 +29,13 @@ angular.module('engine.formly')
             templateUrl: $engineFormly.wrapperUrls['default']
         });
     })
-    .controller('engineFormlyWrapperCtrl', function ($scope) {
+    .controller('engineFormlyWrapperCtrl', function ($scope, $engLog) {
         $scope.$on('document.form.reloadingMetrics.before', function (event) {
-            console.log('document.form.reloadingMetrics.before');
+            $engLog.debug('document.form.reloadingMetrics.before');
             $scope.loading = true;
         });
         $scope.$on('document.form.reloadingMetrics.after', function (event) {
-            console.log('document.form.reloadingMetrics.after');
+            $engLog.debug('document.form.reloadingMetrics.after');
             $scope.loading = false;
         });
     });

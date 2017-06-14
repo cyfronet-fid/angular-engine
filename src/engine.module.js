@@ -12,7 +12,7 @@
  *
  */
 
-angular.module('engine',
+var app = angular.module('engine',
     ['ngRoute',
         'ngResource',
         'formly',
@@ -28,11 +28,17 @@ angular.module('engine',
         'ngFileUpload',
         'pascalprecht.translate',
         'engine.document'])
-    .config(function (formlyConfigProvider, formlyApiCheck, productionMode) {
-        if (productionMode) {
-            console.log(formlyApiCheck);
-            formlyApiCheck.config.disabled = true;
-            formlyConfigProvider.disableWarnings = true;
-            formlyConfigProvider.extras.ngModelAttrsManipulatorPreferBound = true;
-        }
-    });
+/**
+ * Optimizating performance in production mode
+ */
+app.config(function (formlyConfigProvider, formlyApiCheck, $engLogProvider, $provide, productionMode) {
+    // turn on optimization if in production mode
+    if (productionMode) {
+        formlyApiCheck.config.disabled = true;
+        formlyConfigProvider.disableWarnings = true;
+        formlyConfigProvider.extras.ngModelAttrsManipulatorPreferBound = true;
+
+        // disable logs if in production mode
+        $engLogProvider.setLogLevel('error');
+    }
+});
