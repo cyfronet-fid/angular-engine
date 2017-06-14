@@ -1,4 +1,7 @@
-<div class="{{options.templateOptions.wrapperClass}}" ng-show="options.data.hasMetrics()">
+<div class="{{options.templateOptions.wrapperClass}}" style="position: relative" ng-show="options.data.hasMetrics()" ng-controller="engineFormlyWrapperCtrl">
+    <div ng-show="loading" class="category-loading">
+        <i class="category-loading-spinner fa fa-spinner fa-spin" style="" aria-hidden="true"></i>
+    </div>
     <div class="{{::options.templateOptions.wrapperInnerClass}}">
         <h2 ng-if="options.templateOptions.label" translate>{{options.templateOptions.label}}</h2>
         <formly-transclude></formly-transclude>

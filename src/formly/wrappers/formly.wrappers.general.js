@@ -28,4 +28,14 @@ angular.module('engine.formly')
             name: 'default',
             templateUrl: $engineFormly.wrapperUrls['default']
         });
+    })
+    .controller('engineFormlyWrapperCtrl', function ($scope) {
+        $scope.$on('document.form.reloadingMetrics.before', function (event) {
+            console.log('document.form.reloadingMetrics.before');
+            $scope.loading = true;
+        });
+        $scope.$on('document.form.reloadingMetrics.after', function (event) {
+            console.log('document.form.reloadingMetrics.after');
+            $scope.loading = false;
+        });
     });

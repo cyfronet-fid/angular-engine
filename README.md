@@ -87,6 +87,9 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.88** Added waiting indicator on categories when additional metrics are loaded (reloaded).
+ During loading time user can not input new data.
+
 * **0.6.87** Changed all actions button to newly designed components, now double 
 clicking executing action should not be possible anymore.
 Additionall features:

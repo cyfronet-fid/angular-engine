@@ -26,7 +26,7 @@ angular.module('engine.document')
     $scope.steps = this.options.document.steps;
 
     this.actionList = null;
-    this.documentForm = new DocumentForm();
+    this.documentForm = new DocumentForm($scope);
 
     this.getDocument = function (noReloadSteps) {
         var _actionsToPerform = [];

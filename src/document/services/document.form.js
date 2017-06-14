@@ -3,7 +3,14 @@ angular.module('engine.document')
                                    DocumentCategoryFactory, $engineApiCheck, $log, DocumentValidator) {
     var _apiCheck = $engineApiCheck;
 
-    function DocumentForm() {
+    /**
+     *
+     * @param documentScope - scope of the document component (all events will be called on this scope with $broadcast)
+     * @constructor
+     */
+    function DocumentForm(documentScope) {
+        assert(documentScope != null);
+        this.documentScope = documentScope;
         this.fieldList = [];
         this.metricList = [];
         this.metricDict = {};
@@ -67,7 +74,11 @@ angular.module('engine.document')
             $log.error('DocumentForm._reloadForm called without waiting for DocumentForm.loadForm');
             throw new Error();
         }
+        this.documentScope.$broadcast('document.form.reloadingMetrics.before');
 
+        /**
+         * Return promise to the engineMetric loading
+         */
         return engineMetric(this.document, function (metricList) {
             console.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
@@ -121,7 +132,10 @@ angular.module('engine.document')
                     step.fields[field.data.id] = field;
                     break;
                 }
-            })
+            });
+
+            // Notify document and every element under it that metrics have been reladed
+            self.documentScope.$broadcast('document.form.reloadingMetrics.after');
         }).$promise;
     };
 
