@@ -44,7 +44,7 @@ angular.module('engine')
             request_processors: request_processors,
             response_processors: response_processors,
             get: function (query, parentDocument, callback, errorCallback) {
-                $engineApiCheck.throw([apiCheck.string, apiCheck.object.optional, apiCheck.func.optional, apiCheck.func.optional], arguments);
+                $engineApiCheck.throw([$engineApiCheck.string, $engineApiCheck.object.optional, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
                 var parentDocumentId = parentDocument != null && parentDocument.id != null ? parentDocument.id : '';
 
@@ -95,12 +95,12 @@ angular.module('engine')
 
         return {
             fromList: function (queryIds) {
-                $engineApiCheck([apiCheck.arrayOf(apiCheck.string)], arguments)
+                $engineApiCheck([$engineApiCheck.arrayOf($engineApiCheck.string)], arguments)
 
 
             },
             fromCategory: function (queryCategoryId, callback, errorCallback) {
-                $engineApiCheck([apiCheck.string], arguments);
+                $engineApiCheck([$engineApiCheck.string], arguments);
 
                 return _queryCategory.get({'queryCategoryId': queryCategoryId}, callback, errorCallback);
             }
@@ -119,12 +119,12 @@ angular.module('engine')
         });
 
         return function (documentJSON, callback, errorCallback) {
-            $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
             return _query.post(documentJSON, callback, errorCallback);
         }
     })
-    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $log) {
+    .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $engLog) {
         var categorySorter = function (data, headersGetter, status) {
             var data = EngineInterceptor.response(data, headersGetter, status);
             // data = _.sortBy(data, 'position');
@@ -163,13 +163,13 @@ angular.module('engine')
                 _metricCategories[metricCategory.id] = metricCategory;
             });
             collectMetrics(data);
-            console.debug(_metricCategories);
+            $engLog.debug(_metricCategories);
             return {
                 $resolved: true,
                 metrics: _metricCategories,
                 getNames: function (metricCategoryId) {
                     if (!(metricCategoryId in _names))
-                        $log.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricCategoryId);
+                        $engLog.error('You tried to access metricCategory which does not exist, check whether metric references existsing metric category. Wrong key: ' + metricCategoryId);
                     return _names[metricCategoryId]
                 }
             };
@@ -184,7 +184,7 @@ angular.module('engine')
 
         return {
             forDocument: function (document, callback, errorCallback) {
-                $engineApiCheck([apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+                $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
                 return _action.post({documentId: document.id}, document, callback, errorCallback)
             },
@@ -203,7 +203,7 @@ angular.module('engine')
         });
 
         return function (actionId, document, callback, errorCallback, parentDocumentId, documentId) {
-            $engineApiCheck([apiCheck.string, apiCheck.object, apiCheck.func.optional, apiCheck.func.optional], arguments);
+            $engineApiCheck([$engineApiCheck.string, $engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
             return _action.post({actionId: actionId, documentId: documentId || document.id, otherDocumentId:parentDocumentId}, document, callback, errorCallback);
         }
@@ -267,7 +267,7 @@ angular.module('engine')
                 return _document.validate({'documentId': document.id}, document, callback, errorCallback);
             }
         }
-    }).service('EngineInterceptor', function () {
+    }).service('EngineInterceptor', function ($engLog) {
 
     function processData(data) {
         if (data == null)
@@ -301,7 +301,7 @@ angular.module('engine')
         },
         request: function (data, headersGetter) {
             var site = data.site;
-            console.log('parsing request');
+            $engLog.log('parsing request');
             if (site && site.id) {
                 data.site = site.id;
                 data.siteName = site.value.provider_id;

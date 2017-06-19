@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('DocumentFieldFactory', function (DocumentField, $engine, $log, createAttachmentCtrl) {
+    .factory('DocumentFieldFactory', function (DocumentField, $engine, $engLog, createAttachmentCtrl) {
         function DocumentFieldFactory() {
             this._fieldTypeList = [];
             this._defaultField = new DocumentField();
@@ -45,7 +45,7 @@ angular.module('engine.document')
             }
             if(!this.allowDefaultField){
                 var message = "DocumentFieldFactory.allowDefaultField is false but there was a metric which could not be matched to registered types: ";
-                $log.error(message, "Metric", metric, "Registered types", this._fieldTypeList);
+                $engLog.error(message, "Metric", metric, "Registered types", this._fieldTypeList);
                 throw new Error(message);
             }
             return this._defaultField.makeField(metricList, metric, ctx);
@@ -87,7 +87,7 @@ angular.module('engine.document')
                 return field;
             }));
 
-            this.register(new DocumentField({visualClass: 'select', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
+            this.register(new DocumentField({visualClass: 'multiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelect';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
@@ -97,6 +97,10 @@ angular.module('engine.document')
             this.register(new DocumentField({visualClass: '@verticalMultiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelectVertical';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+                field.data.isDisabled = function () {
+                    return field.data.form.disabled;
+                }
 
                 return field;
             }));
@@ -129,6 +133,10 @@ angular.module('engine.document')
                         $scope.options.templateOptions.onChange(field.model[field.key], field, $scope);
                     };
                 };
+
+                field.data.isDisabled = function () {
+                    return field.data.form.disabled;
+                }
 
                 field.data.isActive = function(element) {
                     return _.contains(field.model[field.key], element)
@@ -213,6 +221,12 @@ angular.module('engine.document')
             }));
 
         this.register(new DocumentField({inputType: 'EXTERNAL'}, function (field, metric, ctx) {
+            field.data.onChange = DocumentField.onChange;
+            field.data.onReload = DocumentField.onReload;
+
+            // field.data.onValidate = DocumentField.onValidate;
+            // field.data.onValidateSelf = DocumentField.onValidateSelf;
+
             return {
                 data: field.data,
                 key: metric.id, //THIS FIELD IS REQUIRED
@@ -247,6 +261,15 @@ angular.module('engine.document')
             };
 
             return field;
+        }));
+
+        this.register(new DocumentField({inputType: 'LINK'}, function (field, metric, ctx) {
+            return {
+                data: field.data,
+                key: metric.id, //THIS FIELD IS REQUIRED
+                template: '<engine-link><a class="' + metric.visualClass.join(' ') + '" href="'+metric.url+'" target="'+metric.target+'">"'+metric.label+'"</a></engine-link>',
+                templateOptions: {ngModel: ctx.document, options: ctx.options}
+            };
         }));
     };
 

@@ -1,4 +1,4 @@
-angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engine) {
+angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engine, $engLog) {
     var attributes = [
         'date-disabled',
         'custom-class',
@@ -40,7 +40,7 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
         ngModelAttrs[camelize(binding)] = {bound: binding};
     });
 
-    console.log(ngModelAttrs);
+    $engLog.log(ngModelAttrs);
 
     formlyConfig.setType({
         name: 'datepicker',

@@ -12,12 +12,12 @@ angular.module('engine.common')
 
         return {
             getAvailable: function (document, contextDocumentId) {
-                $engineApiCheck([apiCheck.object, apiCheck.string], arguments);
+                $engineApiCheck([$engineApiCheck.object, $engineApiCheck.string], arguments);
 
                 return _actionAvailable.post({documentId: contextDocumentId}, document);
             },
             invoke: function (actionId, document, contextDocumentId) {
-                $engineApiCheck([apiCheck.string, apiCheck.object], arguments);
+                $engineApiCheck([$engineApiCheck.string, $engineApiCheck.object], arguments);
 
                 return _action.invoke({actionId: actionId, documentId: contextDocumentId || document.id}, document);
             }

@@ -1,0 +1,6 @@
+<button type="submit"
+        class="btn {{$ctrl.btnClass || 'btn-default'}}"
+        ng-click="$ctrl.invoke()">
+    <i class="fa fa-spinner fa-spin" aria-hidden="true" ng-show="$ctrl.loading"></i>
+    <translate translate="{{$ctrl.label}}"></translate>
+</button>

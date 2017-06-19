@@ -18,15 +18,15 @@ angular.module('engine.document')
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
                                             engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                             engineAction, engineMetricCategories, StepList, DocumentForm,
-                                            DocumentActionList, $q, $log, $attrs) {
+                                            DocumentActionList, $q, $engLog, $attrs) {
     var self = this;
-    console.log($scope);
+    $engLog.debug($scope);
     this.document = null;
     self.documentScope = $scope;
     $scope.steps = this.options.document.steps;
 
     this.actionList = null;
-    this.documentForm = new DocumentForm();
+    this.documentForm = new DocumentForm($scope);
 
     this.getDocument = function (noReloadSteps) {
         var _actionsToPerform = [];
@@ -106,8 +106,8 @@ angular.module('engine.document')
         return self.actionList.callSave();
     };
 
-    $scope.$on('engine.common.document.validate', function () {
-        self.documentForm.validate(null, true).then(function (valid) {
+    $scope.$on('engine.common.document.validate', function (event) {
+        event.$promise = self.documentForm.validate(null, true).then(function (valid) {
             if(!valid)
                 self.step = self.stepList.getFirstInvalidIndex();
         });
@@ -122,7 +122,7 @@ angular.module('engine.document')
     });
 
     $scope.$on('engine.common.document.requestReload', function (event) {
-        $log.debug('request reload for document');
+        $engLog.debug('request reload for document');
         event.reloadPromise = self.getDocument(true).then(function () {
             self.documentForm._setDocument(self.document);
             self.actionList._setDocument(self.document);
@@ -130,8 +130,8 @@ angular.module('engine.document')
     });
 
     this.$ready = this.getDocument().then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)}).then(this.initDocument).then(this.postinitDocument).then(function () {
-        $log.debug('engineDocumentCtrl initialized: ', self);
-        console.log(self.$ready.$$state.status);
+        $engLog.debug('engineDocumentCtrl initialized: ', self);
+        $engLog.log(self.$ready.$$state.status);
     });
-    console.log(this.$ready.$$state.status);
+    $engLog.log(this.$ready.$$state.status);
 });

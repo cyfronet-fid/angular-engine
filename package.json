@@ -18,12 +18,14 @@
     "deasync": "^0.1.9",
     "dgeni": "^0.4.2",
     "dgeni-packages": "^0.16.1",
+    "environment-brunch": "^1.0.0",
     "grunt": "^0.4.5",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-clean": "0.4.1",
     "grunt-contrib-connect": "~0.3.0",
     "grunt-ngdocs": "^0.2.10",
     "http-server": "^0.9.0",
+    "inject-this-brunch": "^4.1.0",
     "jasmine-core": "^2.4.1",
     "javascript-brunch": "^2.0.0",
     "karma": "^0.13.22",
@@ -31,11 +33,10 @@
     "karma-firefox-launcher": "^0.1.7",
     "karma-jasmine": "^0.3.8",
     "lite-server": "^2.2.2",
-    "ng-annotate-brunch": "~1.7.2",
     "ngdocs": "~0.1.0",
     "protractor": "^4.0.9",
     "replacement-brunch": "^2.0.4",
-    "uglify-js-brunch": "^2.0.0"
+    "uglify-js-brunch": "^2.10.0"
   },
   "scripts": {
     "ssl": "openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem",

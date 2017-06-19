@@ -871,10 +871,11 @@ li.ng-scope{
 /* styles for Sample Chemical Risks*/
 
 .multiselect-image {
-    padding: 15px;
+    padding: 14px;
     margin-bottom: 5px;
     border: 1px solid transparent;
     border-radius: 4px;
+    font-size: 15px;
 }
 .multiselect-image span{
     width: 80%;
@@ -887,14 +888,15 @@ li.ng-scope{
     border-color: #bfc4da;
 }
 
-.multiselect-imagel{
-    font-size: 1.063em;
-    padding: 25px;
-    padding-left: 90px;
-    font-weight: bold;
-    text-transform: uppercase;
-    cursor: pointer;
-}
+
+/*.multiselect-imagel{*/
+    /*font-size: 1.063em;*/
+    /*padding: 25px;*/
+    /*padding-left: 90px;*/
+    /*font-weight: bold;*/
+    /*text-transform: uppercase;*/
+    /*cursor: pointer;*/
+/*}*/
 .multiselect-image .fa{
     font-size: 1.5em;
     float: right;
@@ -904,8 +906,17 @@ li.ng-scope{
 
 .multiselect-image.alert-success, .multiselect-image.alert-success .fa{
     color: #75ad40;
-    background-color: #ffffff;
-    border-color: #75ad40;}
+    border-color: #75ad40;
+}
+
+.multiselect-image.disabled {
+    background-color: #eee !important;
+    cursor: not-allowed;
+}
+
+.multiselect-image.disabled .fa {
+    background: transparent !important;
+}
 
 .pr-category .btn-default, .input-group-datepicker .btn-default{
     border-color:#bec5dc;
@@ -1127,4 +1138,31 @@ label + table{
     .sidebar-document-rwd {display: block;}
     .sidebar-document {display: none;}
     .engine-document {width: 100%;}
+}
+
+action-button {
+    margin-left: 5px;
+}
+.full-width {
+    width: 100%;
+}
+
+.category-loading {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 100000;
+    background-color: white;
+    opacity: 0.6;
+    top: 0;
+    left: 0;
+}
+
+.category-loading-spinner {
+    font-size: 25px !important;
+    position: relative;
+    float: left;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }

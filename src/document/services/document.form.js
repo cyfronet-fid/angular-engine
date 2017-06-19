@@ -1,9 +1,16 @@
 angular.module('engine.document')
 .factory('DocumentForm', function (engineMetricCategories, engineMetric, DocumentFieldFactory, $q,
-                                   DocumentCategoryFactory, $engineApiCheck, $log, DocumentValidator) {
+                                   DocumentCategoryFactory, $engineApiCheck, $engLog, DocumentValidator) {
     var _apiCheck = $engineApiCheck;
 
-    function DocumentForm() {
+    /**
+     *
+     * @param documentScope - scope of the document component (all events will be called on this scope with $broadcast)
+     * @constructor
+     */
+    function DocumentForm(documentScope) {
+        assert(documentScope != null);
+        this.documentScope = documentScope;
         this.fieldList = [];
         this.metricList = [];
         this.metricDict = {};
@@ -64,19 +71,23 @@ angular.module('engine.document')
         var self = this;
 
         if(!this.formLoaded) {
-            $log.error('DocumentForm._reloadForm called without waiting for DocumentForm.loadForm');
+            $engLog.error('DocumentForm._reloadForm called without waiting for DocumentForm.loadForm');
             throw new Error();
         }
+        this.documentScope.$broadcast('document.form.reloadingMetrics.before');
 
+        /**
+         * Return promise to the engineMetric loading
+         */
         return engineMetric(this.document, function (metricList) {
-            console.log('New loaded metrics: ', metricList);
+            $engLog.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
 
             var newMetrics = _.reject(metricList, function (metric) {
                 return metric.id in self.metricDict;
             });
 
-            console.log('New metrics: ', newMetrics);
+            $engLog.log('New metrics: ', newMetrics);
 
             //remove metrics, which are not present in metricList
             _.forEach(self.metricList, function (metric) {
@@ -88,7 +99,7 @@ angular.module('engine.document')
                     if(metricIndex == -1)
                         return;
 
-                    console.log('Metric to remove: ', metric, 'index: ', metricIndex);
+                    $engLog.log('Metric to remove: ', metric, 'index: ', metricIndex);
                     delete self.metricDict[metric.id];
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
                     delete self.document.metrics[metric.id];
@@ -97,7 +108,7 @@ angular.module('engine.document')
 
             //add new metrics to the form, with respect to position
             _.forEach(newMetrics, function (newMetric) {
-                console.log(self.categoriesDict[newMetric.categoryId]);
+                $engLog.log(self.categoriesDict[newMetric.categoryId]);
                 self.addMetric(newMetric);
                 var field = DocumentFieldFactory.makeField(self.metricList, newMetric, {document: self.document,
                                                                                         options: self.documentOptions,
@@ -111,7 +122,7 @@ angular.module('engine.document')
                 for(var i = 0; i < self.steps.getSteps().length; ++i) {
                     var step = self.steps.getStep(i);
                     if (self.categoriesDict[field.data.categoryId] === undefined) {
-                        $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
+                        $engLog.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
                             'field', field, 'categoryId', field.data.categoryId);
                         continue;
                     }
@@ -121,7 +132,10 @@ angular.module('engine.document')
                     step.fields[field.data.id] = field;
                     break;
                 }
-            })
+            });
+
+            // Notify document and every element under it that metrics have been reladed
+            self.documentScope.$broadcast('document.form.reloadingMetrics.after');
         }).$promise;
     };
 
@@ -195,7 +209,7 @@ angular.module('engine.document')
 
         this.currentStep = step;
         this.formStructure[this.currentStep].data.hide = false;
-        $log.debug('current fields to display in form', this.currentFormlyFields);
+        $engLog.debug('current fields to display in form', this.currentFormlyFields);
     };
 
     DocumentForm.prototype._assertInit = function assertInit() {
@@ -208,14 +222,14 @@ angular.module('engine.document')
     };
 
     DocumentForm.prototype._onReload = function onReload() {
-        $log.debug('Form reload called');
+        $engLog.debug('Form reload called');
         this._reloadForm();
     };
 
     DocumentForm.prototype._makeForm = function makeForm() {
         var self = this;
 
-        console.log('DocumentForm._makeForm', this.fieldList);
+        $engLog.log('DocumentForm._makeForm', this.fieldList);
         this._assertInit();
 
         assert(this.metricList.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetrics');
@@ -240,7 +254,7 @@ angular.module('engine.document')
 
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
-        console.debug('DocumentForm form structure', self.formStructure);
+        $engLog.debug('DocumentForm form structure', self.formStructure);
 
         return self.formStructure;
 
@@ -266,7 +280,7 @@ angular.module('engine.document')
         function connectFields(step) {
             _.forEach(self.fieldList, function (field) {
                 if(self.categoriesDict[field.data.categoryId] === undefined){
-                    $log.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
+                    $engLog.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
                               'field', field, 'categoryId', field.data.categoryId);
                     return;
                 }

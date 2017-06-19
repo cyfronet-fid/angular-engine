@@ -13,7 +13,8 @@
             <div ng-repeat="col in options.templateOptions.cols" class="{{::options.templateOptions.colClass}}">
                <div class="multiselect-image {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}"
                      role="alert" ng-repeat="element in col"
-                     ng-click="addRemoveModel(element.value)">
+                     ng-class="{'disabled': options.data.isDisabled()}"
+                     ng-click="options.data.isDisabled() || addRemoveModel(element.value)">
                     <span>{{::element.label}}</span>
                     <i class="fa fa-check-circle" aria-hidden="true"></i>
                 </div>

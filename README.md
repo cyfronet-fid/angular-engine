@@ -87,5 +87,22 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.89** Removed console logs in production by default, they still can be turned on in the
+application via $engLogProvider.serLogLevel()
+
+* **0.6.88** Added waiting indicator on categories when additional metrics are loaded (reloaded).
+ During loading time user can not input new data.
+
+* **0.6.87** Changed all actions button to newly designed components, now double 
+clicking executing action should not be possible anymore.
+Additionall features:
+    * Validation button not showing if document is not editable
+    * Multiselects fixes (now disable works, also some other minor fixes)
+    * Fixes to LINK metric
+
+* **0.6.86** Created two types of build (production & development) - for production
+a couple of optimizations has been introduced which should decrease lag and increase
+responsiveness of the application.
+
 * **0.6.83** Added basic custom style to angular engine. It overrides bootstrap styles,
 so in deployment bootstrap.css should be placed before angular-engine.css

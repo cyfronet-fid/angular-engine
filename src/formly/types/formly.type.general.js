@@ -1,6 +1,6 @@
 angular.module('engine.formly')
-    .run(function (formlyConfig, $engineFormly, $engine) {
-        var _apiCheck = $engine.apiCheck;
+    .run(function (formlyConfig, $engineFormly, $engineApiCheck) {
+        var _apiCheck = $engineApiCheck;
 
         formlyConfig.setType({
             name: 'input',

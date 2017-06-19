@@ -1,5 +1,5 @@
 angular.module('engine.document')
-    .factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck, $log, $parse) {
+    .factory('StepList', function (Step, $q, engineMetricCategories, $engineApiCheck, $engLog, $parse) {
         var _ac = $engineApiCheck;
 
         function StepList(documentOptionSteps) {
@@ -51,7 +51,7 @@ angular.module('engine.document')
                     }
                     else { //is string (metricCategory) so we have to retrieve its children
                         if(!(step.categories in metricCategories.metrics)){
-                            $log.error(step.categories, ' not in ', metricCategories.metrics, '. Make sure that metric category registered in document.steps exists');
+                            $engLog.error(step.categories, ' not in ', metricCategories.metrics, '. Make sure that metric category registered in document.steps exists');
                             throw new Error();
                         }
 
