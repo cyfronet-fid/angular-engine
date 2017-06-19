@@ -1,13 +1,13 @@
 angular.module('engine')
     .factory('engineResolve', function () {
-        function index(obj,i) {
-            if(obj == null)
+        function index(obj, i) {
+            if (obj == null)
                 return undefined;
             return obj[i]
         }
 
         return function (baseObject, str) {
-            if(!str)
+            if (!str)
                 return '';
             return str.split('.').reduce(index, baseObject);
         };
@@ -16,12 +16,12 @@ angular.module('engine')
 
         var engResource = function () {
             var defaults = {
-                browse:  { method: 'GET',   transformResponse: transformResponse },
-                query:   { method: 'GET',   transformResponse: transformResponse, isArray: true },
-                get:     { method: 'GET',   transformResponse: transformResponse },
-                create:  { method: 'POST',  transformRequest: transformRequest },
-                update:  { method: 'PATCH', transformRequest: transformRequest },
-                destroy: { method: 'DELETE' }
+                browse: {method: 'GET', transformResponse: transformResponse},
+                query: {method: 'GET', transformResponse: transformResponse, isArray: true},
+                get: {method: 'GET', transformResponse: transformResponse},
+                create: {method: 'POST', transformRequest: transformRequest},
+                update: {method: 'PATCH', transformRequest: transformRequest},
+                destroy: {method: 'DELETE'}
             };
 
             angular.extend(defaults, options.methods);
@@ -52,7 +52,7 @@ angular.module('engine')
                 res.$resolved = 0;
 
                 var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query +
-                                   '&attachAvailableActions=true&otherDocumentId='+parentDocumentId+'&documentId='+parentDocumentId)
+                    '&attachAvailableActions=true&otherDocumentId=' + parentDocumentId + '&documentId=' + parentDocumentId)
                     .then(function (response) {
                         return response.data;
                     })
@@ -66,7 +66,7 @@ angular.module('engine')
                     var processingQueue = [];
                     q = q.then(function (documents) {
                         _.forEach(documents, function (document, index) {
-                            if(!_.isNaN(parseInt(index)))
+                            if (!_.isNaN(parseInt(index)))
                                 processingQueue.push($q.when(processor(document.document)));
                         });
 
@@ -143,6 +143,7 @@ angular.module('engine')
             function writeMetric(_metric) {
                 _names[_metric.id] = _metric; //{label: _metric.label, position: _metric.position, visualClass: _metric.visualClass};
             }
+
             function collectChildren(metric) {
                 angular.forEach(metric.children, function (_metric) {
                     writeMetric(_metric);
@@ -205,16 +206,24 @@ angular.module('engine')
         return function (actionId, document, callback, errorCallback, parentDocumentId, documentId) {
             $engineApiCheck([$engineApiCheck.string, $engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
-            return _action.post({actionId: actionId, documentId: documentId || document.id, otherDocumentId:parentDocumentId}, document, callback, errorCallback);
+            return _action.post({
+                actionId: actionId,
+                documentId: documentId || document.id,
+                otherDocumentId: parentDocumentId
+            }, document, callback, errorCallback);
         }
     })
     .service('engineDocument', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $http) {
         var _document = $resource('', {documentId: '@documentId'},
             {
-                getDocument: {url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
-                              method: 'POST', transformResponse: EngineInterceptor.response},
-                validate:    {url: $engineConfig.baseUrl + '/validate-metric-values'+'?documentId=:documentId',
-                              method: 'POST', transformResponse: EngineInterceptor.response}
+                getDocument: {
+                    url: $engineConfig.baseUrl + '/document/getwithextradata?documentId=:documentId&attachAvailableActions=true',
+                    method: 'POST', transformResponse: EngineInterceptor.response
+                },
+                validate: {
+                    url: $engineConfig.baseUrl + '/validate-metric-values' + '?documentId=:documentId',
+                    method: 'POST', transformResponse: EngineInterceptor.response
+                }
             });
 
         var request_processors = [];
@@ -228,7 +237,7 @@ angular.module('engine')
 
                 var res = {$resolved: 0};
 
-                var q = $http.post($engineConfig.baseUrl + '/document/getwithextradata?documentId='+documentId+'&attachAvailableActions=true', null)
+                var q = $http.post($engineConfig.baseUrl + '/document/getwithextradata?documentId=' + documentId + '&attachAvailableActions=true', null)
                     .then(function (response) {
                         return response.data;
                     })
@@ -262,7 +271,7 @@ angular.module('engine')
              */
             validate: function (document, callback, errorCallback) {
                 $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional],
-                                 arguments);
+                    arguments);
 
                 return _document.validate({'documentId': document.id}, document, callback, errorCallback);
             }

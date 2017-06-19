@@ -47,6 +47,8 @@ angular.module('engine.common')
         step: '=',
         showValidationButton: '=',
         customButtons: '=',
-        documentParent: '='
+        documentParent: '=',
+        dirty: '=',
+        saveAlertLeft: '='
     }
 });

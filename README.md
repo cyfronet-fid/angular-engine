@@ -87,6 +87,9 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.91** Actions for the document are now visible only if document has been saved and is unmodified.
+Fixed some small bugs with prompts before leaving edited document.
+
 * **0.6.90** Added handling of `dirty` state for the document, now whether document is saved is
 displayed on the side panel, and if user tries to navigate away from the document page confirmation window will
 appear.

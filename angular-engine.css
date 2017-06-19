@@ -1182,3 +1182,12 @@ action-button {
 .document-dirty {
     color: #d43f3a;
 }
+
+.document-dirty-warning-left {
+    color: orangered;
+}
+
+.document-dirty-warning-right {
+    color: orangered;
+    margin-left: 10px;
+}
