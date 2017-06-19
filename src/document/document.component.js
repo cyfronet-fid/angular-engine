@@ -12,7 +12,8 @@ angular.module('engine.document')
         showValidationButton: '=',
         documentId: '@',
         actions: '=',
-        parentDocument: '='
+        parentDocument: '=',
+        dirty: '='
     }
 })
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
@@ -27,6 +28,11 @@ angular.module('engine.document')
 
     this.actionList = null;
     this.documentForm = new DocumentForm($scope);
+    this.dirty = false;
+
+    $scope.$watch('$ctrl.documentForm.formlyState.$dirty', function (newValue, oldValue) {
+        self.dirty = newValue;
+    });
 
     this.getDocument = function (noReloadSteps) {
         var _actionsToPerform = [];

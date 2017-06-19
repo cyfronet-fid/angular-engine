@@ -2,6 +2,9 @@
     <div class="text-content" ng-clock>
         <h3 style="margin-top: 0px">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>
 
+        <span ng-show="$ctrl.dirty" class="document-changes-info document-dirty">Document has unsaved changes</span>
+        <span ng-hide="$ctrl.dirty" class="document-changes-info document-pristine">All changes are saved</span>
+
         <ul class="list-group">
             <li ng-repeat="entry in $ctrl.options.document.details.entries | conditionFulfiled : $ctrl.ngModel" class="list-group-item">
                 <span translate>{{entry.caption || entry.name}}</span>

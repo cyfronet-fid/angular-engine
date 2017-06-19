@@ -87,8 +87,12 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.90** Added handling of `dirty` state for the document, now whether document is saved is
+displayed on the side panel, and if user tries to navigate away from the document page confirmation window will
+appear.
+
 * **0.6.89** Removed console logs in production by default, they still can be turned on in the
-application via $engLogProvider.serLogLevel()
+application via $engLogProvider.setLogLevel()
 
 * **0.6.88** Added waiting indicator on categories when additional metrics are loaded (reloaded).
  During loading time user can not input new data.

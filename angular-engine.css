@@ -1169,3 +1169,16 @@ action-button {
     left: 50%;
     transform: translate(-50%, -50%);
 }
+
+.document-changes-info {
+    font-size: 14px;
+    text-align: left;
+}
+
+.document-pristine {
+    color: #75ad40;
+}
+
+.document-dirty {
+    color: #d43f3a;
+}

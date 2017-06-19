@@ -12,10 +12,10 @@
     <div class="row">
         <engine-document step-list="stepList" show-validation-button="options.document.showValidationButton"
                          document-id="{{::documentId}}" document="document" step="$routeParams.step" options="options"
-                         class="col-lg-8 col-md-8 col-sm-12 engine-document" actions="actions"></engine-document>
+                         class="col-lg-8 col-md-8 col-sm-12 engine-document" actions="actions" dirty="documentDirty"></engine-document>
         <div class="col-lg-4 col-md-4 hidden-sm sidebar-document">
             <engine-steps ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
-            <engine-document-details ng-model="document" options="options" actions="actions"></engine-document-details>
+            <engine-document-details ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
         </div>
     </div>
 
@@ -24,7 +24,7 @@
     </div>
     <div class="sidebar-document-rwd" ng-show="sideMenuVisible">
         <engine-steps ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
-        <engine-document-details ng-model="document" options="options" actions="actions"></engine-document-details>
+        <engine-document-details ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
     </div>
 
 </div>

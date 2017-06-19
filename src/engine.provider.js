@@ -154,6 +154,18 @@ angular.module('engine')
                 options.list.customButtons = [options.list.customButtons];
         }
 
+        self._disableOnReload = false;
+
+        this.disableOnReload = function () {
+            self._disableOnReload = true;
+        };
+
+        this.enableOnReload = function () {
+            self._disableOnReload = false;
+        };
+
+
+
         /**
          * @ngdoc method
          * @name dashboard
@@ -661,6 +673,12 @@ angular.module('engine')
                 this.baseUrl = _baseUrl;
                 this.documents = documents;
                 this.documents_d = documents_d;
+
+                /**
+                 * true if user disabled onReloadFunction during configuration phase
+                 * false otherwise
+                 */
+                this.disableOnReload = _engineProvider._disableOnReload;
 
                 /**
                  * By default only metrics are visible in document list view, in order to display document fields

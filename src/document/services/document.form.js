@@ -46,6 +46,18 @@ angular.module('engine.document')
             return self._loadMetricCategories();
         });
 
+        this.documentScope.$on('engine.common.save.after', function (event) {
+            self.formlyState.$setPristine();
+        });
+
+        this.documentScope.$on('engine.common.navigateAway', function (event) {
+            if(self.formlyState.$dirty) {
+                event.preventDefault();
+            }
+        });
+
+
+
     }
 
     DocumentForm.prototype.loadForm = function loadForm() {

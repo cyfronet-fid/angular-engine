@@ -13,7 +13,8 @@ angular.module('engine.document')
         bindings: {
             ngModel: '=',
             options: '=',
-            actions: '='
+            actions: '=',
+            dirty: '='
         }
     })
 .filter('conditionFulfiled', function ($parse) {
