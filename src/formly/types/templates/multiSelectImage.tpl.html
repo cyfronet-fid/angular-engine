@@ -11,7 +11,7 @@
     <div class="content">
         <div class="row">
             <div ng-repeat="col in options.templateOptions.cols" class="{{::options.templateOptions.colClass}}">
-               <div class="multiselect-image {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}}"
+               <div class="multiselect-image {{::element.css}} {{options.data.isActive(element.value) ? 'alert-success' : 'alert-default'}} form-control"
                      role="alert" ng-repeat="element in col"
                      ng-class="{'disabled': options.data.isDisabled()}"
                      ng-click="options.data.isDisabled() || addRemoveModel(element.value)">
@@ -19,6 +19,8 @@
                     <i class="fa fa-check-circle" aria-hidden="true"></i>
                 </div>
             </div>
+            <!-- we need ng-model for proper usage of multiSelectImage by formly -->
+            <input type="hidden" ng-model="model">
         </div>
     </div>
 </div>
