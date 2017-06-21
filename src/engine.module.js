@@ -42,3 +42,33 @@ app.config(function (formlyConfigProvider, formlyApiCheck, $engLogProvider, $pro
         $engLogProvider.setLogLevel('error');
     }
 });
+
+/**
+ * setup hook when user tries to navigate away
+ */
+app.run(function ($engine, $rootScope, $engLog, $translate) {
+
+    function onRelad() {
+        $engLog.debug('engine.common.navigateAway');
+        var event = $rootScope.$broadcast('engine.common.navigateAway');
+        return event.defaultPrevented == true ? true : null;
+    }
+
+    if ($engine.disableOnReload == false) {
+        window.onbeforeunload = onRelad;
+
+        $rootScope.$on("$locationChangeStart", function (event, next, current) {
+
+            //if routes differ only by GET params don't do anything
+            var nextBase = next.match(/^[^?]+/);
+            var currBase = current.match(/^[^?]+/);
+
+            if(nextBase.length == 1 && currBase.length == 1 && currBase[0] == nextBase[0])
+                return;
+
+            if(onRelad() == true && confirm($translate.instant('Do you want to leave this site? Changes you made may not be saved.')) == false) {
+                event.preventDefault();
+            }
+        });
+    }
+});

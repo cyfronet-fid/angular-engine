@@ -3,7 +3,7 @@ angular.module('engine.document')
         function DocumentActionList(actions, document, parentDocument, $scope) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
 
-            if(parentDocument == null)
+            if (parentDocument == null)
                 parentDocument = {};
 
             var self = this;
@@ -29,10 +29,11 @@ angular.module('engine.document')
 
             this._setDocument(document);
         }
+
         DocumentActionList.get = function (document, parentDocument, $scope) {
             var res = new DocumentActionList(document, parentDocument, $scope);
 
-            $http.get($engineConfig.baseUrl + '/action/available?documentId='+document.id).then(function (response) {
+            $http.get($engineConfig.baseUrl + '/action/available?documentId=' + document.id).then(function (response) {
                 var data = response.data.data;
 
                 return data;
@@ -42,7 +43,7 @@ angular.module('engine.document')
         };
 
         DocumentActionList.prototype._setDocument = function setDocument(document) {
-            if(document == null || _.isEmpty(document) || document == this.document)
+            if (document == null || _.isEmpty(document) || document == this.document)
                 return;
 
             var prevDoc = this.document;
@@ -64,7 +65,7 @@ angular.module('engine.document')
         DocumentActionList.prototype.callSave = function callSave() {
             var saveAction = this.getSaveAction();
 
-            if(saveAction == null) {
+            if (saveAction == null) {
                 $engLog.warn('engine.document.actions No save action specified for document', this.document);
                 return $q.reject();
             }
@@ -104,69 +105,102 @@ angular.module('engine.document')
             $rootScope.$broadcast(notificationId, this.document, this);
         };
 
-        DocumentAction.prototype.call = function call() {
+        /**
+         *
+         * @param {Object} ctx custom context which will be passed to every event fired in this function (key: `ctx`)
+         */
+        DocumentAction.prototype.call = function call(ctx) {
+            if(ctx == null)
+                ctx = {};
             var self = this;
             var event = null;
             $engLog.debug('engine.document.actions', 'action called', this);
 
-            if(this.$scope) {
+            if (this.$scope) {
                 var promises = [];
 
-                event = this.$scope.$broadcast('engine.common.action.before', {'document': this.document,
-                                                                               'action': this,
-                                                                               'promises': promises});
+                event = this.$scope.$broadcast('engine.common.action.before', {
+                    'document': this.document,
+                    'action': this,
+                    'ctx': ctx,
+                    'promises': promises
+                });
                 this.broadcastNotification('engine.notification.action.before');
 
-                if(event.defaultPrevented) {
-                    this.$scope.$broadcast('engine.common.action.prevented', {'document': this.document,
-                                                                              'action': this,
-                                                                              'event': event});
+                if (event.defaultPrevented) {
+                    this.$scope.$broadcast('engine.common.action.prevented', {
+                        'document': this.document,
+                        'action': this,
+                        'ctx': ctx,
+                        'event': event
+                    });
 
                     this.broadcastNotification('engine.notification.action.prevented');
                     return;
                 }
 
-                if(this.isSave()){
-                    event = self.$scope.$broadcast('engine.common.save.before', {'document': this.document,
-                                                                                 'action': this,
-                                                                                 'promises': promises});
+                if (this.isSave()) {
+                    event = self.$scope.$broadcast('engine.common.save.before', {
+                        'document': this.document,
+                        'action': this,
+                        'ctx': ctx,
+                        'promises': promises
+                    });
 
                     this.broadcastNotification('engine.notification.save.before');
 
-                    if(event.defaultPrevented) {
-                        self.$scope.$broadcast('engine.common.save.prevented', {'document': this.document,
-                                                                                  'action': this,
-                                                                                  'event': event});
+                    if (event.defaultPrevented) {
+                        self.$scope.$broadcast('engine.common.save.prevented', {
+                            'document': this.document,
+                            'action': this,
+                            'ctx': ctx,
+                            'event': event
+                        });
 
                         self.broadcastNotification('engine.notification.save.prevented');
                         return;
                     }
                 }
             }
-            return $q.all(promises).then(function(){
-                if(self.isLink())
+            return $q.all(promises).then(function () {
+                if (self.isLink())
                     return engActionResource.invoke(self.actionId, self.parentDocument, self.document.id).$promise;
                 else
                     return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise;
             }).then(function (result) {
                 $engLog.debug('engine.document.actions', 'action call returned', result);
-                if(self.$scope) {
-                    var ev1 = self.$scope.$broadcast('engine.common.action.after', {'document': self.document, 'action': self, 'result': result});
-                    var ev2 = self.$scope.$broadcast('engine.common.save.after', {'document': self.document, 'action': self, 'result': result});
+                if (self.$scope) {
+                    var ev1 = self.$scope.$broadcast('engine.common.action.after', {
+                        'document': self.document,
+                        'action': self,
+                        'ctx': ctx,
+                        'result': result
+                    });
+                    var ev2 = self.$scope.$broadcast('engine.common.save.after', {
+                        'document': self.document,
+                        'action': self,
+                        'ctx': ctx,
+                        'result': result
+                    });
 
                     self.broadcastNotification('engine.notification.action.after');
 
-                    if(self.isSave())
+                    if (self.isSave())
                         self.broadcastNotification('engine.notification.save.after');
 
-                    if(ev1.defaultPrevented || ev2.defaultPrevented)
+                    if (ev1.defaultPrevented || ev2.defaultPrevented)
                         return result;
                 }
                 return DocumentActionProcess(self.document, result);
             }, function (result) {
-                self.$scope.$broadcast('engine.common.action.error', {'document': self.document, 'action': self, 'result': result});
+                self.$scope.$broadcast('engine.common.action.error', {
+                    'document': self.document,
+                    'action': self,
+                    'ctx': ctx,
+                    'result': result
+                });
                 self.broadcastNotification('engine.notification.action.error');
-                if(self.isSave())
+                if (self.isSave())
                     self.broadcastNotification('engine.notification.save.error');
                 return $q.reject(result);
             });
@@ -176,45 +210,49 @@ angular.module('engine.document')
             return _.contains(this.SAVE_ACTIONS, this.type);
         };
 
+        DocumentAction.prototype.isCreate = function isCreate() {
+            return this.type == this.TYPE_CREATE;
+        };
+
         DocumentAction.prototype.isLink = function isLink() {
             return _.contains(this.LINK_ACTIONS, this.type);
         };
 
         return DocumentAction;
     })
-.factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
+    .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
 
-    return function DocumentActionHandler(document, actionResponse) {
-        if(actionResponse.type == 'REDIRECT') {
-            if(document.id == actionResponse.redirectToDocument)
-                return $q.resolve();
+        return function DocumentActionHandler(document, actionResponse) {
+            if (actionResponse.type == 'REDIRECT') {
+                if (document.id == actionResponse.redirectToDocument)
+                    return $q.resolve();
 
-            //before redirecting, load document from engine to ascertain it's document type
-            return engineDocument.get(actionResponse.redirectToDocument).$promise.then(function (data) {
+                //before redirecting, load document from engine to ascertain it's document type
+                return engineDocument.get(actionResponse.redirectToDocument).$promise.then(function (data) {
 
-                if(document.id != null && document.id != actionResponse.redirectToDocument) {
-                    $location.$$search.step = 0;
-                }
+                    if (document.id != null && document.id != actionResponse.redirectToDocument) {
+                        $location.$$search.step = 0;
+                    }
 
-                var documentOptions = $engine.getOptions(data.document.states.documentType);
+                    var documentOptions = $engine.getOptions(data.document.states.documentType);
 
-                if(documentOptions == null){
-                    var message = 'Document type to which redirection was requested has not been registrated! ' +
-                                  'Make sure to register it in $engineProvider';
+                    if (documentOptions == null) {
+                        var message = 'Document type to which redirection was requested has not been registrated! ' +
+                            'Make sure to register it in $engineProvider';
 
-                    $engLog.error(message, 'DocumentType=', data.document.states.documentType);
+                        $engLog.error(message, 'DocumentType=', data.document.states.documentType);
 
-                    throw new Error(message)
-                }
+                        throw new Error(message)
+                    }
 
 
-                if(documentOptions.subdocument == false) {
-                    $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
-                    $location.$$compose();
-                }
+                    if (documentOptions.subdocument == false) {
+                        $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
+                        $location.$$compose();
+                    }
 
-                return actionResponse;
-            });
+                    return actionResponse;
+                });
+            }
         }
-    }
-});
+    });
