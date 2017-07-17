@@ -91,23 +91,6 @@ angular.module('engine.document')
                 field.type = 'multiSelect';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
-                field.controller = function($scope) {
-                    var expanded = false;
-
-                    $scope.showHideOptions=function(){
-
-                        var checkboxes = document.getElementById("checkboxes");
-                        if (!expanded) {
-                            checkboxes.style.display = "block";
-                            expanded = true;
-                        } else {
-                            checkboxes.style.display = "none";
-                            expanded = false;
-                        }
-
-                    }
-                };
-
                 return field;
             }));
 

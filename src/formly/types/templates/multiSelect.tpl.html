@@ -1,16 +1,6 @@
-<div class="multiselect" ng-click="showHideOptions()">
-    <div class="selectBox radio-box" ng-class="{'radio-box-last': $last, 'radio-box-first': $first, 'radio-box-active': model[options.key] == option.value}">
-
-        <input type="text"  ng-model="search" >
-
-    </div>
-        <div id="checkboxes" >
-           <label  ng-repeat="option in to.options | filter:search" >
-               <input type="checkbox"  checklist-model="option.value" checklist-value ="option.name">
-               {{ option.name }}
-           </label>
-        </div>
-
-</div>
-
-
+<ui-select multiple ng-model="model[options.key]">
+    <ui-select-match placeholder="Select option..." close-on-select="false" theme="bootstrap">{{$item.name}}</ui-select-match>
+    <ui-select-choices repeat="option in to.options | filter:$select.search">
+        <input type="checkbox" value="option">{{ option.name }}
+    </ui-select-choices>
+</ui-select>
