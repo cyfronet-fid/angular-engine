@@ -101,9 +101,6 @@ angular.module('engine.document')
                 field.data.isDisabled = function () {
                     return field.data.form.disabled;
                 }
-                field.controller = function($scope) {
-                    console.log(field)
-                };
 
                 return field;
             }));
@@ -465,6 +462,4 @@ angular.module('engine.document')
                 });
             }
         };
-    }).directive('search', function () {
-
     });
