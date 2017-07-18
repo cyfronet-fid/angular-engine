@@ -121,7 +121,7 @@ angular.module('engine')
         return function (documentJSON, callback, errorCallback) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
-            return _query.post(documentJSON, callback, errorCallback);
+            return _query.post(_.omit(documentJSON, '$ext'), callback, errorCallback);
         }
     })
     .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $engLog) {

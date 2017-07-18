@@ -8,11 +8,11 @@
             <tr class="single-document-top">
                 <td class="text-left"></td>
                 <td class="text-right cog-dropdown" style="padding-top: 5px">
-                    <div class="dropdown" style="height: 9px;" ng-if="document_entry.actions.length > 0">
+                    <div class="dropdown" style="height: 9px;" ng-if="getActionsForDocument(document_entry).actions.length > 0">
                         <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><span class="glyphicon glyphicon-cog"></span></a>
                         <ul class="dropdown-menu">
-                            <li ng-repeat="action in document_entry.actions"><a href="" ng-click="engineAction(action, document_entry.document)" translate>{{action.label}}</a></li>
-                            <li ng-if="!document_entry.actions"><span style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span></li>
+                            <li ng-repeat="action in getActionsForDocument(document_entry).actions"><a href="" ng-click="engineAction(action)" translate>{{action.label}}</a></li>
+                            <li ng-if="!getActionsForDocument(document_entry).actions"><span style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span></li>
                         </ul>
                     </div>
                 </td>

@@ -87,6 +87,12 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.0** Fixed bug with document's link fields in list where they would execute ng-click event AND href in some cases 
+ (LINK ACTIONS)
+ Fixed bug with redirects with actions from document lists.
+ Fixed bug with array column type which broke if `array == null`
+ **(API BREAK)** API extending list html template needs to use `document_entry.$actions` for action lists. See aproperiate templates.  
+
 * **0.6.93** Link fields in document's list are now proper links with href, so it's possible to open documents
 in new tabs.
 Fixed problem where clicking steps too fast while document was in `/new` state would create duplicates

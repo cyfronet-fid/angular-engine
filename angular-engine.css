@@ -1192,3 +1192,8 @@ action-button {
     color: orangered;
     margin-left: 10px;
 }
+
+engine-document-actions {
+    display: block;
+    margin-bottom: 10px;
+}
