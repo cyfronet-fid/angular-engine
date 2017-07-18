@@ -1,4 +1,7 @@
 <div class="text-box text-box-nav">
+    <div ng-show="$ctrl.processing" class="category-loading">
+        <i class="category-loading-spinner fa fa-spinner fa-spin" style="" aria-hidden="true"></i>
+    </div>
     <ul class="nav nav-pills nav-stacked nav-steps">
         <li ng-repeat="_step in $ctrl.stepList.steps" ng-class="{active: $ctrl.stepList.getCurrentStep() == _step}">
             <a href="" ng-click="$ctrl.changeStep($index)">

@@ -135,7 +135,7 @@ angular.module('engine.list')
             return '/src/list/cell/index.tpl.html';
         return '/src/list/cell/text.tpl.html';
     };
-    $scope.onDocumentSelect = function(documentEntry) {
+    $scope.onDocumentSelect = function(documentEntry, $event) {
         if(_parentDocumentId) {
             if(self.onSelectBehavior == 'LINK') {
                 var linkAction = engineActionUtils.getLinkAction(documentEntry.actions);
@@ -151,18 +151,20 @@ angular.module('engine.list')
                         $rootScope.$broadcast('engine.list.reload', $scope.query);
                     });
                 else {
-                    $location.$$search.step = 0;
-                    $location.$$path = $scope.genDocumentLink(documentEntry.document.id);
-                    $location.$$compose();
+                    return;
+                    // $location.$$search.step = 0;
+                    // $location.$$path = $scope.genDocumentLink(documentEntry.document.id);
+                    // $location.$$compose();
                 }
             }
         } else {
-            $location.path($scope.genDocumentLink(documentEntry.document.id));
         }
     };
 
-    $scope.genDocumentLink = function (documentId) {
-        return $scope.options.documentUrl.replace(':id', documentId);
+    $scope.genDocumentLink = function (documentId, hash) {
+        if(!$scope.options.documentUrl)
+            return '';
+        return (hash == true ? '#' : '') + $scope.options.documentUrl.replace(':id', documentId);
     };
 
     $scope.onCreateDocument = function() {

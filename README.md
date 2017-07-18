@@ -87,6 +87,12 @@ angular-engine package
 
 ##Changelog
 
+* **0.6.93** Link fields in document's list are now proper links with href, so it's possible to open documents
+in new tabs.
+Fixed problem where clicking steps too fast while document was in `/new` state would create duplicates
+
+* **0.6.92** Fixed problems with multi select (showing validation errors)
+
 * **0.6.91** Actions for the document are now visible only if document has been saved and is unmodified.
 Fixed some small bugs with prompts before leaving edited document.
 

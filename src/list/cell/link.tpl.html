@@ -1,1 +1,1 @@
-<a href="" ng-click="onDocumentSelect(document_entry)" class="proposal-title" ng-include="getCellTemplate(document_entry.document, column, true)"></a>
+<a ng-href="{{::genDocumentLink(document_entry.document.id, true)}}" ng-click="onDocumentSelect(document_entry)" class="proposal-title" ng-include="getCellTemplate(document_entry.document, column, true)"></a>

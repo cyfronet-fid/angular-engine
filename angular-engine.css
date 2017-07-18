@@ -583,6 +583,7 @@ input[type="checkbox"] {
 
 .text-box-nav{
     padding:0;
+    position: relative;
     }
 
 .nav-steps li.active a {
