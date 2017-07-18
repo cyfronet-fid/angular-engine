@@ -1,6 +1,6 @@
-<ui-select multiple ng-model="model[options.key]">
-    <ui-select-match placeholder="Select option..." close-on-select="false" theme="bootstrap">{{$item.name}}</ui-select-match>
-    <ui-select-choices repeat="option in to.options | filter:$select.search">
-        <input type="checkbox" value="option">{{ option.name }}
+<ui-select multiple ng-model="model[options.key]" ng-class="{'disabled': options.data.isDisabled()}"  theme="bootstrap">
+    <ui-select-match placeholder="Select option..." close-on-select="false">{{$item.value}}</ui-select-match>
+    <ui-select-choices repeat="option.value as option in to.options | filter:$select.search">
+        <input type="checkbox" value="option.value"><span ng-bind-html="option.name "></span>
     </ui-select-choices>
 </ui-select>
