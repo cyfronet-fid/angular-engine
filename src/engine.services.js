@@ -190,7 +190,7 @@ angular.module('engine')
                 return _action.post({documentId: document.id}, document, callback, errorCallback)
             },
             forType: function (documentJson, parentDocumentId, callback, errorCallback) {
-                return _action.post({documentId: parentDocumentId}, documentJson, callback, errorCallback);
+                return _action.post({otherDocumentId: parentDocumentId}, documentJson, callback, errorCallback);
             }
         };
     })

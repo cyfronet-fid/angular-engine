@@ -11,9 +11,9 @@ angular.module('engine.common')
         });
 
         return {
-            getAvailable: function (document, contextDocumentId) {
+            getAvailable: function (document, documentId, otherDocumentId) {
                 $engineApiCheck([$engineApiCheck.object, $engineApiCheck.string], arguments);
-                return _actionAvailable.post({documentId: contextDocumentId}, _.omit(document, '$ext'));
+                return _actionAvailable.post({documentId: documentId, otherDocumentId: otherDocumentId}, _.omit(document, '$ext'));
             },
             invoke: function (actionId, document, contextDocumentId, otherDocumentId) {
                 $engineApiCheck([$engineApiCheck.string, $engineApiCheck.object], arguments);

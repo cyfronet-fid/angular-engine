@@ -17,7 +17,7 @@ angular.module('engine.document')
             this.loadActions = function loadActions() {
                 if(actions != null)
                     return self.processActions(actions);
-                return engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(self.processActions);
+                return engActionResource.getAvailable(self.document, self.document.id, self.parentDocumentId).$promise.then(self.processActions);
             };
 
             this.processActions = function (actions) {

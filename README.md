@@ -87,6 +87,8 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.1** (hotfix) Fixed bug with actions loading for subdocuments
+
 * **0.7.0** Fixed bug with document's link fields in list where they would execute ng-click event AND href in some cases 
  (LINK ACTIONS)
  Fixed bug with redirects with actions from document lists.
