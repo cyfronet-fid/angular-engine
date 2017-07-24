@@ -3,9 +3,11 @@
 </div>
 
 <button type="submit" class="btn btn-primary dark-blue-btn" ng-click="$ctrl.changeStep($ctrl.step+1)"
+        ng-if="$ctrl.steps.getSteps().length >= 1"
         ng-show="!$ctrl.steps.isLast($ctrl.step)" translate>Next Step:</button>
 
 <button type="submit" class="btn btn-primary" ng-click="$ctrl.changeStep($ctrl.step+1)"
+        ng-if="$ctrl.steps.getSteps().length >= 1"
         ng-show="!$ctrl.steps.isLast($ctrl.step)">
     {{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step+1).name}}
 </button>

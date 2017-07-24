@@ -87,6 +87,9 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.3** Fixed flickering of action buttons when loading one step documents. Fixed validation for Modals.
+  Added '*' for required fields
+
 * **0.7.2** Actions for documents are now reloaded for document saves, and actions on 
  subdocuments of the edited document
 

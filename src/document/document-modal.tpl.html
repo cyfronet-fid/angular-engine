@@ -6,12 +6,12 @@
 </div>
 <div class="modal-body">
     <div class="container-fluid">
-        <engine-document parent-document="parentDocument" dirty="documentDirty" step-list="stepList" document="document" document-id="{{::documentId}}" step="step" options="documentOptions"></engine-document>
+        <engine-document parent-document="parentDocument" dirty="documentDirty" document-scope="documentScope" step-list="stepList" document="document" document-id="{{::documentId}}" step="step" options="documentOptions"></engine-document>
     </div>
 </div>
 <div class="modal-footer">
-    <engine-document-actions show-validation-button="$ctrl.showValidationButton" custom-buttons="customButtons"
-                             document="document" document-scope="$scope" document-parent="parentDocument" dirty="documentDirty"
+    <engine-document-actions show-validation-button="documentOptions.document.showValidationButton" custom-buttons="customButtons"
+                             document="document" document-scope="documentScope" document-parent="parentDocument" dirty="documentDirty"
                              steps="stepList" step="step" class="btn-group float-left" save-alert-left="true">
     </engine-document-actions>
 </div>

@@ -14,7 +14,8 @@ angular.module('engine.document')
         actions: '=',
         parentDocument: '=',
         dirty: '=',
-        processing: '='
+        processing: '=',
+        documentScope: '='
     }
 })
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
