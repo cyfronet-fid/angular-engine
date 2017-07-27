@@ -686,7 +686,8 @@ input[type="checkbox"] {
     background-color: #f1cb30;
     }
 
-.fa-times-circle-o{
+.fa-times-circle-o,
+.fa-times-circle{
     color: #fd402d !important;
     }
 
