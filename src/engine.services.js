@@ -121,7 +121,7 @@ angular.module('engine')
         return function (documentJSON, callback, errorCallback) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
-            return _query.post(documentJSON, callback, errorCallback);
+            return _query.post(_.omit(documentJSON, '$ext'), callback, errorCallback);
         }
     })
     .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $engLog) {
@@ -190,7 +190,7 @@ angular.module('engine')
                 return _action.post({documentId: document.id}, document, callback, errorCallback)
             },
             forType: function (documentJson, parentDocumentId, callback, errorCallback) {
-                return _action.post({documentId: parentDocumentId}, documentJson, callback, errorCallback);
+                return _action.post({otherDocumentId: parentDocumentId}, documentJson, callback, errorCallback);
             }
         };
     })

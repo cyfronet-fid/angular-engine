@@ -22,7 +22,7 @@ angular.module('engine.document')
     };
 
     DocumentValidator.prototype.cleanDocumentMetrics = function makeDocumentForValidation() {
-        var documentForValidation = _.omit(this.document, 'metrics');
+        var documentForValidation = _.omit(this.document, ['metrics', '$ext']);
         documentForValidation.metrics = {};
         return documentForValidation;
     };

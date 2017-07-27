@@ -580,6 +580,7 @@ input[type="checkbox"] {
 
 .text-box-nav{
     padding:0;
+    position: relative;
     }
 
 .nav-steps li.active a {
@@ -1187,4 +1188,9 @@ action-button {
 .document-dirty-warning-right {
     color: orangered;
     margin-left: 10px;
+}
+
+engine-document-actions {
+    display: block;
+    margin-bottom: 10px;
 }

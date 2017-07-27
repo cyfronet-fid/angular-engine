@@ -11,15 +11,13 @@ angular.module('engine.common')
         });
 
         return {
-            getAvailable: function (document, contextDocumentId) {
+            getAvailable: function (document, documentId, otherDocumentId) {
                 $engineApiCheck([$engineApiCheck.object, $engineApiCheck.string], arguments);
-
-                return _actionAvailable.post({documentId: contextDocumentId}, document);
+                return _actionAvailable.post({documentId: documentId, otherDocumentId: otherDocumentId}, _.omit(document, '$ext'));
             },
-            invoke: function (actionId, document, contextDocumentId) {
+            invoke: function (actionId, document, contextDocumentId, otherDocumentId) {
                 $engineApiCheck([$engineApiCheck.string, $engineApiCheck.object], arguments);
-
-                return _action.invoke({actionId: actionId, documentId: contextDocumentId || document.id}, document);
+                return _action.invoke({actionId: actionId, documentId: contextDocumentId || document.id, otherDocumentId: otherDocumentId}, _.omit(document, '$ext'));
             }
         };
     });

@@ -22,6 +22,7 @@ angular.module('engine.list')
 })
 .controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
                                         engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $engLog,
+                                        DocumentActionList,
                                         $injector, $rootScope, $parse, $controller) {
     var self = this;
 
@@ -67,6 +68,8 @@ angular.module('engine.list')
     var _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 
     this.arrayCellIterate = function (iterator, array) {
+        if(array == null)
+            return '';
         if(iterator == null)
             return array.join(', ');
 
@@ -83,10 +86,21 @@ angular.module('engine.list')
         return element;
     };
 
+    $scope.documentActions = {};
+
+    $scope.getActionsForDocument = function(documentEntry) {
+        return $scope.documentActions[documentEntry.document.id];
+    };
+
     this.loadDocuments = function () {
+        $scope.documentActions = {};
         if((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)){
             $scope.documents = engineQuery.get($scope.query, this.parentDocument);
             $scope.documents.$promise.then(function (documents) {
+                angular.forEach(documents, function(document){
+                    $scope.documentActions[document.document.id] = new DocumentActionList(document.actions, document.document, self.parentDocument, $scope);
+                });
+
                 if(self.metricId != null) {
                     if(self.parentDocument.$ext == null)
                         self.parentDocument.$ext = {};
@@ -103,14 +117,14 @@ angular.module('engine.list')
     };
     $scope.actions = engineActionsAvailable.forType($scope.options.documentJSON, _parentDocumentId);
 
-    $scope.engineAction = function (action, document) {
+    $scope.engineAction = function (action) {
 
         // if(action.type == 'LINK'){
         //     return engineAction(action.id, self.parentDocument, undefined, undefined, document.id).$promise.then(function (data) {
         //         $rootScope.$broadcast('engine.list.reload', $scope.query);
         //     }, undefined);
         // } else {
-        return engineAction(action.id, document, null, null, _parentDocumentId).$promise.then(function (data) {
+        return action.call().then(function () {
             // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
             $rootScope.$broadcast('engine.list.reload', $scope.query);
         });
@@ -135,15 +149,12 @@ angular.module('engine.list')
             return '/src/list/cell/index.tpl.html';
         return '/src/list/cell/text.tpl.html';
     };
-    $scope.onDocumentSelect = function(documentEntry) {
+    $scope.onDocumentSelect = function(documentEntry, $event) {
         if(_parentDocumentId) {
             if(self.onSelectBehavior == 'LINK') {
-                var linkAction = engineActionUtils.getLinkAction(documentEntry.actions);
-
-                if(linkAction != null)
-                    $scope.engineAction(linkAction, documentEntry.document);
-                else
-                    $engLog.warn(self.query, ' QueriedList onSelectBehavior set as Link, but document does not have link action available')
+                $scope.getActionsForDocument(documentEntry).callLink().then(function(){
+                    $rootScope.$broadcast('engine.list.reload', $scope.query);
+                });
             } else {
                 if($scope.options.subdocument == true)
                     DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
@@ -151,18 +162,27 @@ angular.module('engine.list')
                         $rootScope.$broadcast('engine.list.reload', $scope.query);
                     });
                 else {
-                    $location.$$search.step = 0;
-                    $location.$$path = $scope.genDocumentLink(documentEntry.document.id);
-                    $location.$$compose();
+                    // $location.$$search.step = 0;
+                    // $location.$$path = $scope.genDocumentLink(documentEntry.document.id);
+                    // $location.$$compose();
                 }
             }
         } else {
-            $location.path($scope.genDocumentLink(documentEntry.document.id));
         }
     };
 
-    $scope.genDocumentLink = function (documentId) {
-        return $scope.options.documentUrl.replace(':id', documentId);
+    $scope.canGenerateHref = function() {
+       if(_parentDocumentId && self.onSelectBehavior == 'LINK')
+           return false;
+       else if($scope.options.subdocument == true)
+           return false;
+       return true;
+    };
+
+    $scope.genDocumentLink = function (documentId, hash) {
+        if(!$scope.options.documentUrl || !$scope.canGenerateHref())
+            return '';
+        return (hash == true ? '#' : '') + $scope.options.documentUrl.replace(':id', documentId);
     };
 
     $scope.onCreateDocument = function() {

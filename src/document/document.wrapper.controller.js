@@ -8,6 +8,8 @@ angular.module('engine.document')
         $scope.document = {};
         $scope.documentId = $routeParams.id;
 
+        $scope.processing = false;
+
         if($routeParams.step === undefined)
             $routeParams.step = 0;
         else
