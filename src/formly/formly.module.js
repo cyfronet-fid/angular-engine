@@ -1,1 +1,1 @@
-angular.module('engine.formly', []);
+angular.module('engine.formly', ['ngSanitize']);
