@@ -2,7 +2,8 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
     var listUrl = 'attachment-list';
     var singleUrl = 'attachment';
 
-    function EngineAttachment(documentId, metricId, isList) {
+    function EngineAttachment(document, metricId, isList) {
+        var documentId = document.id;
         var self = this;
         this.isList = isList || false;
         this.baseUrl = this.isList ? listUrl : singleUrl;
@@ -10,11 +11,12 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
             self.dataDict = {};
         this.documentId = documentId;
         this.metricId = metricId;
+        this.metricExists = !_.isEmpty(document.metrics[metricId]);
         this.action = null;
         this.data = null;
         this.label = 'Select file';
         this.ready = $q.all([this.loadActions(), $q.when(function () {
-            if (self.documentId == null)
+            if (self.documentId == null || !self.metricExists)
                 return;
 
             return self.loadMetadata();
@@ -51,7 +53,8 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
 
     EngineAttachment.prototype.loadMetadata = function loadMetadata() {
         var self = this;
-        this.data = null;
+        self.data = null;
+
         return $http.get($engineConfig.baseUrl + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
             self.data = response.data.data;
 
@@ -80,7 +83,7 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
     EngineAttachment.prototype.upload = function upload(file) {
         var self = this;
 
-        data = self.isList ? {files: file} : {file: file};
+        var data = self.isList ? {files: file} : {file: file};
 
         return Upload.upload({
             url: $engineConfig.baseUrl + '/action/invoke/' + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId + '&actionId=' + this.action.id,
@@ -116,12 +119,22 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
         if ($scope.attachment == null)
             return;
 
+        if (!$scope.attachment.metricExists)
+            return;
+
         $scope.attachment.loadMetadata();
     });
 
-    $scope.delete = function () {
+    $scope.delete = function (file) {
         $scope.status = STATUS.loading;
-        $scope.model[$scope.options.key] = $scope.isList ? [] : null;
+        if ($scope.isList) {
+            var indexOf = _.indexOf($scope.model[$scope.options.key], file);
+            if (indexOf !== -1) {
+                $scope.model[$scope.options.key].splice(indexOf, 1);
+            }
+        } else {
+            $scope.model[$scope.options.key] = null;
+        }
         $scope.attachment.clear();
 
         var event = $scope.$emit('engine.common.document.requestSave');
@@ -180,7 +193,7 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
         $scope.STATUS = STATUS;
         $scope.status = STATUS.loading;
         if ($scope.ctx.document.id != null) {
-            $scope.attachment = new engAttachment($scope.ctx.document.id, $scope.metric.id, $scope.isList);
+            $scope.attachment = new engAttachment($scope.ctx.document, $scope.metric.id, $scope.isList);
             $scope.attachment.ready.then(function () {
                 $scope.status = STATUS.normal;
             });
