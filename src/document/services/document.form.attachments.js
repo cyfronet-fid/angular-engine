@@ -70,6 +70,7 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
         return $http.post($engineConfig.baseUrl + 'action/available/attachment' + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
             if (response.data.data.length == 0)
                 $engLog.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
+
             self.action = response.data.data[0];
             self.label = self.action.label;
         }, function (response) {

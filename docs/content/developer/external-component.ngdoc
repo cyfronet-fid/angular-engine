@@ -61,10 +61,45 @@ Here is a list with a description:
 * **`ngDisabled`** - true if current control should be disabled, false otherwise
 * **`metricId`** - id of the external metric, can be used to insert values into `ngModel.metrics[metricId]`
 * **`metric`** - Object containing all raw data of the metric, in the format received from agreemount.engine
-* **`errors`** - Object containing errors for current control
+* **`errors`** - Object containing errors for current control (same as angularjs $errors in forms)
 * **`formlyOptions`** - Additional 'bag' property, it contains ALL data used to create this field in front end, use it with caution,
   as the stability of fields in this object is **not guaranteed** (may change between versions of angular-engine), if
   possible use other bindings to access necessary data.
+
+## Accessing and displaying server errors, and setting custom errors
+
+Below are the methods using which accessing server errors is possible for external components.
+External component can also provide it's own custom errors extending standard agreemount.engine validation.
+
+### Reading errors
+Most components should display error messages if server provides them for a given external component.
+
+List of server errors can be accessed via: `$ctrl.formlyOptions.templateOptions.serverErrors`, shortcut to
+check whether any errors are present is: `$ctrl.formlyOptions.validation.show`.
+
+In order to access and display errors in the external component's template use the following snippet:
+
+```
+<!--$ctrl.formlyOptions.validation.show can be checked to see if errors are present -->
+<div class="form-group" ng-class="{'has-error': $ctrl.formlyOptions.validation.show }">
+    <div ng-if="$ctrl.formlyOptions.validation.show" ng-repeat="error in $ctrl.formlyOptions.templateOptions.serverErrors">
+      <div class="alert alert-danger">{{ error }}</div>
+    </div>
+    
+    <!--...Rest of the component's template....-->
+</div>
+```
+
+### Writing errors
+
+If your component has some additional means of validation (external services, or front end JS) presence
+of such an error can be setup by writing additional field to `$ctrl.errors` dictionary:
+
+```
+$ctrl.errors.customErrorCode = true
+```
+Doing this will set form to be in an invalid state in the frontend
+
 
 ## Events
 

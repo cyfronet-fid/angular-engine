@@ -5,6 +5,8 @@ angular.module('engine.steps')
             var self = this;
 
             this.changeStep = function (newStep) {
+                if(this.processing === true)
+                    return;
                 self.step = newStep;
             }
         },
@@ -12,6 +14,7 @@ angular.module('engine.steps')
             ngModel: '=',
             step: '=',
             stepList: '=',
-            options: '='
+            options: '=',
+            processing: '<'
         }
     });

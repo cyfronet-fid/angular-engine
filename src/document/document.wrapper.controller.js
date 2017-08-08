@@ -8,12 +8,14 @@ angular.module('engine.document')
         $scope.document = {};
         $scope.documentId = $routeParams.id;
 
+        $scope.processing = false;
+
         if($routeParams.step === undefined)
             $routeParams.step = 0;
         else
             $routeParams.step = parseInt($routeParams.step);
 
-        $scope.sideMenuVisible = true;
+        $scope.sideMenuVisible = false;
         $scope.toggleSideMenu = function () {
              $scope.sideMenuVisible = !$scope.sideMenuVisible;
         };

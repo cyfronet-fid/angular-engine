@@ -1,4 +1,7 @@
 <div class="text-box text-box-nav">
+    <div ng-show="$ctrl.processing" class="category-loading">
+        <i class="category-loading-spinner fa fa-spinner fa-spin" style="" aria-hidden="true"></i>
+    </div>
     <ul class="nav nav-pills nav-stacked nav-steps">
         <li ng-repeat="_step in $ctrl.stepList.steps" ng-class="{active: $ctrl.stepList.getCurrentStep() == _step}">
             <a href="" ng-click="$ctrl.changeStep($index)">
@@ -7,7 +10,7 @@
                        ng-class="{'fa-check-circle' : _step.getState() == 'valid',
                                   'fa-circle-o': _step.getState() == 'blank',
                                   'fa-cog fa-spin': _step.getState() == 'loading',
-                                  'fa-times-circle-o': _step.getState() == 'invalid'}"></i>
+                                  'fa-times-circle': _step.getState() == 'invalid'}"></i>
                 </span>
                 <span class="menu-steps-desc ng-binding">{{$index + 1}}. {{_step.name}}</span>
             </a>

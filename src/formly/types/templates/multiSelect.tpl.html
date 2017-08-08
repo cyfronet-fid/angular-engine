@@ -1,7 +1,6 @@
-<div>
-    <div class="radio-box" ng-class="{'radio-box-last': $last, 'radio-box-first': $first, 'radio-box-active': model[options.key] == option.value}"
-         ng-repeat="option in to.options">
-        <input type="checkbox" checklist-model="model[options.key]" checklist-value="option.value">
-        <span class="radio-desc">{{::option.name}}</span>
-    </div>
-</div>
+<ui-select multiple ng-model="model[options.key]" ng-class="{'disabled': options.data.isDisabled()}" theme="bootstrap" class="multiple-ui-select">
+    <ui-select-match placeholder="Select option..." close-on-select="false">{{$item.value}}</ui-select-match>
+    <ui-select-choices repeat="option.value as option in to.options | filter:$select.search">
+        <div value="option.value"><span ng-bind-html="option.name">dddd</span>
+    </ui-select-choices>
+</ui-select>

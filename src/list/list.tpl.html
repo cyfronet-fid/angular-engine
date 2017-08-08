@@ -12,11 +12,11 @@
         <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument" ng-init="$row=$index">
             <td ng-repeat="column in columns" class="{{column.css}} {{column.style}}" ng-include="getCellTemplate(document_entry.document, column)"></td>
             <td class="text-right cog-dropdown">
-                <div class="dropdown" ng-if="document_entry.actions.length > 0">
+                <div class="dropdown" ng-if="getActionsForDocument(document_entry).actions.length > 0">
                     <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><i class="fa fa-cog" aria-hidden="true"></i></a>
                     <ul class="dropdown-menu">
-                        <li ng-repeat="action in document_entry.actions"><a href="" ng-click="engineAction(action, document_entry.document)" translate>{{action.label}}</a></li>
-                        <li ng-if="!document_entry.actions"><span style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span></li>
+                        <li ng-repeat="action in getActionsForDocument(document_entry).actions"><a href="" ng-click="engineAction(action)" translate>{{action.label}}</a></li>
+                        <li ng-if="!getActionsForDocument(document_entry).actions"><span style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span></li>
                     </ul>
                 </div>
             </td>

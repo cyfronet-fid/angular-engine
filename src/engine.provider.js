@@ -39,7 +39,8 @@ angular.module('engine')
                 this.error = function () {
 
                     if (canLog('error'))
-                        $log.error(arguments)
+                        $log.error(arguments);
+                    throw new Error(arguments)
                 };
                 this.warning = this.warn;
             };

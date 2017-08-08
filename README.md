@@ -87,6 +87,26 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.3** Fixed flickering of action buttons when loading one step documents. Fixed validation for Modals.
+  Added '*' for required fields
+
+* **0.7.2** Actions for documents are now reloaded for document saves, and actions on 
+ subdocuments of the edited document
+
+* **0.7.1** (hotfix) Fixed bug with actions loading for subdocuments
+
+* **0.7.0** Fixed bug with document's link fields in list where they would execute ng-click event AND href in some cases 
+ (LINK ACTIONS)
+ Fixed bug with redirects with actions from document lists.
+ Fixed bug with array column type which broke if `array == null`
+ **(API BREAK)** API extending list html template needs to use `document_entry.$actions` for action lists. See aproperiate templates.  
+
+* **0.6.93** Link fields in document's list are now proper links with href, so it's possible to open documents
+in new tabs.
+Fixed problem where clicking steps too fast while document was in `/new` state would create duplicates
+
+* **0.6.92** Fixed problems with multi select (showing validation errors)
+
 * **0.6.91** Actions for the document are now visible only if document has been saved and is unmodified.
 Fixed some small bugs with prompts before leaving edited document.
 

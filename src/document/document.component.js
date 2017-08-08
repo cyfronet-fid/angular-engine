@@ -13,7 +13,9 @@ angular.module('engine.document')
         documentId: '@',
         actions: '=',
         parentDocument: '=',
-        dirty: '='
+        dirty: '=',
+        processing: '=',
+        documentScope: '='
     }
 })
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
@@ -25,7 +27,7 @@ angular.module('engine.document')
     this.document = null;
     self.documentScope = $scope;
     $scope.steps = this.options.document.steps;
-
+    this.processing = false;
     this.actionList = null;
     this.documentForm = new DocumentForm($scope);
     this.dirty = false;
@@ -109,7 +111,8 @@ angular.module('engine.document')
     };
 
     this.save = function () {
-        return self.actionList.callSave();
+        self.processing = true;
+        return self.actionList.callSave().finally(function(){self.processing = false;});
     };
 
     $scope.$on('engine.common.document.validate', function (event) {

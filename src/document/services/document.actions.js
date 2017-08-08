@@ -15,11 +15,15 @@ angular.module('engine.document')
             this.markInit = null;
 
             this.loadActions = function loadActions() {
-                return engActionResource.getAvailable(self.document, self.parentDocumentId || self.document.id).$promise.then(function (actions) {
-                    self.actions = [];
-                    _.forEach(actions, function (action) {
-                        self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope));
-                    });
+                if(actions != null)
+                    return self.processActions(actions);
+                return engActionResource.getAvailable(self.document, self.document.id, self.parentDocumentId).$promise.then(self.processActions);
+            };
+
+            this.processActions = function (actions) {
+                self.actions = [];
+                _.forEach(actions, function (action) {
+                    self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope));
                 });
             };
 
@@ -61,6 +65,11 @@ angular.module('engine.document')
                 return action.isSave();
             });
         };
+        DocumentActionList.prototype.getLinkAction = function getLinkAction() {
+            return _.find(this.actions, function (action) {
+                return action.isLink();
+            });
+        };
 
         DocumentActionList.prototype.callSave = function callSave() {
             var saveAction = this.getSaveAction();
@@ -71,6 +80,18 @@ angular.module('engine.document')
             }
             $engLog.debug('engine.document.actions Called save for document', this.document);
             return saveAction.call();
+        };
+
+
+        DocumentActionList.prototype.callLink = function callLink() {
+            var linkAction = this.getLinkAction();
+
+            if (linkAction == null) {
+                $engLog.warn('engine.document.actions No link action specified for document', this.document);
+                return $q.reject();
+            }
+            $engLog.debug('engine.document.actions Called link for document', this.document);
+            return linkAction.call();
         };
 
         return DocumentActionList;
@@ -163,10 +184,7 @@ angular.module('engine.document')
                 }
             }
             return $q.all(promises).then(function () {
-                if (self.isLink())
-                    return engActionResource.invoke(self.actionId, self.parentDocument, self.document.id).$promise;
-                else
-                    return engActionResource.invoke(self.actionId, self.document, self.parentDocumentId).$promise;
+                return engActionResource.invoke(self.actionId, self.document, self.document.id, self.parentDocumentId).$promise;
             }).then(function (result) {
                 $engLog.debug('engine.document.actions', 'action call returned', result);
                 if (self.$scope) {
@@ -191,7 +209,7 @@ angular.module('engine.document')
                     if (ev1.defaultPrevented || ev2.defaultPrevented)
                         return result;
                 }
-                return DocumentActionProcess(self.document, result);
+                return DocumentActionProcess(self.document, result, self.parentDocument);
             }, function (result) {
                 self.$scope.$broadcast('engine.common.action.error', {
                     'document': self.document,
@@ -222,7 +240,7 @@ angular.module('engine.document')
     })
     .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
 
-        return function DocumentActionHandler(document, actionResponse) {
+        return function DocumentActionHandler(document, actionResponse, parentDocument) {
             if (actionResponse.type == 'REDIRECT') {
                 if (document.id == actionResponse.redirectToDocument)
                     return $q.resolve();
