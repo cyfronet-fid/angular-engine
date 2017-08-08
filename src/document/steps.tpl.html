@@ -10,7 +10,7 @@
                        ng-class="{'fa-check-circle' : _step.getState() == 'valid',
                                   'fa-circle-o': _step.getState() == 'blank',
                                   'fa-cog fa-spin': _step.getState() == 'loading',
-                                  'fa-times-circle-o': _step.getState() == 'invalid'}"></i>
+                                  'fa-times-circle': _step.getState() == 'invalid'}"></i>
                 </span>
                 <span class="menu-steps-desc ng-binding">{{$index + 1}}. {{_step.name}}</span>
             </a>

@@ -17,8 +17,7 @@ body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
 
 /* PREVIOUS STYLES to check & delete **/
 .row-compensate {
-    margin-right:0;
-    margin-left:0;
+    margin: auto 0;
     }
 
 .modal-body .text-box {
@@ -45,9 +44,7 @@ body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
     font-size: 12px;
     }
 
-.alert-document {
-
-    }
+.table-package {overflow-y: auto;}
 
 /* multi select with images style moved to main.css in duo*/
 
@@ -57,7 +54,7 @@ body {font-family: "Lato", Helvetica, sans-serif;font-size: 14px;}
     }
 .cog-dropdown .dropdown-menu{
     position: absolute;
-    left: -130px;
+    left: -140px;
     }
 
 .cog-dropdown i {margin-top: 4px;}
@@ -229,7 +226,7 @@ table tr:hover {
     }
 
 table {
-    display: block;
+    display: table !important;
     overflow-x: auto;
     margin-bottom: 15px;
     }
@@ -689,7 +686,8 @@ input[type="checkbox"] {
     background-color: #f1cb30;
     }
 
-.fa-times-circle-o{
+.fa-times-circle-o,
+.fa-times-circle{
     color: #fd402d !important;
     }
 

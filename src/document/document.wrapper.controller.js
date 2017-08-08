@@ -15,7 +15,7 @@ angular.module('engine.document')
         else
             $routeParams.step = parseInt($routeParams.step);
 
-        $scope.sideMenuVisible = true;
+        $scope.sideMenuVisible = false;
         $scope.toggleSideMenu = function () {
              $scope.sideMenuVisible = !$scope.sideMenuVisible;
         };
