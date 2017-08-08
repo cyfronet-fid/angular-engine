@@ -87,6 +87,10 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.4** Fixes to CSS, fixes to Multiselect,
+  units can now be in HTML (allows superscripts),
+  fixed bug with attachment metrics to handle deletion correctly
+
 * **0.7.3** Fixed flickering of action buttons when loading one step documents. Fixed validation for Modals.
   Added '*' for required fields
 
