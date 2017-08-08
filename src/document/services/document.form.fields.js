@@ -91,6 +91,10 @@ angular.module('engine.document')
                 field.type = 'multiSelect';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
 
+                field.data.isDisabled = function () {
+                    return field.data.form.disabled;
+                }
+
                 return field;
             }));
 
@@ -462,4 +466,4 @@ angular.module('engine.document')
                 });
             }
         };
-    });
+    })
