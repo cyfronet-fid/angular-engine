@@ -192,6 +192,7 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
         $scope.error = null;
         $scope.STATUS = STATUS;
         $scope.status = STATUS.loading;
+        $scope.accept = $scope.metric.accept || '';
         if ($scope.ctx.document.id != null) {
             $scope.attachment = new engAttachment($scope.ctx.document, $scope.metric.id, $scope.isList);
             $scope.attachment.ready.then(function () {
