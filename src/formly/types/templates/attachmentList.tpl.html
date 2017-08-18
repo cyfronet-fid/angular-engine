@@ -23,8 +23,8 @@
             ngf-select="upload($file)"
             ng-disabled="status != STATUS.normal"
             ngf-multiple="false"
-            ngf-pattern="'{{accept}}'"
-            ngf-accept="'{{accept}}'">
+            ngf-pattern="acceptedExtensions"
+            ngf-accept="acceptedExtensions">
         <i class="fa fa-cloud-upload" aria-hidden="true"></i>
         <span ng-if="status == STATUS.uploading">{{ 'Uploading' | translate}} {{progress}}%</span>
         <span ng-if="status == STATUS.normal">{{ (attachment.label || 'Select File') | translate}}</span>
