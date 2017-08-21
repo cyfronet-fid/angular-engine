@@ -19,8 +19,13 @@
 
     </table>
 
-    <button type="file" class="btn btn-primary btn-file" ngf-select="upload($file)" ng-disabled="status != STATUS.normal"
-            ngf-multiple="false" ng-show="model[options.key] == null">
+    <button type="file" class="btn btn-primary btn-file"
+            ngf-select="upload($file)"
+            ng-disabled="status != STATUS.normal"
+            ngf-multiple="false"
+            ngf-pattern="acceptedExtensions"
+            ngf-accept="acceptedExtensions"
+            ng-show="model[options.key] == null">
         <i class="fa fa-cloud-upload" aria-hidden="true"></i>
         <span ng-if="status == STATUS.uploading">{{ 'Uploading' | translate}} {{progress}}%</span>
         <span ng-if="status == STATUS.normal">{{ (attachment.label || 'Select File') | translate}}</span>
