@@ -87,6 +87,8 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.5** Added optional parameter to file controls to allow filtering files by extension
+
 * **0.7.4** Fixes to CSS, fixes to Multiselect,
   units can now be in HTML (allows superscripts),
   fixed bug with attachment metrics to handle deletion correctly
