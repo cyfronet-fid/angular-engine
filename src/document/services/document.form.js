@@ -88,10 +88,15 @@ angular.module('engine.document')
         }
         this.documentScope.$broadcast('document.form.reloadingMetrics.before');
 
+        var options = { documentJSON: this.document };
+        if (!!self.documentScope.$ctrl.parentDocument) {
+            options.otherDocumentId = self.documentScope.$ctrl.parentDocument.id || self.documentScope.$ctrl.parentDocument;
+        }
+
         /**
          * Return promise to the engineMetric loading
          */
-        return engineMetric(this.document, function (metricList) {
+        return engineMetric(options, function (metricList) {
             $engLog.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
 
@@ -117,6 +122,8 @@ angular.module('engine.document')
                     delete self.document.metrics[metric.id];
                 }
             });
+
+            self.setDefaultMetricValues(newMetrics);
 
             //add new metrics to the form, with respect to position
             _.forEach(newMetrics, function (newMetric) {
@@ -262,7 +269,6 @@ angular.module('engine.document')
         postprocess();
 
         reorderFields();
-        setDefaultValues();
 
         this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
 
@@ -310,13 +316,6 @@ angular.module('engine.document')
             })
         }
 
-        function setDefaultValues() {
-            _.forEach(self.metricDict, function (metric, metricId) {
-                if(metric.defaultValue != null && self.document.metrics[metricId] == null)
-                    self.document.metrics[metricId] = metric.defaultValue;
-            })
-        }
-
         function reorderFields() {
             _.forEach(self.categoriesDict, function (metricCategory) {
                 metricCategory.fieldGroup = _.sortBy(metricCategory.fieldGroup, function (field) {
@@ -326,16 +325,30 @@ angular.module('engine.document')
         }
     };
 
+    DocumentForm.prototype.setDefaultMetricValues = function (metrics) {
+        var self = this;
+        metrics.forEach(function (metric) {
+            if (!!metric.defaultValue && !self.document.metrics[metric.id]) {
+                self.document.metrics[metric.id] = metric.defaultValue;
+            }
+        });
+    };
+
     DocumentForm.prototype._updateFields = function updateFields(metricList) {
         this.fieldList = DocumentFieldFactory.makeFields(metricList, {document: this.document, options: this.documentOptions, documentForm: this});
     };
 
     DocumentForm.prototype._loadMetrics = function loadMetrics() {
         var self = this;
+        var options = { documentJSON: this.document };
+        if (!!self.documentScope.$ctrl.parentDocument) {
+            options.otherDocumentId = self.documentScope.$ctrl.parentDocument.id;
+        }
 
-        return engineMetric(this.document, function (metricList) {
+        return engineMetric(options, function (metricList) {
             self.metricList = metricList;
             self.metricDict = _.indexBy(self.metricList, 'id');
+            self.setDefaultMetricValues(self.metricList);
             self._updateFields(self.metricList);
         }).$promise;
     };

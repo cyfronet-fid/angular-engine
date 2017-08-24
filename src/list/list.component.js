@@ -217,7 +217,7 @@ angular.module('engine.list')
                     $scope.columns.push(field);
             });
 
-            engineMetric($scope.options.documentJSON, function (data) {
+            engineMetric({ documentJSON: $scope.options.documentJSON }, function (data) {
                 angular.forEach(data, function (metric) {
                     $scope.columns.push({name: metric.id, caption: metric.label});
                 });

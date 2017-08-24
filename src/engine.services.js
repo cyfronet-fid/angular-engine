@@ -118,10 +118,18 @@ angular.module('engine')
             post: {method: 'POST', transformResponse: metricSorter, isArray: true}
         });
 
-        return function (documentJSON, callback, errorCallback) {
-            $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
+        return function (options, callback, errorCallback) {
+            $engineApiCheck([$engineApiCheck.shape({
+                documentJSON: $engineApiCheck.object,
+                otherDocumentId: $engineApiCheck.string.optional
+            }), $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
-            return _query.post(_.omit(documentJSON, '$ext'), callback, errorCallback);
+            var params = {};
+            if (!!options.otherDocumentId) {
+                params.otherDocumentId = options.otherDocumentId;
+            }
+
+            return _query.post(params, _.omit(options.documentJSON, '$ext'), callback, errorCallback);
         }
     })
     .service('engineMetricCategories', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor, $engLog) {
