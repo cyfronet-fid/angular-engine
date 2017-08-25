@@ -272,16 +272,21 @@ angular.module('engine')
             /**
              * Validates given document, sending it to agreemount.engine backend
              *
-             * @param document
+             * @param options
              * @param callback
              * @param errorCallback
              * @returns {*|{url, method, transformResponse}}
              */
-            validate: function (document, callback, errorCallback) {
-                $engineApiCheck([$engineApiCheck.object, $engineApiCheck.func.optional, $engineApiCheck.func.optional],
-                    arguments);
+            validate: function (options, callback, errorCallback) {
+                $engineApiCheck([$engineApiCheck.shape({
+                    document: $engineApiCheck.object,
+                    otherDocumentId: $engineApiCheck.string.optional
+                }), $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
 
-                return _document.validate({'documentId': document.id}, document, callback, errorCallback);
+                return _document.validate({
+                    documentId: options.document.id,
+                    otherDocumentId: options.otherDocumentId
+                }, options.document, callback, errorCallback);
             }
         }
     }).service('EngineInterceptor', function ($engLog) {

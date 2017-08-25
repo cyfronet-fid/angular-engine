@@ -16,6 +16,7 @@ angular.module('engine.document')
         this.metricDict = {};
         this.metricCategories = {};
         this.document = null;
+        this.parentDocumentId = documentScope.$ctrl.parentDocument ? (documentScope.$ctrl.parentDocument.id || documentScope.$ctrl.parentDocument) : undefined;
         this.documentOptions = null;
         this.steps = null;
         this.disabled = false;
@@ -89,8 +90,8 @@ angular.module('engine.document')
         this.documentScope.$broadcast('document.form.reloadingMetrics.before');
 
         var options = { documentJSON: this.document };
-        if (!!self.documentScope.$ctrl.parentDocument) {
-            options.otherDocumentId = self.documentScope.$ctrl.parentDocument.id || self.documentScope.$ctrl.parentDocument;
+        if (!!self.parentDocumentId) {
+            options.otherDocumentId = self.parentDocumentId;
         }
 
         /**
@@ -248,21 +249,21 @@ angular.module('engine.document')
     DocumentForm.prototype._makeForm = function makeForm() {
         var self = this;
 
-        $engLog.log('DocumentForm._makeForm', this.fieldList);
-        this._assertInit();
+        $engLog.log('DocumentForm._makeForm', self.fieldList);
+        self._assertInit();
 
-        assert(this.metricList.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetrics');
-        assert(this.metricCategories.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetricCategories');
+        assert(self.metricList.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetrics');
+        assert(self.metricCategories.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetricCategories');
 
         var _categoriesToPostProcess = [];
 
-        _.forEach(this.steps.getSteps(), function (step) {
+        _.forEach(self.steps.getSteps(), function (step) {
             var formStepStructure = DocumentCategoryFactory.makeStepCategory(step);
             formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
 
             self.formStructure.push(formStepStructure);
         });
-        _.forEach(this.steps.getSteps(), function (step) {
+        _.forEach(self.steps.getSteps(), function (step) {
             connectFields(step);
         });
 
@@ -270,7 +271,7 @@ angular.module('engine.document')
 
         reorderFields();
 
-        this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
+        self.validator = new DocumentValidator(self.document, self.parentDocumentId, self.steps, self.formlyState);
 
         $engLog.debug('DocumentForm form structure', self.formStructure);
 
@@ -341,8 +342,8 @@ angular.module('engine.document')
     DocumentForm.prototype._loadMetrics = function loadMetrics() {
         var self = this;
         var options = { documentJSON: this.document };
-        if (!!self.documentScope.$ctrl.parentDocument) {
-            options.otherDocumentId = self.documentScope.$ctrl.parentDocument.id;
+        if (!!self.parentDocumentId) {
+            options.otherDocumentId = self.parentDocumentId;
         }
 
         return engineMetric(options, function (metricList) {
