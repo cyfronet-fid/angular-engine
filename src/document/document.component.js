@@ -21,7 +21,7 @@ angular.module('engine.document')
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
                                             engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                             engineAction, engineMetricCategories, StepList, DocumentForm,
-                                            DocumentActionList, $q, $engLog, $attrs) {
+                                            DocumentActionList, $q, $engLog, $attrs, Step) {
     var self = this;
     $engLog.debug($scope);
     this.document = null;
@@ -130,6 +130,20 @@ angular.module('engine.document')
 
     });
 
+    this.validateAfterInit = function validateAfterInit() {
+
+        var stepsToValidate = [];
+        var currentStep = self.stepList.getCurrentStepIndex();
+
+        for(i = 0; i < currentStep; i++) {
+            if (self.stepList.getStep(i).getState() == Step.STATE_BLANK) {
+                stepsToValidate.push(i);
+            }
+        }
+
+        self.documentForm.validate(stepsToValidate, true);
+    }
+
     $scope.$on('engine.common.document.requestReload', function (event) {
         $engLog.debug('request reload for document');
         event.reloadPromise = self.getDocument(true).then(function () {
@@ -138,9 +152,13 @@ angular.module('engine.document')
         });
     });
 
-    this.$ready = this.getDocument().then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)}).then(this.initDocument).then(this.postinitDocument).then(function () {
-        $engLog.debug('engineDocumentCtrl initialized: ', self);
-        $engLog.log(self.$ready.$$state.status);
-    });
+    this.$ready = this.getDocument()
+        .then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)})
+        .then(this.initDocument)
+        .then(this.postinitDocument)
+        .then(function () {
+            $engLog.debug('engineDocumentCtrl initialized: ', self);
+            $engLog.log(self.$ready.$$state.status);
+        }).then(this.validateAfterInit);
     $engLog.log(this.$ready.$$state.status);
 });
