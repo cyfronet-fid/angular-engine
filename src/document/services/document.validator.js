@@ -8,10 +8,11 @@ angular.module('engine.document')
  *
  */
     .factory('DocumentValidator', function (engineDocument, $engineApiCheck, $engLog, Step) {
-    function DocumentValidator(document, stepList, formStructure) {
+    function DocumentValidator(document, parentDocumentId, stepList, formStructure) {
+        this.document = document;
+        this.parentDocumentId = parentDocumentId;
         this.stepList = stepList;
         this.formStructure = formStructure;
-        this.document = document;
     }
 
     DocumentValidator.prototype.setStepsState = function setStepsState(steps, state) {
@@ -56,7 +57,10 @@ angular.module('engine.document')
         $engineApiCheck.throw([$engineApiCheck.object], arguments);
         var documentForValidation = this.cleanDocumentMetrics();
         documentForValidation.metrics = metrics;
-        return engineDocument.validate(documentForValidation).$promise.then(function (validatedMetrics) {
+        return engineDocument.validate({
+            document: documentForValidation,
+            otherDocumentId: self.parentDocumentId
+        }).$promise.then(function (validatedMetrics) {
             validatedMetrics = _.indexBy(validatedMetrics.results, 'metricId');
             self.setMetricValidation(field, validatedMetrics);
 
@@ -102,7 +106,10 @@ angular.module('engine.document')
 
         var documentForValidation = this.makeDocumentForValidation(this.document, stepsToValidate, fillNull);
 
-        return engineDocument.validate(documentForValidation).$promise.then(function (validationData) {
+        return engineDocument.validate({
+            document: documentForValidation,
+            otherDocumentId: self.parentDocumentId
+        }).$promise.then(function (validationData) {
             $engLog.debug(validationData);
 
             var _validatedMetrics = _.indexBy(validationData.results, 'metricId');

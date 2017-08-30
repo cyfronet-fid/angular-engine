@@ -16,6 +16,7 @@ angular.module('engine.document')
         this.metricDict = {};
         this.metricCategories = {};
         this.document = null;
+        this.parentDocumentId = documentScope.$ctrl.parentDocument ? (documentScope.$ctrl.parentDocument.id || documentScope.$ctrl.parentDocument) : undefined;
         this.documentOptions = null;
         this.steps = null;
         this.disabled = false;
@@ -88,10 +89,15 @@ angular.module('engine.document')
         }
         this.documentScope.$broadcast('document.form.reloadingMetrics.before');
 
+        var options = { documentJSON: this.document };
+        if (!!self.parentDocumentId) {
+            options.otherDocumentId = self.parentDocumentId;
+        }
+
         /**
          * Return promise to the engineMetric loading
          */
-        return engineMetric(this.document, function (metricList) {
+        return engineMetric(options, function (metricList) {
             $engLog.log('New loaded metrics: ', metricList);
             var metricDict = _.indexBy(metricList, 'id');
 
@@ -117,6 +123,8 @@ angular.module('engine.document')
                     delete self.document.metrics[metric.id];
                 }
             });
+
+            self.setDefaultMetricValues(newMetrics);
 
             //add new metrics to the form, with respect to position
             _.forEach(newMetrics, function (newMetric) {
@@ -241,30 +249,29 @@ angular.module('engine.document')
     DocumentForm.prototype._makeForm = function makeForm() {
         var self = this;
 
-        $engLog.log('DocumentForm._makeForm', this.fieldList);
-        this._assertInit();
+        $engLog.log('DocumentForm._makeForm', self.fieldList);
+        self._assertInit();
 
-        assert(this.metricList.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetrics');
-        assert(this.metricCategories.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetricCategories');
+        assert(self.metricList.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetrics');
+        assert(self.metricCategories.$resolved == true, 'Called DocumentForm._makeForm() before calling DocumentForm._loadMetricCategories');
 
         var _categoriesToPostProcess = [];
 
-        _.forEach(this.steps.getSteps(), function (step) {
+        _.forEach(self.steps.getSteps(), function (step) {
             var formStepStructure = DocumentCategoryFactory.makeStepCategory(step);
             formStepStructure.fieldGroup = parseMetricCategories(step, step.metricCategories);
 
             self.formStructure.push(formStepStructure);
         });
-        _.forEach(this.steps.getSteps(), function (step) {
+        _.forEach(self.steps.getSteps(), function (step) {
             connectFields(step);
         });
 
         postprocess();
 
         reorderFields();
-        setDefaultValues();
 
-        this.validator = new DocumentValidator(this.document, this.steps, this.formlyState);
+        self.validator = new DocumentValidator(self.document, self.parentDocumentId, self.steps, self.formlyState);
 
         $engLog.debug('DocumentForm form structure', self.formStructure);
 
@@ -310,13 +317,6 @@ angular.module('engine.document')
             })
         }
 
-        function setDefaultValues() {
-            _.forEach(self.metricDict, function (metric, metricId) {
-                if(metric.defaultValue != null && self.document.metrics[metricId] == null)
-                    self.document.metrics[metricId] = metric.defaultValue;
-            })
-        }
-
         function reorderFields() {
             _.forEach(self.categoriesDict, function (metricCategory) {
                 metricCategory.fieldGroup = _.sortBy(metricCategory.fieldGroup, function (field) {
@@ -326,16 +326,30 @@ angular.module('engine.document')
         }
     };
 
+    DocumentForm.prototype.setDefaultMetricValues = function (metrics) {
+        var self = this;
+        metrics.forEach(function (metric) {
+            if (!!metric.defaultValue && !self.document.metrics[metric.id]) {
+                self.document.metrics[metric.id] = metric.defaultValue;
+            }
+        });
+    };
+
     DocumentForm.prototype._updateFields = function updateFields(metricList) {
         this.fieldList = DocumentFieldFactory.makeFields(metricList, {document: this.document, options: this.documentOptions, documentForm: this});
     };
 
     DocumentForm.prototype._loadMetrics = function loadMetrics() {
         var self = this;
+        var options = { documentJSON: this.document };
+        if (!!self.parentDocumentId) {
+            options.otherDocumentId = self.parentDocumentId;
+        }
 
-        return engineMetric(this.document, function (metricList) {
+        return engineMetric(options, function (metricList) {
             self.metricList = metricList;
             self.metricDict = _.indexBy(self.metricList, 'id');
+            self.setDefaultMetricValues(self.metricList);
             self._updateFields(self.metricList);
         }).$promise;
     };

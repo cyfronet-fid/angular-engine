@@ -14,7 +14,7 @@ angular.module('engine.document')
         actions: '=',
         parentDocument: '=',
         dirty: '=',
-        processing: '=',
+        processing: '=?',
         documentScope: '='
     }
 })
