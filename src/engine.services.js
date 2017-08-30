@@ -35,7 +35,7 @@ angular.module('engine')
     })
 
 
-    .service('engineQuery', function ($engineConfig, $engineApiCheck, $http, EngineInterceptor, $q) {
+    .service('engineQuery', function ($engineConfig, $engLog, $engineApiCheck, $http, EngineInterceptor, $q) {
 
         var request_processors = [];
         var response_processors = [];
@@ -43,16 +43,26 @@ angular.module('engine')
         return {
             request_processors: request_processors,
             response_processors: response_processors,
-            get: function (query, parentDocument, callback, errorCallback) {
-                $engineApiCheck.throw([$engineApiCheck.string, $engineApiCheck.object.optional, $engineApiCheck.func.optional, $engineApiCheck.func.optional], arguments);
+            get: function (query, parentDocument, callback, errorCallback, skip, limit, sort, filters) {
+                $engineApiCheck.throw([$engineApiCheck.string, $engineApiCheck.object.optional,
+                    $engineApiCheck.func.optional, $engineApiCheck.func.optional,
+                    $engineApiCheck.number.optional, $engineApiCheck.number.optional,
+                    $engineApiCheck.array.optional,
+                    $engineApiCheck.any.optional
+                ], arguments);
 
                 var parentDocumentId = parentDocument != null && parentDocument.id != null ? parentDocument.id : '';
 
                 var res = [];
                 res.$resolved = 0;
 
+                $engLog.debug('searching', filters);
+
                 var q = $http.post($engineConfig.baseUrl + '/query/documents-with-extra-data?queryId=' + query +
-                    '&attachAvailableActions=true&otherDocumentId=' + parentDocumentId + '&documentId=' + parentDocumentId)
+                    '&attachAvailableActions=true&otherDocumentId=' + parentDocumentId + '&documentId=' + parentDocumentId +
+                    (!_.isUndefined(skip) && !_.isUndefined(limit) ? '&skip='+skip+'&limit='+limit : '') +
+                    (!_.isUndefined(sort) && !_.isEmpty(sort) ? '&sort='+sort.join(',') : '') +
+                    (!_.isUndefined(filters) && !_.isEmpty(filters) ? '&constraints='+btoa(angular.toJson(filters)) : ''))
                     .then(function (response) {
                         return response.data;
                     })
@@ -107,14 +117,14 @@ angular.module('engine')
         }
     })
     .service('engineMetric', function ($engineConfig, $engineApiCheck, $resource, EngineInterceptor) {
-        var metricSorter = function (data, headersGetter, status) {
+        function metricSorter (data, headersGetter, status) {
             var data = EngineInterceptor.response(data, headersGetter, status);
             data = _.sortBy(data, 'position');
 
             return data;
-        };
+        }
 
-        var _query = $resource($engineConfig.baseUrl + '/metrics', {}, {
+        var _query = $resource($engineConfig.baseUrl + '/metrics?documentId=:id', {id: '@id'}, {
             post: {method: 'POST', transformResponse: metricSorter, isArray: true}
         });
 

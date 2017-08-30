@@ -35,7 +35,7 @@
     </div>
 </div>
 
-<action-button ng-if="$ctrl._showCreateButton && canCreateDocument()"
+<action-button ng-if="$ctrl.showCreateButton !== false && canCreateDocument()"
                btn-class="btn-primary" on-click="onCreateDocument()"
                label="{{$ctrl.options.list.createButtonLabel ? $ctrl.options.list.createButtonLabel : 'Create '+options.name}}"></action-button>
 

@@ -1,1 +1,1 @@
-{{$ctrl.process(column.processor, $row+1)}}
+{{$ctrl.process(column.processor, (($ctrl.currentPage - 1) * $ctrl.DOCUMENT_QUERY_LIMIT) + $row+1)}}

@@ -2,9 +2,16 @@ var fs = require('fs');
 var deasync = require('deasync');
 var cp = require('child_process');
 var exec = deasync(cp.exec);
+const _ = require('lodash');
 
 var engine_docs = 'build/' + JSON.parse(fs.readFileSync('bower.json', 'utf8')).version + '/js/engine.docs.js';
 var isWin = /^win/.test(process.platform);
+
+var afterBuild = [];
+
+if(!_.isUndefined(process.env['AFTER_BUILD'])) {
+    afterBuild.push(process.env['AFTER_BUILD']);
+}
 
 module.exports = {
     paths: {
@@ -47,11 +54,11 @@ module.exports = {
         ignored: ['node_modules/**']
     },
     plugins: {
-        afterBrunch: [
+        afterBrunch: _.concat([
             isWin ? 'node_modules\\.bin\\grunt ngdocs > nul' : 'node_modules/.bin/grunt ngdocs > /dev/null',
             // 'cp docs/js/docs.js build/'+JSON.parse(fs.readFileSync('bower.json', 'utf8')).version+'/js/docs.js',
             'cp bower_components/angular-animate/angular-animate.min.js build/' + JSON.parse(fs.readFileSync('bower.json', 'utf8')).version + '/js/angular-animate.min.js'
-        ],
+        ], afterBuild),
         angularTemplate: {
             moduleName: 'engine',
             pathToSrc: function (x) {
