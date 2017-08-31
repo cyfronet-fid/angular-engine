@@ -33,18 +33,45 @@ angular.module('engine.document')
                             event.preventDefault();
                     });
 
-                    $scope.$on('engine.common.action.after', function (event, ctx) {
+                    var documentScopeHandlers = {
+                      'engine.common.action.after': function (event, ctx) {
                         // don't close modal after save, with exception of create actions
                         // TODO - in the future release create action may close modal, and open new with created document
-                        if(ctx.action.isSave() && !ctx.action.isCreate())
-                            return;
-
-                        if(ctx.result.type == 'REDIRECT') {
-                            event.preventDefault();
-                            // this must be done in the next digest cycle, so that form $dirty state is cleared beforehand
-                            $timeout($scope.closeModal);
+                        if (ctx.action.isSave() && !ctx.action.isCreate()) {
+                          return;
                         }
-                    });
+
+                        // if (ctx.result.type == 'REDIRECT') {
+                        //   event.preventDefault();
+                        //   // // this must be done in the next digest cycle, so that form $dirty state is cleared beforehand
+                        //   // $timeout($scope.closeModal);
+                        //   $scope.documentId = ctx.result.redirectToDocument;
+                        //   $timeout(_.bind(newScope.$emit, newScope, 'engine.common.document.requestReload'));
+                        // }
+                      },
+                      'modal.redirect.save.after': function (event, ctx) {
+                          $scope.stepList = new StepList(ctx.documentOptions.document.steps);
+                          $scope.documentId = ctx.documentId;
+                          $scope.parentDocument = ctx.parentDocument;
+                          $scope.documentOptions = ctx.documentOptions;
+                      }
+                    };
+
+                    $scope.$watch("$scope.documentScope", function () {
+                        var handlers;
+                        return function (newScope) {
+                            if (!!handlers) {
+                                _.forEach(handlers, function (handler) { handler(); });
+                                handlers = undefined;
+                            }
+                            if (!!newScope && !!newScope.$on) {
+                                handlers = [];
+                                for (var event in documentScopeHandlers) {
+                                    handlers.push(newScope.$on(event, documentScopeHandlers[event]));
+                                }
+                            }
+                        };
+                    }());
 
                     $scope.customButtons = [{label: 'Cancel', 'action': $scope.closeModal}];
                 },

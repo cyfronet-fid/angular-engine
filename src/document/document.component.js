@@ -8,14 +8,14 @@ angular.module('engine.document')
         options: '=',
         stepList: '=',
         step: '=',
-        validatedSteps: '=',
-        showValidationButton: '=',
-        documentId: '@',
-        actions: '=',
-        parentDocument: '=',
+        validatedSteps: '=?',
+        showValidationButton: '=?',
+        documentId: '<',
+        actions: '=?',
+        parentDocument: '=?',
         dirty: '=',
         processing: '=?',
-        documentScope: '='
+        documentScope: '=?'
     }
 })
 .controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
@@ -152,13 +152,29 @@ angular.module('engine.document')
         });
     });
 
-    this.$ready = this.getDocument()
-        .then(function() {return $q.all(self.stepList.$ready, self.documentForm.$ready)})
-        .then(this.initDocument)
-        .then(this.postinitDocument)
-        .then(function () {
-            $engLog.debug('engineDocumentCtrl initialized: ', self);
-            $engLog.log(self.$ready.$$state.status);
-        }).then(this.validateAfterInit);
+    this.$ready = self.getDocument()
+      .then(self.stepList.$ready)
+      .then(self.initDocument)
+      .then(self.documentForm.$ready)
+      .then(self.postinitDocument)
+      .then(function () {
+        $engLog.debug('engineDocumentCtrl initialized: ', self);
+        $engLog.log(self.$ready.$$state.status);
+      }).then(self.validateAfterInit);
+
+    $scope.$watch('$ctrl.documentId', function (newDocumentId) {
+        if (!!newDocumentId && self.$ready.$$state.status === 1) {
+            self.documentForm = new DocumentForm($scope);
+            self.$ready = self.getDocument()
+              .then(self.stepList.$ready)
+              .then(self.initDocument)
+              .then(self.documentForm.$ready)
+              .then(self.postinitDocument)
+              .then(function () {
+                $engLog.debug('engineDocumentCtrl reloaded: ', self);
+                $engLog.log(self.$ready.$$state.status);
+              }).then(self.validateAfterInit);
+        }
+    });
     $engLog.log(this.$ready.$$state.status);
 });

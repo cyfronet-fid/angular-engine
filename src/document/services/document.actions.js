@@ -209,7 +209,7 @@ angular.module('engine.document')
                     if (ev1.defaultPrevented || ev2.defaultPrevented)
                         return result;
                 }
-                return DocumentActionProcess(self.document, result, self.parentDocument);
+                return DocumentActionProcess(self.document, result, self.parentDocument, self.$scope);
             }, function (result) {
                 self.$scope.$broadcast('engine.common.action.error', {
                     'document': self.document,
@@ -240,7 +240,7 @@ angular.module('engine.document')
     })
     .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
 
-        return function DocumentActionHandler(document, actionResponse, parentDocument) {
+        return function DocumentActionHandler(document, actionResponse, parentDocument, $scope) {
             if (actionResponse.type == 'REDIRECT') {
                 if (document.id == actionResponse.redirectToDocument)
                     return $q.resolve();
@@ -267,6 +267,12 @@ angular.module('engine.document')
                     if (documentOptions.subdocument == false) {
                         $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
                         $location.$$compose();
+                    } else {
+                        $scope.$broadcast('modal.redirect.save.after', {
+                            documentId: actionResponse.redirectToDocument,
+                            documentOptions: documentOptions,
+                            parentDocument: parentDocument
+                        });
                     }
 
                     return actionResponse;
