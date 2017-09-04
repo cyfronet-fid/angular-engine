@@ -14,13 +14,13 @@
     ng-change="$ctrl.onPageChanged()">
 </ul>
 
-<button ng-show="documents.$resolved"
-        class="btn btn-default btn-sm pull-right list-filter"
-        ng-class="{active: $ctrl.showFilters === true}"
-        ng-click="$ctrl.setShowFilters(!$ctrl.showFilters)"
-        title="{{ 'Filter' | translate}}">
-    <span class="glyphicon glyphicon-filter"></span>
-</button>
+<!--<button ng-show="documents.$resolved"-->
+        <!--class="btn btn-default btn-sm pull-right list-filter"-->
+        <!--ng-class="{active: $ctrl.showFilters === true}"-->
+        <!--ng-click="$ctrl.setShowFilters(!$ctrl.showFilters)"-->
+        <!--title="{{ 'Filter' | translate}}">-->
+    <!--<span class="glyphicon glyphicon-filter"></span>-->
+<!--</button>-->
 
 <div class="eng-loading-box clear" ng-show="!documents.$resolved">
     <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
