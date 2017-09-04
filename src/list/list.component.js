@@ -86,7 +86,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
             // if($scope == event.currentScope)
             //     return;
             $engLog.debug('engine.list.reload received, reloading documents', 'queryId', $scope.query);
-            self.loadDocuments();
+            self.loadDocuments(true);
         });
 
         init();
@@ -149,7 +149,13 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         return element;
     };
 
-    this.loadDocuments = function () {
+    this.loadDocuments = function (clear) {
+        if(clear === true) {
+            self.documentPages = [];
+            self.currentPage = 1;
+            self.allDocumentsLoaded = false;
+        }
+
         $scope.documentActions = {};
         if ((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)) {
             $scope.documents = engineQuery.get($scope.query, this.parentDocument, undefined, undefined, self.documentPages.length * self.DOCUMENT_QUERY_LIMIT, self.DOCUMENT_QUERY_LIMIT,
