@@ -15,22 +15,21 @@ app.component('engineDocument', {
         parentDocument: '=',
         dirty: '=',
         processing: '=?',
-        documentScope: '='
+        documentScope: '=?'
     }
 });
 app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
                                                engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                                engineAction, engineMetricCategories, StepList, DocumentForm,
-                                               DocumentActionList, $q, $engLog, $attrs, Step, $parse) {
+                                               DocumentActionList, $q, $engLog, $attrs, Step, $parse, $element,
+                                               $compile) {
     var self = this;
 
     $engLog.debug($scope);
 
     this.$onInit = function () {
         this.document = null;
-        // providing this binding is not required, so we have to check it it's defined
-        if ($parse($attrs['documentScope']).assign === true)
-            self.documentScope = $scope;
+        this.documentScope = $scope;
         $scope.steps = this.options.document.steps;
         this.processing = false;
         this.actionList = null;
@@ -57,26 +56,55 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
         });
 
         $scope.$on('engine.common.action.after', function (event, document, action, result) {
-
         });
 
-        this.$ready = this.getDocument()
+
+        $scope.$watch('$ctrl.formlyState.$dirty', function (newValue, oldValue) {
+            self.dirty = newValue;
+        });
+
+        $scope.$watch('$ctrl.formlyState', function (newValue, oldValue) {
+            self.documentForm.setFormlyState(newValue);
+        });
+
+        $scope.$watch('$ctrl.formlyOptions', function (newValue, oldValue) {
+            self.documentForm.setFormlyOptions(newValue);
+        });
+
+        this.$ready = _initDocument();
+    };
+
+    function _initDocument(noReloadSteps) {
+        return self.getDocument(noReloadSteps)
             .then(function () {
                 return $q.all(self.stepList.$ready, self.documentForm.$ready)
             })
-            .then(this.initDocument)
-            .then(this.postinitDocument)
+            .then(self.initDocument)
+            .then(self.postinitDocument)
             .then(function () {
                 $engLog.debug('engineDocumentCtrl initialized: ', self);
                 $engLog.log(self.$ready.$$state.status);
-            }).then(this.validateAfterInit);
-        $engLog.log(this.$ready.$$state.status);
+            }).then(self.validateAfterInit);
+    }
+
+    this.$onChanges = function (changesObject) {
+        //this should cover creating new document in modal
+        if (!_.isUndefined(changesObject.documentId)) {
+            console.log('documentId changed', changesObject.documentId);
+            if (changesObject.documentId.currentValue !== '' && !changesObject.documentId.isFirstChange()) {
+                self.document = null;
+                self.processing = false;
+                self.actionList = null;
+                self.dirty = false;
+                self.documentForm.$destroy();
+                self.documentForm = new DocumentForm($scope);
+                self.$ready = _initDocument().then(function() {
+                    $compile($element.contents())($scope);
+                });
+            }
+        }
     };
 
-
-    $scope.$watch('$ctrl.documentForm.formlyState.$dirty', function (newValue, oldValue) {
-        self.dirty = newValue;
-    });
 
     this.getDocument = function (noReloadSteps) {
         var _actionsToPerform = [];
@@ -119,11 +147,16 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
 
         // return chained promise, which will do all other common required operations:
         self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
-        return self.actionList.$ready.then(function () {
+        return $q.all([self.actionList.$ready]).then(function () {
             //assign actions only if binding is present
             if ($attrs.actions)
                 self.actions = self.actionList;
-            self.documentForm.init(self.document, self.options, self.stepList, self.actionList);
+            self.documentForm.init(self.document,
+                self.options,
+                self.stepList,
+                self.actionList,
+                self.formlyState,
+                self.formlyOptions);
             //load metrics to form
             return self.documentForm.loadForm();
         });

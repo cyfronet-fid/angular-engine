@@ -41,25 +41,32 @@ angular.module('engine.document')
         this.formLoaded = false;
         this.markInit = null;
         var self = this;
+        this.$validationReadyDeferred = $q.defer();
+        this.$validationReady = this.$validationReadyDeferred.promise;
         this.$ready = $q(function (resolve, reject) {
             self.markInit = resolve;
         }).then(function(){
             return self._loadMetricCategories();
         });
 
-        this.documentScope.$on('engine.common.save.after', function (event) {
-            self.formlyState.$setPristine();
-        });
+        this.bindings = [];
 
-        this.documentScope.$on('engine.common.navigateAway', function (event) {
+        this.bindings.push(this.documentScope.$on('engine.common.save.after', function (event) {
+            self.formlyState.$setPristine();
+        }));
+
+        this.bindings.push(this.documentScope.$on('engine.common.navigateAway', function (event) {
             if(self.formlyState.$dirty) {
                 event.preventDefault();
             }
-        });
-
-
-
+        }));
     }
+
+    DocumentForm.prototype.$destroy = function $destroy() {
+        _.each(this.bindings, function (binding) {
+            binding();
+        })
+    };
 
     DocumentForm.prototype.loadForm = function loadForm() {
         var self = this;
@@ -202,15 +209,36 @@ angular.module('engine.document')
             })
         })
     };
-    DocumentForm.prototype.init = function init(document, options, steps, actions) {
-        _apiCheck([_apiCheck.object, _apiCheck.object, _apiCheck.arrayOf(_apiCheck.object)], arguments);
+    DocumentForm.prototype.init = function init(document, options, steps, actions, formlyState, formlyOptions) {
+        _apiCheck([_apiCheck.object,
+            _apiCheck.object,
+            _apiCheck.arrayOf(_apiCheck.object),
+            _apiCheck.object,
+            _apiCheck.object], arguments);
 
         this._setDocument(document);
         this._setOptions(options);
         this._setSteps(steps);
         this._setActions(actions);
-
+        this.formlyState = formlyState;
+        this.formlyOptions = formlyOptions;
         this.markInit();
+    };
+
+
+    DocumentForm.prototype.setValidator = function (validator) {
+        this.validator = validator;
+        this.$validationReadyDeferred.resolve();
+    }
+    DocumentForm.prototype.setFormlyState = function (formlyState) {
+        this.formlyState = formlyState;
+        if(this.formlyState != null) {
+            this.setValidator(new DocumentValidator(this.document, this.parentDocumentId, this.steps, this.formlyState));
+        }
+    };
+
+    DocumentForm.prototype.setFormlyOptions = function (formlyOptions) {
+        this.formlyOptions = formlyOptions;
     };
 
     DocumentForm.prototype.setEditable = function setEditable(editable) {
@@ -271,7 +299,8 @@ angular.module('engine.document')
 
         reorderFields();
 
-        self.validator = new DocumentValidator(self.document, self.parentDocumentId, self.steps, self.formlyState);
+        if(self.formlyState != null)
+            self.setValidator(new DocumentValidator(self.document, self.parentDocumentId, self.steps, self.formlyState));
 
         $engLog.debug('DocumentForm form structure', self.formStructure);
 
@@ -355,11 +384,13 @@ angular.module('engine.document')
     };
 
     DocumentForm.prototype.validateCurrentStep = function validateCurrentStep(fillNull) {
-        return this.validator.validate(this.currentStep, fillNull);
+        var self = this;
+        return this.$validationReady.then(function () {return self.validator.validate(self.currentStep, fillNull);});
     };
 
     DocumentForm.prototype.validate = function validate(step, fillNull) {
-        return this.validator.validate(step, fillNull);
+        var self = this;
+        return this.$validationReady.then(function() {return self.validator.validate(step, fillNull);});
     };
 
     return DocumentForm;
