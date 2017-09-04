@@ -87,6 +87,8 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.7** Fixed problem where query validators were not fired, added blocking of redirects
+
 * **0.7.6** Fixed passing ID with metrics query, added pagination
 
 * **0.7.5** Added optional parameter to file controls to allow filtering files by extension

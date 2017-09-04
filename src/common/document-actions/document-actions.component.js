@@ -6,12 +6,12 @@ angular.module('engine.common')
             var _bindings = [];
 
             this.$onInit = function () {
-
-                self.loadActions();
+                if (self.document != null)
+                    self.loadActions();
             };
 
             this.$onChanges = function (changesObj) {
-                if(changesObj.documentScope != null) {
+                if (changesObj.documentScope != null) {
                     if (changesObj.documentScope.currentValue == null) {
                         $engLog.warn('engineDocumentActions document-scope argument not specified, using local $scope, which may be not what you want');
                         this._documentScope = $scope;
@@ -21,7 +21,7 @@ angular.module('engine.common')
 
 
                     if (changesObj.documentScope.isFirstChange() != true && changesObj.documentScope.previousValue != null) {
-                        angular.forEach(_bindings, function(removeBinding) {
+                        angular.forEach(_bindings, function (removeBinding) {
                             removeBinding();
                         });
                         _bindings = [];
@@ -39,8 +39,12 @@ angular.module('engine.common')
                 if (changesObj.document != null) {
                     var newDocument = changesObj.document.currentValue;
 
-                    if (self.actionList != null && !_.isEmpty(newDocument) && newDocument != null)
-                        self.actionList._setDocument(newDocument);
+                    if (self.actionList != null && !_.isEmpty(newDocument) && newDocument != null) {
+                        if (self.actionList == null)
+                            self.loadActions();
+                        else
+                            self.actionList._setDocument(newDocument);
+                    }
                 }
             };
 
@@ -53,8 +57,13 @@ angular.module('engine.common')
             };
 
             this.loadActions = function loadActions() {
+
                 self.loading = true;
                 $timeout(function () {
+                    if (self.document == null) {
+                        self.loading = false;
+                        return;
+                    }
                     self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
                     self.actionList.$ready.finally(function () {
                         self.loading = false;

@@ -246,6 +246,12 @@ angular.module('engine.document')
         }));
 
         this.register(new DocumentField({inputType: 'QUERIED_LIST'}, function (field, metric, ctx) {
+            /**
+             * queries don't have real values, but something other than `null` must be provided
+             * for validators in the backend to work
+             */
+            ctx.document.metrics[metric.id] = metric.queryId;
+
             field = {
                 data: _.extend(field.data, {queries: ctx.options.document.queries[metric.id]}),
                 key: metric.id, //THIS FIELD IS REQUIRED
@@ -263,6 +269,7 @@ angular.module('engine.document')
                     document: ctx.document
                 }//, expressionProperties: {'templateOptions.disabled': 'false'}
             };
+
 
             return field;
         }));
