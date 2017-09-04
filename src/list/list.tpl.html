@@ -1,22 +1,59 @@
-<h2 ng-if="$ctrl.listCaption" translate>{{ $ctrl.listCaption }}</h2>
+<h2 ng-if="$ctrl.listCaption" class="pull-left" translate>{{ $ctrl.listCaption }}</h2>
 
-<div class="eng-loading-box" ng-show="!documents.$resolved">
+
+<ul uib-pagination
+    ng-show="documents.$resolved"
+    style="margin-top: 0px;"
+    class="btn-xs pull-right"
+    total-items="$ctrl.calculateVirtualDocumentCount()"
+    items-per-page="$ctrl.DOCUMENT_QUERY_LIMIT"
+    boundry-links="false"
+    max-size="6"
+    rotate="true"
+    ng-model="$ctrl.currentPage"
+    ng-change="$ctrl.onPageChanged()">
+</ul>
+
+<!--<button ng-show="documents.$resolved"-->
+        <!--class="btn btn-default btn-sm pull-right list-filter"-->
+        <!--ng-class="{active: $ctrl.showFilters === true}"-->
+        <!--ng-click="$ctrl.setShowFilters(!$ctrl.showFilters)"-->
+        <!--title="{{ 'Filter' | translate}}">-->
+    <!--<span class="glyphicon glyphicon-filter"></span>-->
+<!--</button>-->
+
+<div class="eng-loading-box clear" ng-show="!documents.$resolved">
     <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
 </div>
-<div ng-if="documents.$resolved || $ctrl.noParentDocument" ng-cloak>
+<div class="clear" ng-if="documents.$resolved || $ctrl.noParentDocument" ng-cloak>
     <table class="proposal-list table">
         <tr>
-            <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;" ng-repeat="column in columns" translate>{{column.caption || column.name}}</th>
+            <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;"
+                eng-save-col-width
+                ng-class="{'eng-col-index': column.name === '@index'}"
+                ng-repeat="column in columns"><span translate>{{column.caption || column.name}}</span>
+                <input type="text" class="form-control input-sm eng-table-filter-header-input"
+                       ng-show="$ctrl.showFilters === true" ng-change="$ctrl.filterQuery()"
+                       ng-model="$ctrl.filters[column.name]"
+                       ng-if="$ctrl.canShowInputFilterForColumn(column)" />
+            </th>
             <th class="text-right"></th>
         </tr>
-        <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument" ng-init="$row=$index">
-            <td ng-repeat="column in columns" class="{{column.css}} {{column.style}}" ng-include="getCellTemplate(document_entry.document, column)"></td>
+        <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument"
+            ng-init="$row=$index">
+            <td ng-repeat="column in columns" class="{{column.css}} {{column.style}}"
+                ng-include="getCellTemplate(document_entry.document, column)"></td>
             <td class="text-right cog-dropdown">
                 <div class="dropdown" ng-if="getActionsForDocument(document_entry).actions.length > 0">
-                    <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><i class="fa fa-cog" aria-hidden="true"></i></a>
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><i
+                            class="fa fa-cog" aria-hidden="true"></i></a>
                     <ul class="dropdown-menu">
-                        <li ng-repeat="action in getActionsForDocument(document_entry).actions"><a href="" ng-click="engineAction(action)" translate>{{action.label}}</a></li>
-                        <li ng-if="!getActionsForDocument(document_entry).actions"><span style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span></li>
+                        <li ng-repeat="action in getActionsForDocument(document_entry).actions"><a href=""
+                                                                                                   ng-click="engineAction(action)"
+                                                                                                   translate>{{action.label}}</a>
+                        </li>
+                        <li ng-if="!getActionsForDocument(document_entry).actions"><span
+                                style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span></li>
                     </ul>
                 </div>
             </td>
@@ -28,15 +65,32 @@
     <div class="alert alert-warning" role="alert" ng-if="$ctrl.noParentDocument" translate>
         {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}
     </div>
-    <div class="alert alert-info" role="alert" ng-if="documents.$resolved && documents.length == 0 && !documents.$error" translate>
+    <div class="alert alert-info" role="alert" ng-if="documents.$resolved && documents.length == 0 && !documents.$error"
+         translate>
         {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}
     </div>
 </div>
 
-<action-button ng-if="$ctrl._showCreateButton && canCreateDocument()"
+<action-button ng-if="$ctrl.showCreateButton !== false && canCreateDocument()"
+               ng-show="documents.$resolved"
                btn-class="btn-primary" on-click="onCreateDocument()"
                label="{{$ctrl.options.list.createButtonLabel ? $ctrl.options.list.createButtonLabel : 'Create '+options.name}}"></action-button>
 
 <action-button ng-repeat="customButton in customButtons"
+               ng-show="documents.$resolved"
                btn-class="btn-primary" on-click="customButton.callback($ctrl.options)"
                label="{{customButton.label}}"></action-button>
+
+
+<ul uib-pagination
+    ng-if="($ctrl.showCreateButton !== false && canCreateDocument()) || (customButtons && customButtons.length > 0)"
+    ng-show="documents.$resolved"
+    style="margin-top: 0px;"
+    class="btn-xs pull-right"
+    total-items="$ctrl.calculateVirtualDocumentCount()"
+    items-per-page="$ctrl.DOCUMENT_QUERY_LIMIT"
+    boundry-links="false"
+    rotate="true"
+    ng-model="$ctrl.currentPage"
+    ng-change="$ctrl.onPageChanged()">
+</ul>

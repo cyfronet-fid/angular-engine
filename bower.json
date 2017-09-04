@@ -1,6 +1,6 @@
 {
   "name": "angular-engine",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "authors": [
     "Michał Szostak <szostak.m.f@gmail.com>"
   ],
@@ -42,7 +42,7 @@
   ],
   "dependencies": {
     "angular": "~1.5.8",
-    "angular-bootstrap": "^2.2.0",
+    "angular-bootstrap": "^2.5.0",
     "bootstrap": "^3.3.7",
     "angular-route": "~1.5.8",
     "angular-resource": "~1.5.8",
