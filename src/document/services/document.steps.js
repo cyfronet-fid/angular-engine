@@ -8,8 +8,8 @@ angular.module('engine.document')
             this.documentSteps = documentOptionSteps;
             this.steps = [];
             this.singleStep = false;
-            this.$ready = null;
-
+            this._$readyDeferred = $q.defer();
+            this.$ready = this._$readyDeferred.promise;
             this.currentStep = null;
 
         }
@@ -36,7 +36,7 @@ angular.module('engine.document')
         StepList.prototype._preprocessDocumentSteps = function _preprocessDocumentSteps() {
             var self = this;
 
-            this.$ready = engineMetricCategories.then(function (metricCategories) {
+            engineMetricCategories.then(function (metricCategories) {
                 assert(_.isArray(self.documentSteps) && !_.isEmpty(self.documentSteps), 'documentSteps were not defined');
 
                 _.forEach(self.documentSteps, function (step, index) {
@@ -58,6 +58,10 @@ angular.module('engine.document')
                         self.steps.push(new Step(metricCategories.metrics[step.categories].children, step, index));
                     }
                 });
+
+                self._$readyDeferred.resolve();
+            }, function (error) {
+                self._$readyDeferred.reject(error);
             });
         };
 

@@ -241,14 +241,14 @@ angular.module('engine.document')
     .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
 
         return function DocumentActionHandler(document, actionResponse, parentDocument) {
-            if (actionResponse.type == 'REDIRECT') {
-                if (document.id == actionResponse.redirectToDocument)
+            if (actionResponse.type === 'REDIRECT') {
+                if (document.id === actionResponse.redirectToDocument)
                     return $q.resolve();
 
                 //before redirecting, load document from engine to ascertain it's document type
                 return engineDocument.get(actionResponse.redirectToDocument).$promise.then(function (data) {
 
-                    if (document.id != null && document.id != actionResponse.redirectToDocument) {
+                    if (document.id != null && document.id !== actionResponse.redirectToDocument) {
                         $location.$$search.step = 0;
                     }
 
