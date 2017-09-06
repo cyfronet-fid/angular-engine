@@ -1,5 +1,5 @@
-var app = angular.module('engine.list')
-app.component('engineDocumentList', {
+angular.module('engine.list')
+.component('engineDocumentList', {
     template: '<ng-include src="$ctrl.contentTemplateUrl || \'/src/list/list.component.tpl.html\'"></ng-include>',
     controller: 'engineListCtrl',
     bindings: {
@@ -17,7 +17,8 @@ app.component('engineDocumentList', {
         metricId: '@',
         singleDocument: '=',
         controller: '@',
-        contentTemplateUrl: '='
+        contentTemplateUrl: '=',
+        formlyOptions: '='
     }
 });
 
