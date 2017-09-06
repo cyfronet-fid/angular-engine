@@ -1,5 +1,5 @@
-angular.module('engine.list')
-.component('engineDocumentList', {
+var app = angular.module('engine.list')
+app.component('engineDocumentList', {
     template: '<ng-include src="$ctrl.contentTemplateUrl || \'/src/list/list.component.tpl.html\'"></ng-include>',
     controller: 'engineListCtrl',
     bindings: {
