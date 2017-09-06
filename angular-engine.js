@@ -147,7 +147,7 @@ angular.module('engine.common').factory('DocumentEventCtx', function () {
     };
 
     var getCreateUpdateAction = function getCreateUpdateAction(actions) {
-        for (var i = 0; i < actions.length; ++i) {
+        if (actions != null) for (var i = 0; i < actions.length; ++i) {
             var action = actions[i];
             if (isSaveAction(action)) {
                 return action;
@@ -3478,7 +3478,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2017-09-04T13:25:07.313Z';
+var ENGINE_COMPILATION_DATE = '2017-09-06T16:50:04.470Z';
 var ENGINE_VERSION = '0.7.6';
 var ENGINE_BACKEND_VERSION = '1.1.16';
 
@@ -3818,7 +3818,8 @@ app.controller('engineListCtrl', ["$scope", "$route", "$location", "engineMetric
 
         $scope.$parse = $parse;
         $scope.options = this.options;
-        $scope.columns = this.columns || (this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null ? $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
+        $scope.columns = this.columns;
+        if ($scope.options != null && $scope.options.document != null) $scope.columns = this.columns || (this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null ? $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
 
         $scope.query = self.query || $scope.options.query;
         $scope.customButtons = self.customButtons || self.options.customButtons;

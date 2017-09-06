@@ -55,8 +55,10 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
 
         $scope.$parse = $parse;
         $scope.options = this.options;
-        $scope.columns = this.columns || ((this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null) ?
-            $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
+        $scope.columns = this.columns;
+        if($scope.options != null && $scope.options.document != null)
+            $scope.columns = this.columns || ((this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null) ?
+                $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
 
 
         $scope.query = self.query || $scope.options.query;
