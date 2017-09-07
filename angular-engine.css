@@ -59,6 +59,10 @@ body {
 
 /* multi select with images style moved to main.css in duo*/
 
+.eng-cog-col {
+    width: 50px;
+}
+
 .cog-dropdown .dropdown {
     position: relative;
 }
@@ -66,6 +70,7 @@ body {
 .cog-dropdown .dropdown-menu {
     position: absolute;
     left: -140px;
+    z-index: 1000;
 }
 
 .cog-dropdown i {
@@ -1227,4 +1232,14 @@ engine-document-actions {
 .proposal-list th:first-child.eng-col-index, .eng-col-index{
     max-width: 50px;
     width: 50px;
+}
+
+.eng-list-bottom-bar {
+    display: block;
+    width: 100%;
+    height: 35px;
+}
+
+.eng-list-pagination-top {
+    font-weight: normal;
 }

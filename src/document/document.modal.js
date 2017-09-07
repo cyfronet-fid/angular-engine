@@ -1,11 +1,12 @@
 angular.module('engine.document')
     .factory('DocumentModal',
-        function ($resource, $uibModal, $translate, $timeout) {
+        function ($resource, $uibModal, $translate, $timeout, $engine) {
             return function (documentId, documentOptions, parentDocument, callback) {
                 var modalInstance = $uibModal.open({
                     templateUrl: '/src/document/document-modal.tpl.html',
                     keyboard: false,
                     backdrop: 'static',
+                    windowTopClass: $engine.GLOBAL_CSS,
 
                     controller: function ($scope, documentId, documentOptions, engineActionsAvailable, StepList, engineResolve, $uibModalInstance) {
                         $scope.engineResolve = engineResolve;

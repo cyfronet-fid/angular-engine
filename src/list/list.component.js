@@ -56,13 +56,19 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         $scope.$parse = $parse;
         $scope.options = this.options;
         $scope.columns = this.columns;
-        if($scope.options != null && $scope.options.document != null)
+        if ($scope.options != null && $scope.options.document != null)
             $scope.columns = this.columns || ((this.metricId && $scope.options.document.queries != null && $scope.options.document.queries[this.metricId] != null) ?
                 $scope.options.document.queries[this.metricId].columns : $scope.options.list.columns);
 
 
-        $scope.query = self.query || $scope.options.query;
-        $scope.customButtons = self.customButtons || self.options.customButtons;
+        $scope.query = self.query;
+        if ($scope.query == null && $scope.options != null && $scope.options.query != null)
+            $scope.query = $scope.options.query;
+
+        $scope.customButtons = self.customButtons;
+
+        if ($scope.customButtons != null && $scope.options != null && $scope.options.customButtons != null)
+            $scope.customButtons = $scope.options.customButtons;
 
 
         /**
@@ -97,34 +103,50 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
             $controller(this.controller, {$scope: $scope});
     };
 
+    this.canShowPagination = function () {
+        if ($scope.documents.length < this.DOCUMENT_QUERY_LIMIT && this.documentPages.length <= 1)
+            return false;
+
+        if (this.noParentDocument === true)
+            return false;
+
+        if ($scope.documents.$error != null)
+            return false;
+
+        if (!$scope.documents.$resolved)
+            return false;
+
+        return true;
+    };
+
     this.filterQuery = function () {
         console.log(this.filters);
 
-        if(this.filterQueryAction !== null)
+        if (this.filterQueryAction !== null)
             $timeout.cancel(this.filterQueryAction);
 
-        this.filterQueryAction = $timeout(function() {
+        this.filterQueryAction = $timeout(function () {
             self.loadDocuments();
         }, this.FILTER_DEBOUNCE_TIME);
     };
 
-    this.setShowFilters = function(show) {
+    this.setShowFilters = function (show) {
         this.showFilters = show;
     };
 
     this.calculateVirtualDocumentCount = function () {
-        if(($scope.documents.length % this.DOCUMENT_QUERY_LIMIT === 0) && this.allDocumentsLoaded === false)
+        if (($scope.documents.length % this.DOCUMENT_QUERY_LIMIT === 0) && this.allDocumentsLoaded === false)
             return (this.documentPages.length + 1) * this.DOCUMENT_QUERY_LIMIT;
         return (this.documentPages.length * this.DOCUMENT_QUERY_LIMIT);
     };
 
     this.onPageChanged = function () {
-        if(this.currentPage > this.documentPages.length) {
+        if (this.currentPage > this.documentPages.length) {
             this.loadDocuments();
             return;
         }
 
-        $scope.documents = this.documentPages[this.currentPage-1];
+        $scope.documents = this.documentPages[this.currentPage - 1];
     };
 
     this.canShowInputFilterForColumn = function (column) {
@@ -152,7 +174,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     this.loadDocuments = function (clear) {
-        if(clear === true) {
+        if (clear === true) {
             self.documentPages = [];
             self.currentPage = 1;
             self.allDocumentsLoaded = false;
@@ -164,10 +186,10 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                 this.ordering, this.filters);
             $scope.documents.$promise.then(function (documents) {
                 // there are no documents for this page, loaded everything
-                if($scope.documents.length === 0) {
+                if ($scope.documents.length === 0) {
                     self.allDocumentsLoaded = true;
                     self.currentPage = self.documentPages.length;
-                    if(!_.isEmpty(self.documentPages))
+                    if (!_.isEmpty(self.documentPages))
                         $scope.documents = _.last(self.documentPages);
                     return;
                 }
@@ -175,8 +197,8 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                 self.documentPages.push($scope.documents);
                 self.currentPage = self.documentPages.length;
 
-                if($scope.documents.length !== self.DOCUMENT_QUERY_LIMIT)
-                    this.allDocumentsLoaded = true;
+                if ($scope.documents.length !== self.DOCUMENT_QUERY_LIMIT)
+                    self.allDocumentsLoaded = true;
                 angular.forEach(documents, function (document) {
                     $scope.documentActions[document.document.id] = new DocumentActionList(document.actions, document.document, self.parentDocument, $scope);
                 });

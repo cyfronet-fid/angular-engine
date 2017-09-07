@@ -1,25 +1,23 @@
-<h2 ng-if="$ctrl.listCaption" class="pull-left" translate>{{ $ctrl.listCaption }}</h2>
-
-
-<ul uib-pagination
-    ng-show="documents.$resolved"
-    style="margin-top: 0px;"
-    class="btn-xs pull-right"
-    total-items="$ctrl.calculateVirtualDocumentCount()"
-    items-per-page="$ctrl.DOCUMENT_QUERY_LIMIT"
-    boundry-links="false"
-    max-size="6"
-    rotate="true"
-    ng-model="$ctrl.currentPage"
-    ng-change="$ctrl.onPageChanged()">
-</ul>
-
+<h2 ng-show="$ctrl.listCaption && $ctrl.calculateVirtualDocumentCount() !== 0" class="eng-list-header pull-left"><span class="eng-caption" ng-if="$ctrl.listCaption" translate>{{ $ctrl.listCaption }}</span>
+    <ul uib-pagination
+        ng-show="$ctrl.canShowPagination()"
+        style="margin-top: 0px;"
+        class="pagination-sm pull-right eng-list-pagination-top"
+        total-items="$ctrl.calculateVirtualDocumentCount()"
+        items-per-page="$ctrl.DOCUMENT_QUERY_LIMIT"
+        boundry-links="false"
+        max-size="6"
+        rotate="true"
+        ng-model="$ctrl.currentPage"
+        ng-change="$ctrl.onPageChanged()">
+    </ul>
+</h2>
 <!--<button ng-show="documents.$resolved"-->
-        <!--class="btn btn-default btn-sm pull-right list-filter"-->
-        <!--ng-class="{active: $ctrl.showFilters === true}"-->
-        <!--ng-click="$ctrl.setShowFilters(!$ctrl.showFilters)"-->
-        <!--title="{{ 'Filter' | translate}}">-->
-    <!--<span class="glyphicon glyphicon-filter"></span>-->
+<!--class="btn btn-default btn-sm pull-right list-filter"-->
+<!--ng-class="{active: $ctrl.showFilters === true}"-->
+<!--ng-click="$ctrl.setShowFilters(!$ctrl.showFilters)"-->
+<!--title="{{ 'Filter' | translate}}">-->
+<!--<span class="glyphicon glyphicon-filter"></span>-->
 <!--</button>-->
 
 <div class="eng-loading-box clear" ng-show="!documents.$resolved">
@@ -35,15 +33,15 @@
                 <input type="text" class="form-control input-sm eng-table-filter-header-input"
                        ng-show="$ctrl.showFilters === true" ng-change="$ctrl.filterQuery()"
                        ng-model="$ctrl.filters[column.name]"
-                       ng-if="$ctrl.canShowInputFilterForColumn(column)" />
+                       ng-if="$ctrl.canShowInputFilterForColumn(column)"/>
             </th>
-            <th class="text-right"></th>
+            <th class="text-right eng-cog-col"></th>
         </tr>
         <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument"
             ng-init="$row=$index">
             <td ng-repeat="column in columns" class="{{column.css}} {{column.style}}"
                 ng-include="getCellTemplate(document_entry.document, column)"></td>
-            <td class="text-right cog-dropdown">
+            <td class="text-right cog-dropdown eng-cog-col">
                 <div class="dropdown" ng-if="getActionsForDocument(document_entry).actions.length > 0">
                     <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><i
                             class="fa fa-cog" aria-hidden="true"></i></a>
@@ -71,6 +69,7 @@
     </div>
 </div>
 
+<div class="eng-list-bottom-bar">
 <action-button ng-if="$ctrl.showCreateButton !== false && canCreateDocument()"
                ng-show="documents.$resolved"
                btn-class="btn-primary" on-click="onCreateDocument()"
@@ -83,10 +82,9 @@
 
 
 <ul uib-pagination
-    ng-if="($ctrl.showCreateButton !== false && canCreateDocument()) || (customButtons && customButtons.length > 0)"
-    ng-show="documents.$resolved"
+    ng-show="$ctrl.canShowPagination()"
     style="margin-top: 0px;"
-    class="btn-xs pull-right"
+    class="pagination-sm pull-right"
     total-items="$ctrl.calculateVirtualDocumentCount()"
     items-per-page="$ctrl.DOCUMENT_QUERY_LIMIT"
     boundry-links="false"
@@ -94,3 +92,4 @@
     ng-model="$ctrl.currentPage"
     ng-change="$ctrl.onPageChanged()">
 </ul>
+</div>
