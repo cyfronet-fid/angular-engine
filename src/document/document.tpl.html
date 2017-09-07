@@ -2,11 +2,11 @@
     <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
 </div>
 
-<div ng-show="$ctrl.$ready.$$state.status === 1" ng-cloak>
+<div ng-if="$ctrl.$ready.$$state.status === 1" ng-cloak>
     <div ng-repeat="message in $ctrl.messages" class="alert alert-{{message.type}} alert-document" role="alert" translate>{{message.body}}</div>
     <form ng-submit="$ctrl.onSubmit()" name="$ctrl.documentForm.formlyState" novalidate>
         <formly-form model="$ctrl.document" fields="$ctrl.documentForm.formStructure" class="horizontal"
-                     options="$ctrl.documentForm.formlyOptions" form="$ctrl.documentForm.formlyState">
+                     options="$ctrl.formlyOptions" form="$ctrl.formlyState">
 
             <engine-document-actions show-validation-button="$ctrl.showValidationButton" ng-if="!$ctrl.options.subdocument"
                                      document="$ctrl.document" document-scope="$ctrl.documentScope" dirty="$ctrl.dirty"

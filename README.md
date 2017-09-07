@@ -87,7 +87,7 @@ angular-engine package
 
 ##Changelog
 
-* **0.7.7** Fixed problem where query validators were not fired, added blocking of redirects
+* **0.7.7** Fixed problem where query validators were not fired, added blocking of redirects, modals now reload after document creation
 
 * **0.7.6** Fixed passing ID with metrics query, added pagination
 

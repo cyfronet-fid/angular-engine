@@ -72,7 +72,7 @@ angular.module('engine.document')
                             }));
                         });
 
-                        $scope.customButtons = [{label: 'Cancel', 'action': $scope.closeModal}];
+                        $scope.customButtons = [{label: 'Close', 'action': $scope.closeModal}];
                     },
                     size: 'lg',
                     resolve: {

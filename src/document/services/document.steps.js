@@ -8,8 +8,8 @@ angular.module('engine.document')
             this.documentSteps = documentOptionSteps;
             this.steps = [];
             this.singleStep = false;
-            this.$ready = $q.defer();
-
+            this._$readyDeferred = $q.defer();
+            this.$ready = this._$readyDeferred.promise;
             this.currentStep = null;
 
         }
@@ -59,9 +59,9 @@ angular.module('engine.document')
                     }
                 });
 
-                self.$ready.resolve();
+                self._$readyDeferred.resolve();
             }, function (error) {
-                self.$ready.reject(error);
+                self._$readyDeferred.reject(error);
             });
         };
 

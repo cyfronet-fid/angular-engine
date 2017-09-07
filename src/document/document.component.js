@@ -21,7 +21,8 @@ app.component('engineDocument', {
 app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $routeParams, $engine, engineDocument,
                                                engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                                engineAction, engineMetricCategories, StepList, DocumentForm,
-                                               DocumentActionList, $q, $engLog, $attrs, Step, $parse) {
+                                               DocumentActionList, $q, $engLog, $attrs, Step, $parse, $element,
+                                               $compile) {
     var self = this;
 
     $engLog.debug($scope);
@@ -58,8 +59,16 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
         });
 
 
-        $scope.$watch('$ctrl.documentForm.formlyState.$dirty', function (newValue, oldValue) {
+        $scope.$watch('$ctrl.formlyState.$dirty', function (newValue, oldValue) {
             self.dirty = newValue;
+        });
+
+        $scope.$watch('$ctrl.formlyState', function (newValue, oldValue) {
+            self.documentForm.setFormlyState(newValue);
+        });
+
+        $scope.$watch('$ctrl.formlyOptions', function (newValue, oldValue) {
+            self.documentForm.setFormlyOptions(newValue);
         });
 
         this.$ready = _initDocument();
@@ -87,8 +96,11 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                 self.processing = false;
                 self.actionList = null;
                 self.dirty = false;
+                self.documentForm.$destroy();
                 self.documentForm = new DocumentForm($scope);
-                self.$ready = _initDocument(true);
+                self.$ready = _initDocument().then(function() {
+                    $compile($element.contents())($scope);
+                });
             }
         }
     };
@@ -135,11 +147,16 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
 
         // return chained promise, which will do all other common required operations:
         self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
-        return self.actionList.$ready.then(function () {
+        return $q.all([self.actionList.$ready]).then(function () {
             //assign actions only if binding is present
             if ($attrs.actions)
                 self.actions = self.actionList;
-            self.documentForm.init(self.document, self.options, self.stepList, self.actionList);
+            self.documentForm.init(self.document,
+                self.options,
+                self.stepList,
+                self.actionList,
+                self.formlyState,
+                self.formlyOptions);
             //load metrics to form
             return self.documentForm.loadForm();
         });
