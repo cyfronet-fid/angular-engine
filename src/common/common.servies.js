@@ -30,12 +30,13 @@ angular.module('engine.common')
         };
 
         var getCreateUpdateAction = function (actions) {
-            for (var i = 0; i < actions.length; ++i) {
-                var action = actions[i];
-                if (isSaveAction(action)) {
-                    return action;
+            if(actions != null)
+                for (var i = 0; i < actions.length; ++i) {
+                    var action = actions[i];
+                    if (isSaveAction(action)) {
+                        return action;
+                    }
                 }
-            }
             $rootScope.$broadcast('engine.common.error', new ErrorEventCtx('noCreateUpdateAction',
                 'Document has no available create / update action, angular-engine framework requires that at least one update and one create action is specified'));
             return null;

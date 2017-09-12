@@ -109,6 +109,7 @@ angular.module('engine')
         var documents = [];
         var documents_d = {};
         var QUERY_PAGE_SIZE = 50;
+        var GLOBAL_CSS = '';
 
         var _apiCheck = $engineApiCheckProvider.apiCheck;
         _apiCheck.columnOptions = _apiCheck.arrayOf(_apiCheck.shape({
@@ -168,6 +169,10 @@ angular.module('engine')
 
         this.setQueryPageSize = function (queryPageSize) {
             QUERY_PAGE_SIZE = queryPageSize;
+        };
+
+        this.setGlobalCSS = function (css) {
+            GLOBAL_CSS = css;
         };
 
         /**
@@ -673,6 +678,7 @@ angular.module('engine')
             return new function () {
                 var self = this;
                 this.QUERY_PAGE_SIZE = QUERY_PAGE_SIZE;
+                this.GLOBAL_CSS = GLOBAL_CSS;
                 this.apiCheck = _apiCheck;
                 this.formly = $engineFormly;
                 this.baseUrl = _baseUrl;

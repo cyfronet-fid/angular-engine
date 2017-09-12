@@ -87,6 +87,11 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.8** Added customizable global CSS class which can be used by some application to specify style only engular-engine
+            Added a couple of guards which prevent application from crashing when provided with malformatted `app.config.js`
+            Added babel to brunch, allowing ECMA2015 code style.
+            Added query validation error display
+
 * **0.7.7** Fixed problem where query validators were not fired, added blocking of redirects, modals now reload after document creation
 
 * **0.7.6** Fixed passing ID with metrics query, added pagination

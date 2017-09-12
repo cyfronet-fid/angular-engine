@@ -8,9 +8,12 @@
   "devDependencies": {
     "aang-template-brunch": "^1.7.6",
     "after-brunch": "0.0.5",
+    "assetsmanager-brunch": "^1.8.1",
     "auto-reload-brunch": "^2.0.0",
     "babel-brunch": "~6.0.0",
     "babel-preset-es2015": "~6.3.13",
+    "babel-preset-env": "^1.6.0",
+    "babel-preset-es2015-ie8": "^1.0.0",
     "bower": "^1.7.7",
     "brunch": "^2.4.0",
     "clean-css-brunch": "^2.0.0",
@@ -34,6 +37,7 @@
     "karma-jasmine": "^0.3.8",
     "lite-server": "^2.2.2",
     "lodash": "^4.17.4",
+    "ng-annotate-brunch": "^1.7.2",
     "ngdocs": "~0.1.0",
     "protractor": "^4.0.9",
     "replacement-brunch": "^2.0.4",
@@ -52,7 +56,5 @@
     "protractor": "protractor tests/e2e/protractor.conf.js",
     "update-index-async": "node -e \"var fs=require('fs'),indexFile='app/index-async.html',loaderFile='app/bower_components/angular-loader/angular-loader.min.js',loaderText=fs.readFileSync(loaderFile,'utf-8').split(/sourceMappingURL=angular-loader.min.js.map/).join('sourceMappingURL=bower_components/angular-loader/angular-loader.min.js.map'),indexText=fs.readFileSync(indexFile,'utf-8').split(/\\/\\/@@NG_LOADER_START@@[\\s\\S]*\\/\\/@@NG_LOADER_END@@/).join('//@@NG_LOADER_START@@\\n'+loaderText+'    //@@NG_LOADER_END@@');fs.writeFileSync(indexFile,indexText);\""
   },
-  "dependencies": {
-    "assetsmanager-brunch": "^1.8.1"
-  }
+  "dependencies": {}
 }
