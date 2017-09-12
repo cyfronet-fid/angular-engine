@@ -262,7 +262,8 @@ angular.module('engine.document')
                 ' single-document="options.data.queries.singleDocument || '+(_.find(metric.visualClass, function (visualClass) {
                     return visualClass == '@singleDocument'
                 }) != null ? true : false)+'"'+
-                ' columns="options.data.queries.columns"'+
+                ' columns="options.data.queries.columns"'+'' +
+                ' formly-options="options" '+
                 ' query="\'' + metric.queryId + '\'" show-create-button="' + metric.showCreateButton + '" on-select-behavior="'+metric.onSelectBehavior+'"></engine-document-list>',
                 templateOptions: {
                     options: $engine.getOptions(metric.modelId),

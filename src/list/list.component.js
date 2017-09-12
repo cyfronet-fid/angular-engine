@@ -17,7 +17,8 @@ app.component('engineDocumentList', {
         metricId: '@',
         singleDocument: '=',
         controller: '@',
-        contentTemplateUrl: '='
+        contentTemplateUrl: '=',
+        formlyOptions: '='
     }
 });
 
