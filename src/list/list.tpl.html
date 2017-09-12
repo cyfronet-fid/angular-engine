@@ -69,6 +69,9 @@
          translate>
         {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}
     </div>
+    <div ng-if="$ctrl.formlyOptions.templateOptions.serverErrors!=0" ng-repeat="error in $ctrl.formlyOptions.templateOptions.serverErrors">
+        <div class="alert alert-danger"><span translate>{{ error }}</span></div>
+    </div>
 </div>
 
 <div class="eng-list-bottom-bar">
