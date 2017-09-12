@@ -452,9 +452,9 @@ fieldset[disabled] .btn-primary.focus {
     width: 50%;
 }
 
-select {
-    font-weight: bold;
-}
+/*select {*/
+    /*font-weight: bold;*/
+/*}*/
 
 .table-trash {
     color: #c1c1c1;
@@ -1219,8 +1219,10 @@ engine-document-actions {
 }
 
 .list-filter {
-    margin-right: 5px;
-    margin-top: 1px;
+    margin-right: 10px !important;
+    margin-top: 1px !important;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
 }
 
 .eng-table-filter-header-input {

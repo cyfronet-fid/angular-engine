@@ -1,4 +1,5 @@
-<h2 ng-show="$ctrl.listCaption && $ctrl.calculateVirtualDocumentCount() !== 0" class="eng-list-header pull-left"><span class="eng-caption" ng-if="$ctrl.listCaption" translate>{{ $ctrl.listCaption }}</span>
+<h2 ng-show="$ctrl.listCaption && $ctrl.calculateVirtualDocumentCount() !== 0" class="eng-list-header pull-left"><span
+        class="eng-caption" ng-if="$ctrl.listCaption" translate>{{ $ctrl.listCaption }}</span>
     <ul uib-pagination
         ng-show="$ctrl.canShowPagination()"
         style="margin-top: 0px;"
@@ -11,14 +12,15 @@
         ng-model="$ctrl.currentPage"
         ng-change="$ctrl.onPageChanged()">
     </ul>
+
+    <!--<button ng-show="documents.$resolved"-->
+            <!--class="btn btn-default btn-sm pull-right list-filter"-->
+            <!--ng-class="{active: $ctrl.showFilters === true}"-->
+            <!--ng-click="$ctrl.setShowFilters(!$ctrl.showFilters)"-->
+            <!--title="{{ 'Filter' | translate}}">-->
+        <!--<span class="glyphicon glyphicon-filter"></span>-->
+    <!--</button>-->
 </h2>
-<!--<button ng-show="documents.$resolved"-->
-<!--class="btn btn-default btn-sm pull-right list-filter"-->
-<!--ng-class="{active: $ctrl.showFilters === true}"-->
-<!--ng-click="$ctrl.setShowFilters(!$ctrl.showFilters)"-->
-<!--title="{{ 'Filter' | translate}}">-->
-<!--<span class="glyphicon glyphicon-filter"></span>-->
-<!--</button>-->
 
 <div class="eng-loading-box clear" ng-show="!documents.$resolved">
     <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
@@ -70,26 +72,26 @@
 </div>
 
 <div class="eng-list-bottom-bar">
-<action-button ng-if="$ctrl.showCreateButton !== false && canCreateDocument()"
-               ng-show="documents.$resolved"
-               btn-class="btn-primary" on-click="onCreateDocument()"
-               label="{{$ctrl.options.list.createButtonLabel ? $ctrl.options.list.createButtonLabel : 'Create '+options.name}}"></action-button>
+    <action-button ng-if="$ctrl.showCreateButton !== false && canCreateDocument()"
+                   ng-show="documents.$resolved"
+                   btn-class="btn-primary" on-click="onCreateDocument()"
+                   label="{{$ctrl.options.list.createButtonLabel ? $ctrl.options.list.createButtonLabel : 'Create '+options.name}}"></action-button>
 
-<action-button ng-repeat="customButton in customButtons"
-               ng-show="documents.$resolved"
-               btn-class="btn-primary" on-click="customButton.callback($ctrl.options)"
-               label="{{customButton.label}}"></action-button>
+    <action-button ng-repeat="customButton in customButtons"
+                   ng-show="documents.$resolved"
+                   btn-class="btn-primary" on-click="customButton.callback($ctrl.options)"
+                   label="{{customButton.label}}"></action-button>
 
 
-<ul uib-pagination
-    ng-show="$ctrl.canShowPagination()"
-    style="margin-top: 0px;"
-    class="pagination-sm pull-right"
-    total-items="$ctrl.calculateVirtualDocumentCount()"
-    items-per-page="$ctrl.DOCUMENT_QUERY_LIMIT"
-    boundry-links="false"
-    rotate="true"
-    ng-model="$ctrl.currentPage"
-    ng-change="$ctrl.onPageChanged()">
-</ul>
+    <ul uib-pagination
+        ng-show="$ctrl.canShowPagination()"
+        style="margin-top: 0px;"
+        class="pagination-sm pull-right"
+        total-items="$ctrl.calculateVirtualDocumentCount()"
+        items-per-page="$ctrl.DOCUMENT_QUERY_LIMIT"
+        boundry-links="false"
+        rotate="true"
+        ng-model="$ctrl.currentPage"
+        ng-change="$ctrl.onPageChanged()">
+    </ul>
 </div>

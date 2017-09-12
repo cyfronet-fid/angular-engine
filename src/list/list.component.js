@@ -1,4 +1,5 @@
-var app = angular.module('engine.list')
+var app = angular.module('engine.list');
+
 app.component('engineDocumentList', {
     template: '<ng-include src="$ctrl.contentTemplateUrl || \'/src/list/list.component.tpl.html\'"></ng-include>',
     controller: 'engineListCtrl',
@@ -181,9 +182,14 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         }
 
         $scope.documentActions = {};
+
+        // let filters = _.map(this.filters, (val, key) => {
+        //         return {[key]: val};
+        // });
+
         if ((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)) {
             $scope.documents = engineQuery.get($scope.query, this.parentDocument, undefined, undefined, self.documentPages.length * self.DOCUMENT_QUERY_LIMIT, self.DOCUMENT_QUERY_LIMIT,
-                this.ordering, this.filters);
+                this.ordering, null);
             $scope.documents.$promise.then(function (documents) {
                 // there are no documents for this page, loaded everything
                 if ($scope.documents.length === 0) {

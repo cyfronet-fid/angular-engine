@@ -78,6 +78,18 @@ module.exports = {
                 }
             }
         },
+        babel: {
+            // bower components should already be usable
+            // static/js is a non angular code, and also should not contain ecma6 syntax
+            // for some reason after compiling with babel it does not work
+            // TODO - check why src/main/resources/static/js does not compile with babel
+            ignore: ['bower_components/**.js', 'node_modules/**.js'],
+            presets: [['env', {
+                targets: {
+                    browsers: ['ie >= 8']
+                }
+            }]]
+        },
         environment: {
             token: /@@__ENV__/g
         },
