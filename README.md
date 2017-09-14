@@ -87,6 +87,13 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.9** Added `engActionButton` class which can be used to add custom button to the document's list which will
+            fire engine's action, and responds to it.
+            Custom buttons for document's lists can now be declared as strings and will be injected via angular's
+            dependency injection
+            Fixed bug where callback for custom button would not have it's return value passed
+            Fixed angular animate style so that buttons with spinners will properly show / hide
+
 * **0.7.8** Added customizable global CSS class which can be used by some application to specify style only engular-engine
             Added a couple of guards which prevent application from crashing when provided with malformatted `app.config.js`
             Added babel to brunch, allowing ECMA2015 code style.

@@ -1245,3 +1245,12 @@ engine-document-actions {
 .eng-list-pagination-top {
     font-weight: normal;
 }
+
+/**
+This is hack which is important, because without it
+spinners and loaders has to finish animation before being
+removed by ng-if and ng-show
+ */
+.ng-hide.ng-hide-animate {
+    display: none !important;
+}
