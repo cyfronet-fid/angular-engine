@@ -76,16 +76,27 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         /**
          * If inject all custom buttons callback which were defined as strings
          */
-        _.forEach($scope.customButtons, function (customButton) {
-            if (_.isString(customButton.callback)) {
+        for(let i = 0; i < ($scope.customButtons ? $scope.customButtons.length : 0); ++i) {
+            let customButton = $scope.customButtons[i];
+            if (_.isString(customButton)) {
+                $injector.invoke([customButton, function (component) {
+                    $scope.customButtons[i] = component;
+                }]);
+            }
+            else if (_.isString(customButton.callback)) {
                 var callbackName = customButton.callback;
                 customButton.callback = function (documentOptions) {
+                    // handling return value like this is required
+                    // in case callback returns promise - used for showing loader on the button
+
+                    let returnVal;
                     $injector.invoke([callbackName, function (callback) {
-                        callback(documentOptions);
+                        returnVal = callback(documentOptions);
                     }]);
+                    return returnVal;
                 }
             }
-        });
+        }
 
         _parentDocumentId = this.parentDocument ? this.parentDocument.id : undefined;
 

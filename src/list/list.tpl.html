@@ -78,12 +78,12 @@
     <action-button ng-if="$ctrl.showCreateButton !== false && canCreateDocument()"
                    ng-show="documents.$resolved"
                    btn-class="btn-primary" on-click="onCreateDocument()"
-                   label="{{$ctrl.options.list.createButtonLabel ? $ctrl.options.list.createButtonLabel : 'Create '+options.name}}"></action-button>
+                   label="{{$ctrl.options.list.createButtonLabel ? $ctrl.options.list.createButtonLabel : 'Create '+options.name }}"></action-button>
 
     <action-button ng-repeat="customButton in customButtons"
-                   ng-show="documents.$resolved"
+                   ng-show="documents.$resolved && customButton.callback"
                    btn-class="btn-primary" on-click="customButton.callback($ctrl.options)"
-                   label="{{customButton.label}}"></action-button>
+                   label="{{customButton.label | translate}}"></action-button>
 
 
     <ul uib-pagination
