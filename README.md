@@ -87,6 +87,11 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.10** Improved redirect handling with use of `com.agreemount` 1.2.6 features. Now document model to which
+             redirecting happens can be specified. Additionally if passing of documents states in redirect action
+             via `engine.includeStateInRedirect = true` option is enabled it will be used, which should save one request
+             to the server.
+
 * **0.7.9** Added `engActionButton` class which can be used to add custom button to the document's list which will
             fire engine's action, and responds to it.
             Custom buttons for document's lists can now be declared as strings and will be injected via angular's

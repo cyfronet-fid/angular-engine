@@ -15,7 +15,7 @@ angular.module('engine.document')
             this.markInit = null;
 
             this.loadActions = function loadActions() {
-                if(actions != null)
+                if (actions != null)
                     return self.processActions(actions);
                 return engActionResource.getAvailable(self.document, self.document.id, self.parentDocumentId).$promise.then(self.processActions);
             };
@@ -131,7 +131,7 @@ angular.module('engine.document')
          * @param {Object} ctx custom context which will be passed to every event fired in this function (key: `ctx`)
          */
         DocumentAction.prototype.call = function call(ctx) {
-            if(ctx == null)
+            if (ctx == null)
                 ctx = {};
             var self = this;
             var event = null;
@@ -245,20 +245,31 @@ angular.module('engine.document')
                 if (document.id === actionResponse.redirectToDocument)
                     return $q.resolve();
 
+                let promise = null;
+                if (actionResponse.redirectContext != null) {
+                    promise = $q.when(actionResponse.redirectContext)
+                }
+                else if (actionResponse.targetDocumentStates != null && actionResponse.targetDocumentStates[$engine.DOCUMENT_MODEL_KEY] != null) {
+                    promise = $q.when(actionResponse.targetDocumentStates[$engine.DOCUMENT_MODEL_KEY])
+                }
+                else {
+                    promise = engineDocument.get(actionResponse.redirectToDocument).$promise.then((data) => data.document.states.documentType);
+                }
+
                 //before redirecting, load document from engine to ascertain it's document type
-                return engineDocument.get(actionResponse.redirectToDocument).$promise.then(function (data) {
+                return promise.then(function (documentModelType) {
 
                     if (document.id != null && document.id !== actionResponse.redirectToDocument) {
                         $location.$$search.step = 0;
                     }
 
-                    var documentOptions = $engine.getOptions(data.document.states.documentType);
+                    var documentOptions = $engine.getOptions(documentModelType);
 
                     if (documentOptions == null) {
                         var message = 'Document type to which redirection was requested has not been registrated! ' +
                             'Make sure to register it in $engineProvider';
 
-                        $engLog.error(message, 'DocumentType=', data.document.states.documentType);
+                        $engLog.error(message, 'DocumentType=', documentModelType);
 
                         throw new Error(message)
                     }
