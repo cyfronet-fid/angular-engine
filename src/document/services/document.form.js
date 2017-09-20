@@ -112,7 +112,6 @@ angular.module('engine.document')
                 return metric.id in self.metricDict;
             });
 
-            var metricToRemove = [];
             $engLog.log('New metrics: ', newMetrics);
 
             //remove metrics, which are not present in metricList
@@ -126,7 +125,8 @@ angular.module('engine.document')
                         return;
 
                     $engLog.log('Metric to remove: ', metric, 'index: ', metricIndex);
-                    metricToRemove.push(metric.id);
+
+                    delete self.steps.getCurrentStep().fields[metric.id];
                     delete self.metricDict[metric.id];
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
                     delete self.document.metrics[metric.id];
@@ -161,11 +161,6 @@ angular.module('engine.document')
                     step.fields[field.data.id] = field;
                     break;
                 }
-            });
-
-            _.forEach(metricToRemove, function (metricId) {
-                var currentStep = self.steps.getCurrentStep();
-                delete currentStep.fields[metricId];
             });
 
             // Notify document and every element under it that metrics have been reladed
