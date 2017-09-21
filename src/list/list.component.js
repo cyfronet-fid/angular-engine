@@ -83,7 +83,11 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                     $scope.customButtons[i] = component;
                 }]);
             }
-            else if (_.isString(customButton.callback)) {
+
+            else if (_.isFunction(customButton.refresh))
+                customButton.refresh();
+
+            if (_.isString(customButton.callback)) {
                 var callbackName = customButton.callback;
                 customButton.callback = function (documentOptions) {
                     // handling return value like this is required

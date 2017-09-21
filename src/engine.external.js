@@ -12,7 +12,13 @@ app.factory('engActionButton', function ($timeout, DocumentActionList, $rootScop
             this.callback = null;
             this.label = label;
             this._$scope = $rootScope.$new(true);
+            this._actionList = null;
 
+            this.refresh();
+        }
+
+        refresh() {
+            this.callback = null;
             this._actionList = new DocumentActionList(null, this.requestJson, null, this._$scope);
 
             this._actionList.$ready.then(() => {
