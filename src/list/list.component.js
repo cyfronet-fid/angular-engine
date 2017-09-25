@@ -137,8 +137,6 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     this.filterQuery = function () {
-        console.log(this.filters);
-
         if (this.filterQueryAction !== null)
             $timeout.cancel(this.filterQueryAction);
 
@@ -198,14 +196,11 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         }
 
         $scope.documentActions = {};
-
-        // let filters = _.map(this.filters, (val, key) => {
-        //         return {[key]: val};
-        // });
+        console.log(this.filters)
 
         if ((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)) {
             $scope.documents = engineQuery.get($scope.query, this.parentDocument, undefined, undefined, self.documentPages.length * self.DOCUMENT_QUERY_LIMIT, self.DOCUMENT_QUERY_LIMIT,
-                this.ordering, null);
+                this.ordering, this.filters);
             $scope.documents.$promise.then(function (documents) {
                 // there are no documents for this page, loaded everything
                 if ($scope.documents.length === 0) {
