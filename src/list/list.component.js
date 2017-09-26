@@ -276,7 +276,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                 });
             } else {
                 if ($scope.options.subdocument == true)
-                    DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
+                    DocumentModal(documentEntry.document.id, $scope.options, self.parentDocument, function () {
                         // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
                         $rootScope.$broadcast('engine.list.reload', $scope.query);
                     });

@@ -209,7 +209,7 @@ angular.module('engine.document')
                     if (ev1.defaultPrevented || ev2.defaultPrevented)
                         return result;
                 }
-                return DocumentActionProcess(self.document, result, self.parentDocument);
+                return DocumentActionProcess(self.document, result, self.parentDocument, self.$scope);
             }, function (result) {
                 self.$scope.$broadcast('engine.common.action.error', {
                     'document': self.document,
@@ -240,10 +240,16 @@ angular.module('engine.document')
     })
     .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
 
-        return function DocumentActionHandler(document, actionResponse, parentDocument) {
+        return function DocumentActionHandler(document, actionResponse, parentDocument, $scope) {
             if (actionResponse.type === 'REDIRECT') {
-                if (document.id === actionResponse.redirectToDocument)
+                if (actionResponse.redirectToDocument === null)
                     return $q.resolve();
+
+                // Reload document
+                if (document.id === actionResponse.redirectToDocument && $scope != null) {
+                    $scope.$broadcast('engine.common.document.requestReload');
+                    return $q.resolve();
+                }
 
                 let promise = null;
                 if (actionResponse.redirectContext != null) {

@@ -84,7 +84,9 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
             .then(function () {
                 $engLog.debug('engineDocumentCtrl initialized: ', self);
                 $engLog.log(self.$ready.$$state.status);
-            }).then(self.validateAfterInit);
+            }).then(self.validateAfterInit).then(() => {
+                $scope.$emit('engine.common.document.documentLoaded', self.document);
+            });
     }
 
     this.$onChanges = function (changesObject) {
