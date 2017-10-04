@@ -22,7 +22,7 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                                                engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                                engineAction, engineMetricCategories, StepList, DocumentForm,
                                                DocumentActionList, $q, $engLog, $attrs, Step, $parse, $element,
-                                               $compile) {
+                                               $compile, $interval) {
     var self = this;
 
     $engLog.debug($scope);
@@ -99,10 +99,10 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                 self.actionList = null;
                 self.dirty = false;
                 self.documentForm.$destroy();
+                self.formlyState = undefined;
+                self.formlyOptions = undefined;
                 self.documentForm = new DocumentForm($scope);
-                self.$ready = _initDocument().then(function() {
-                    $compile($element.contents())($scope);
-                });
+                self.$ready = _initDocument();
             }
         }
     };
