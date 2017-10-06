@@ -91,6 +91,8 @@ angular-engine package
              redirecting happens can be specified. Additionally if passing of documents states in redirect action
              via `engine.includeStateInRedirect = true` option is enabled it will be used, which should save one request
              to the server.
+             Added filtering for querysets
+             Fixed bug with sending empty TEMP instead of null
 
 * **0.7.9** Added `engActionButton` class which can be used to add custom button to the document's list which will
             fire engine's action, and responds to it.

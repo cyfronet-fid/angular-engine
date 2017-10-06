@@ -13,11 +13,11 @@ angular.module('engine.common')
         return {
             getAvailable: function (document, documentId, otherDocumentId) {
                 $engineApiCheck([$engineApiCheck.object, $engineApiCheck.string], arguments);
-                return _actionAvailable.post({documentId: documentId, otherDocumentId: otherDocumentId}, _.omit(document, '$ext'));
+                return _actionAvailable.post({documentId: documentId, otherDocumentId: otherDocumentId}, document === null ? null : _.omit(document, '$ext'));
             },
             invoke: function (actionId, document, contextDocumentId, otherDocumentId) {
                 $engineApiCheck([$engineApiCheck.string, $engineApiCheck.object], arguments);
-                return _action.invoke({actionId: actionId, documentId: contextDocumentId || document.id, otherDocumentId: otherDocumentId}, _.omit(document, '$ext'));
+                return _action.invoke({actionId: actionId, documentId: contextDocumentId || document.id, otherDocumentId: otherDocumentId}, document === null ? null : _.omit(document, '$ext'));
             }
         };
     });
