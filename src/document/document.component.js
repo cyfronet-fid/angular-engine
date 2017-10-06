@@ -22,7 +22,7 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                                                engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                                engineAction, engineMetricCategories, StepList, DocumentForm,
                                                DocumentActionList, $q, $engLog, $attrs, Step, $parse, $element,
-                                               $compile) {
+                                               $compile, $interval) {
     var self = this;
 
     $engLog.debug($scope);
@@ -84,7 +84,9 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
             .then(function () {
                 $engLog.debug('engineDocumentCtrl initialized: ', self);
                 $engLog.log(self.$ready.$$state.status);
-            }).then(self.validateAfterInit);
+            }).then(self.validateAfterInit).then(() => {
+                $scope.$emit('engine.common.document.documentLoaded', self.document);
+            });
     }
 
     this.$onChanges = function (changesObject) {
@@ -97,10 +99,10 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                 self.actionList = null;
                 self.dirty = false;
                 self.documentForm.$destroy();
+                self.formlyState = undefined;
+                self.formlyOptions = undefined;
                 self.documentForm = new DocumentForm($scope);
-                self.$ready = _initDocument().then(function() {
-                    $compile($element.contents())($scope);
-                });
+                self.$ready = _initDocument();
             }
         }
     };

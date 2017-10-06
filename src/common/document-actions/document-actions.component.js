@@ -27,6 +27,8 @@ angular.module('engine.common')
                         _bindings = [];
                     }
 
+                    _bindings.push(this._documentScope.$on('engine.common.document.documentLoaded', self.loadActions));
+
                     //If document is reloaded, also reload actions
                     _bindings.push(this._documentScope.$on('document.form.requestReload', self.loadActions));
 

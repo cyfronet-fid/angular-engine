@@ -1,12 +1,14 @@
 angular.module('engine.document')
     .factory('DocumentActionList', function (DocumentAction, engActionResource, $engineApiCheck, $q, $engLog, $http, $rootScope) {
-        function DocumentActionList(actions, document, parentDocument, $scope) {
+        function DocumentActionList(actions, document, parentDocument, $scope, dontSendTemp) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
 
             if (parentDocument == null)
                 parentDocument = {};
 
+
             var self = this;
+            this.dontSendTemp = dontSendTemp || false;
             this.$scope = $scope;
             this.parentDocument = parentDocument;
             this.parentDocumentId = document.id != null ? null : parentDocument.id;
@@ -23,7 +25,7 @@ angular.module('engine.document')
             this.processActions = function (actions) {
                 self.actions = [];
                 _.forEach(actions, function (action) {
-                    self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope));
+                    self.actions.push(new DocumentAction(action, self.document, self.parentDocument, self.$scope, self.dontSendTemp));
                 });
             };
 
@@ -97,8 +99,9 @@ angular.module('engine.document')
         return DocumentActionList;
     })
     .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $engLog, $q, $rootScope) {
-        function DocumentAction(engAction, document, parentDocument, $scope) {
+        function DocumentAction(engAction, document, parentDocument, $scope, dontSendTemp) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
+            this.dontSendTemp = dontSendTemp || false;
             this.document = document;
             this.actionId = engAction.id;
             this.label = engAction.label;
@@ -184,7 +187,7 @@ angular.module('engine.document')
                 }
             }
             return $q.all(promises).then(function () {
-                return engActionResource.invoke(self.actionId, self.document, self.document.id, self.parentDocumentId).$promise;
+                return engActionResource.invoke(self.actionId, self.dontSendTemp === true ? null : self.document, self.document.id, self.parentDocumentId).$promise;
             }).then(function (result) {
                 $engLog.debug('engine.document.actions', 'action call returned', result);
                 if (self.$scope) {
@@ -209,7 +212,7 @@ angular.module('engine.document')
                     if (ev1.defaultPrevented || ev2.defaultPrevented)
                         return result;
                 }
-                return DocumentActionProcess(self.document, result, self.parentDocument);
+                return DocumentActionProcess(self.document, result, self.parentDocument, self.$scope);
             }, function (result) {
                 self.$scope.$broadcast('engine.common.action.error', {
                     'document': self.document,
@@ -240,10 +243,16 @@ angular.module('engine.document')
     })
     .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
 
-        return function DocumentActionHandler(document, actionResponse, parentDocument) {
+        return function DocumentActionHandler(document, actionResponse, parentDocument, $scope) {
             if (actionResponse.type === 'REDIRECT') {
-                if (document.id === actionResponse.redirectToDocument)
+                if (actionResponse.redirectToDocument === null)
                     return $q.resolve();
+
+                // Reload document
+                if (document.id === actionResponse.redirectToDocument && $scope != null) {
+                    $scope.$broadcast('engine.common.document.requestReload');
+                    return $q.resolve();
+                }
 
                 let promise = null;
                 if (actionResponse.redirectContext != null) {

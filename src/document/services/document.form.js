@@ -220,7 +220,7 @@ angular.module('engine.document')
         this._setOptions(options);
         this._setSteps(steps);
         this._setActions(actions);
-        this.formlyState = formlyState;
+        this.setFormlyState(formlyState);
         this.formlyOptions = formlyOptions;
         this.markInit();
     };

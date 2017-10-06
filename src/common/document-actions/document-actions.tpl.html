@@ -15,7 +15,7 @@
 <span ng-if="$ctrl.saveAlertLeft == true" ng-show="!$ctrl.loading && $ctrl.dirty && $ctrl.steps.isLast($ctrl.step)" class="document-changes-info document-dirty-warning-right" translate>You must save document to perform actions</span>
 
 <!--Always show save button-->
-<action-button ng-show="$ctrl.dirty == true && !$ctrl.loading && $ctrl.steps.isLast($ctrl.step)"
+<action-button ng-show="$ctrl.actionList.getSaveAction() != null && $ctrl.dirty == true && !$ctrl.loading && $ctrl.steps.isLast($ctrl.step)"
                on-click="$ctrl.actionList.callSave()" label="{{$ctrl.actionList.getSaveAction().label}}"></action-button>
 
 <!--Validate should be visible only on pristine document-->

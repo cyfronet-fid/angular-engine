@@ -43,6 +43,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         this.filters = {};
         this.ordering = [];
 
+        $scope.documentActions = {};
 
         this.filterQueryAction = null;
         $scope.documents = [];
@@ -137,13 +138,13 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     this.filterQuery = function () {
-        console.log(this.filters);
+        $engLog.debug(this.filters);
 
         if (this.filterQueryAction !== null)
             $timeout.cancel(this.filterQueryAction);
 
         this.filterQueryAction = $timeout(function () {
-            self.loadDocuments();
+            self.loadDocuments(true);
         }, this.FILTER_DEBOUNCE_TIME);
     };
 
@@ -192,23 +193,25 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
 
     this.loadDocuments = function (clear) {
         if (clear === true) {
+            $scope.documents = [];
             self.documentPages = [];
             self.currentPage = 1;
             self.allDocumentsLoaded = false;
         }
 
-        $scope.documentActions = {};
+        let filters = _.pick(this.filters, value => value !== "");
 
-        // let filters = _.map(this.filters, (val, key) => {
-        //         return {[key]: val};
-        // });
+        filters = _.isEmpty(filters) ? null : {$and: _.map(filters, (val, key) => {
+                return {[key]: {$regex: val, $options: 'i'}};
+        })};
 
         if ((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)) {
             $scope.documents = engineQuery.get($scope.query, this.parentDocument, undefined, undefined, self.documentPages.length * self.DOCUMENT_QUERY_LIMIT, self.DOCUMENT_QUERY_LIMIT,
-                this.ordering, null);
+                this.ordering, filters);
             $scope.documents.$promise.then(function (documents) {
+                $scope.documents = documents;
                 // there are no documents for this page, loaded everything
-                if ($scope.documents.length === 0) {
+                if (documents.length === 0) {
                     self.allDocumentsLoaded = true;
                     self.currentPage = self.documentPages.length;
                     if (!_.isEmpty(self.documentPages))
@@ -222,7 +225,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                 if ($scope.documents.length !== self.DOCUMENT_QUERY_LIMIT)
                     self.allDocumentsLoaded = true;
                 angular.forEach(documents, function (document) {
-                    $scope.documentActions[document.document.id] = new DocumentActionList(document.actions, document.document, self.parentDocument, $scope);
+                    $scope.documentActions[document.document.id] = new DocumentActionList(document.actions, document.document, self.parentDocument, $scope, true);
                 });
 
                 if (self.metricId != null) {
@@ -276,7 +279,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                 });
             } else {
                 if ($scope.options.subdocument == true)
-                    DocumentModal(documentEntry.document.id, $scope.options, _parentDocumentId, function () {
+                    DocumentModal(documentEntry.document.id, $scope.options, self.parentDocument, function () {
                         // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
                         $rootScope.$broadcast('engine.list.reload', $scope.query);
                     });
