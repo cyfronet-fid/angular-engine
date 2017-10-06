@@ -125,6 +125,8 @@ angular.module('engine.document')
                         return;
 
                     $engLog.log('Metric to remove: ', metric, 'index: ', metricIndex);
+
+                    delete self.steps.getCurrentStep().fields[metric.id];
                     delete self.metricDict[metric.id];
                     self.categoriesDict[metric.categoryId].fieldGroup.splice(metricIndex, 1);
                     delete self.document.metrics[metric.id];
