@@ -88,6 +88,7 @@ angular-engine package
 ##Changelog
 
 * **0.7.11** Fixed problem with reloading document after redirect - no queries were reloaded - it's fixed now.
+             Added confirmation modal to action with type "DELETE"   
 
 * **0.7.10** Improved redirect handling with use of `com.agreemount` 1.2.6 features. Now document model to which
              redirecting happens can be specified. Additionally if passing of documents states in redirect action
