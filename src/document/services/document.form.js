@@ -186,13 +186,17 @@ angular.module('engine.document')
     DocumentForm.prototype._setDocument = function setDocument(document) {
         if(this.document != null) {
             this.document = document;
+            // model must be rebound for every field in form
             _.forEach(this.fieldList, function (field) {
                 field.model = document.metrics;
+                if (field.data.prepareValue)
+                    document.metrics[field.key] = field.data.prepareValue(document.metrics[field.key]);
             });
         }
         else
             this.document = document;
     };
+
     DocumentForm.prototype._setActions = function setActions(actions) {
         this.actions = actions;
     };
@@ -383,6 +387,10 @@ angular.module('engine.document')
             self.setDefaultMetricValues(self.metricList);
             self._updateFields(self.metricList);
         }).$promise;
+    };
+
+    DocumentForm.prototype.prepareMetrics = function () {
+        console.log(this);
     };
 
     DocumentForm.prototype.validateCurrentStep = function validateCurrentStep(fillNull) {

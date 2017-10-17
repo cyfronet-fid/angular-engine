@@ -1,9 +1,17 @@
 angular.module('engine.document')
     .component('engineDocumentDetails', {
         templateUrl: '/src/document/details/details.tpl.html',
-        controller: function ($parse) {
-            var self = this;
+        controller: function ($parse, $filter) {
+            const self = this;
             this.$parse = $parse;
+
+            this.formatEntry = (entry) => {
+                let r = this.$parse(entry.name)(this.ngModel);
+
+                if(!_.isUndefined(r) && _.isDate(r) && entry.type === 'date')
+                    r = $filter('date')(r);
+                return r;
+            };
 
             this.saveDocument = function () {
                 self.savePromise = self.actions.callSave();
@@ -11,7 +19,7 @@ angular.module('engine.document')
             };
         },
         bindings: {
-            ngModel: '=',
+            ngModel: '<',
             options: '=',
             actions: '=',
             dirty: '='

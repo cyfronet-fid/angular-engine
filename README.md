@@ -87,6 +87,8 @@ angular-engine package
 
 ##Changelog
 
+* **0.7.12** Added metrics recalculation after reloading document, added parsing of date objects to document detail's view
+
 * **0.7.11** Fixed problem with reloading document after redirect - no queries were reloaded - it's fixed now.
              Added confirmation modal to action with type "DELETE"   
 
