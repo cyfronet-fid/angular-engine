@@ -41,6 +41,7 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
             event.reloadPromise = self.getDocument(true).then(function () {
                 self.documentForm._setDocument(self.document);
                 self.actionList._setDocument(self.document);
+                $scope.$broadcast('engine.list.reload');
             });
         });
 

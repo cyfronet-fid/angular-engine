@@ -242,7 +242,6 @@ angular.module('engine.document')
         return DocumentAction;
     })
     .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
-
         return function DocumentActionHandler(document, actionResponse, parentDocument, $scope) {
             if (actionResponse.type === 'REDIRECT') {
                 if (actionResponse.redirectToDocument === null)
