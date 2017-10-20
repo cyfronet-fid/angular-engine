@@ -12,11 +12,15 @@ app.directive('engIsolateForm', function IsolateFormDirective($timeout) {
 
       $timeout(function () {
         // Remove this form from parent controller
-        var parentFormController = $element.parent().controller('form');
+        let parentFormController = $element.parent().controller('form');
+
+        if (_.isUndefined(parentFormController))
+          return;
+
         parentFormController.$removeControl(formController);
 
         // Replace form controller with a 'null-controller'
-        var isolateFormCtrl = {
+        let isolateFormCtrl = {
           $addControl: angular.noop,
           $removeControl: angular.noop,
           $setValidity: angular.noop,

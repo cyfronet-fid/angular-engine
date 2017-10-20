@@ -1,0 +1,10 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" ng-click="$ctrl.dismiss()">&times;</button>
+    <h4 class="modal-title" id="confirm-modal-label" translate>{{::$ctrl.resolve.title}}</h4>
+
+</div>
+<div class="modal-body" ng-bind-html="$ctrl.resolve.content | translate"></div>
+<div class="modal-footer">
+    <button class="btn btn-default" ng-click="$ctrl.dismiss()" translate>Cancel</button>
+    <button class="btn btn-primary" ng-click="$ctrl.close()" translate>Ok</button>
+</div>

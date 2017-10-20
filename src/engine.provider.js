@@ -102,7 +102,7 @@ angular.module('engine')
      * @description
      * Basic means of configuration
      */
-    .provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider) {
+    .provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider, $injector) {
         var self = this;
 
         var dashboards = [];
@@ -148,6 +148,12 @@ angular.module('engine')
                 templateUrl: '/src/document/document.wrapper.tpl.html',
                 showValidationButton: true
             }
+        };
+
+        this.confirmModal = 'engConfirm';
+
+        this.registerConfirmModal = (confirmModalMethod) => {
+            this.confirmModal = confirmModalMethod;
         };
 
         function prepareDocumentOptions(options) {
@@ -677,7 +683,7 @@ angular.module('engine')
          * (If you want to just use angular-engine see {@link engine.provider:$engineProvider $engineProvider}
          *
          */
-        this.$get = function ($engineFormly, engineDocument, $rootScope, $engLog, engineQuery) {
+        this.$get = function ($engineFormly, engineDocument, $rootScope, $engLog, engineQuery, $injector) {
             var _engineProvider = self;
 
             return new function () {
@@ -690,6 +696,14 @@ angular.module('engine')
                 this.baseUrl = _baseUrl;
                 this.documents = documents;
                 this.documents_d = documents_d;
+
+                this.confirm = (title, content) => {
+                    if (_.isString(_engineProvider.confirmModal)) {
+                        return $injector.invoke([_engineProvider.confirmModal, (_confirmModalMethod) => _confirmModalMethod(title, content)]);
+                    }
+                    else
+                        return _engineProvider.confirmModal(title, content);
+                };
 
                 /**
                  * true if user disabled onReloadFunction during configuration phase

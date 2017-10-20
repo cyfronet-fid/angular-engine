@@ -8,7 +8,7 @@
         <ul class="list-group">
             <li ng-repeat="entry in $ctrl.options.document.details.entries | conditionFulfiled : $ctrl.ngModel" class="list-group-item">
                 <span translate>{{entry.caption || entry.name}}</span>
-                <span translate>{{$ctrl.$parse(entry.name)($ctrl.ngModel) || 'Not specified yet'}}</span>
+                <span translate>{{$ctrl.formatEntry(entry) || 'Not specified yet'}}</span>
             </li>
         </ul>
 

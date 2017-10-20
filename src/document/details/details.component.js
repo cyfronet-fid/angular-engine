@@ -1,19 +1,30 @@
 angular.module('engine.document')
     .component('engineDocumentDetails', {
         templateUrl: '/src/document/details/details.tpl.html',
+
         controller: function ($parse, $window, $scope) {
             var self = this;
             this.$parse = $parse;
+
             self.isVisible = function () {
                 return $scope.$parent.sideMenuVisible;
-            }
+            };
+
+            this.formatEntry = (entry) => {
+                let r = this.$parse(entry.name)(this.ngModel);
+
+                if(!_.isUndefined(r) && _.isDate(r) && entry.type === 'date')
+                    r = $filter('date')(r);
+                return r;
+            };
+
             this.saveDocument = function () {
                 self.savePromise = self.actions.callSave();
                 return self.savePromise;
             };
         },
         bindings: {
-            ngModel: '=',
+            ngModel: '<',
             options: '=',
             actions: '=',
             dirty: '='

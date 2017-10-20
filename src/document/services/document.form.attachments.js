@@ -102,7 +102,7 @@ angular.module('engine.document').filter('formatFileSize', function () {
     };
 });
 
-angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $timeout, engAttachment, $engLog) {
+angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $engine, $timeout, engAttachment, $engLog) {
     var self = this;
     var STATUS = {loading: 0, uploading: 1, disabled: 2, normal: 3};
 
@@ -126,26 +126,28 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
     });
 
     $scope.delete = function (file) {
-        $scope.status = STATUS.loading;
-        if ($scope.isList) {
-            var indexOf = _.indexOf($scope.model[$scope.options.key], file);
-            if (indexOf !== -1) {
-                $scope.model[$scope.options.key].splice(indexOf, 1);
+        $engine.confirm('Delete file', 'Do you really want to delete this file?').then(() => {
+            $scope.status = STATUS.loading;
+            if ($scope.isList) {
+                var indexOf = _.indexOf($scope.model[$scope.options.key], file);
+                if (indexOf !== -1) {
+                    $scope.model[$scope.options.key].splice(indexOf, 1);
+                }
+            } else {
+                $scope.model[$scope.options.key] = null;
             }
-        } else {
-            $scope.model[$scope.options.key] = null;
-        }
-        $scope.attachment.clear();
+            $scope.attachment.clear();
 
-        var event = $scope.$emit('engine.common.document.requestSave');
+            var event = $scope.$emit('engine.common.document.requestSave');
 
-        event.savePromise.then(function () {
-            $scope.error = null;
-            $scope.status = STATUS.normal;
-        }, function () {
-            $scope.error = 'Could not save document';
-            $scope.status = STATUS.normal;
-        })
+            event.savePromise.then(function () {
+                $scope.error = null;
+                $scope.status = STATUS.normal;
+            }, function () {
+                $scope.error = 'Could not save document';
+                $scope.status = STATUS.normal;
+            })
+        });
     };
 
     $scope.upload = function (file) {

@@ -98,7 +98,7 @@ angular.module('engine.document')
 
         return DocumentActionList;
     })
-    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $engLog, $q, $rootScope) {
+    .factory('DocumentAction', function (engActionResource, $engineApiCheck, DocumentActionProcess, $engLog, $q, $rootScope, $engine) {
         function DocumentAction(engAction, document, parentDocument, $scope, dontSendTemp) {
             $engineApiCheck([$engineApiCheck.object, $engineApiCheck.object, $engineApiCheck.object.optional, $engineApiCheck.object.optional], arguments);
             this.dontSendTemp = dontSendTemp || false;
@@ -114,9 +114,11 @@ angular.module('engine.document')
 
         DocumentAction.prototype.TYPE_CREATE = 'CREATE';
         DocumentAction.prototype.TYPE_UPDATE = 'UPDATE';
+        DocumentAction.prototype.TYPE_DELETE = 'DELETE';
         DocumentAction.prototype.TYPE_LINK = 'LINK';
         DocumentAction.prototype.SAVE_ACTIONS = [DocumentAction.prototype.TYPE_CREATE, DocumentAction.prototype.TYPE_UPDATE];
         DocumentAction.prototype.LINK_ACTIONS = [DocumentAction.prototype.TYPE_LINK];
+        DocumentAction.prototype.DELETE_ACTIONS = [DocumentAction.prototype.TYPE_DELETE];
 
         /**
          * Broadcast notification event (notification events should not be listened by angular-engine
@@ -140,90 +142,99 @@ angular.module('engine.document')
             var event = null;
             $engLog.debug('engine.document.actions', 'action called', this);
 
-            if (this.$scope) {
-                var promises = [];
+            let consent = $q.when(true);
 
-                event = this.$scope.$broadcast('engine.common.action.before', {
-                    'document': this.document,
-                    'action': this,
-                    'ctx': ctx,
-                    'promises': promises
-                });
-                this.broadcastNotification('engine.notification.action.before');
+            if (this.isDelete()) {
+                console.log('delete called');
+                consent = $engine.confirm('Delete', 'Do you really want to perform this action?');
+            }
 
-                if (event.defaultPrevented) {
-                    this.$scope.$broadcast('engine.common.action.prevented', {
-                        'document': this.document,
-                        'action': this,
-                        'ctx': ctx,
-                        'event': event
-                    });
+            return consent.then(() => {
+                if (this.$scope) {
+                    var promises = [];
 
-                    this.broadcastNotification('engine.notification.action.prevented');
-                    return;
-                }
-
-                if (this.isSave()) {
-                    event = self.$scope.$broadcast('engine.common.save.before', {
+                    event = this.$scope.$broadcast('engine.common.action.before', {
                         'document': this.document,
                         'action': this,
                         'ctx': ctx,
                         'promises': promises
                     });
-
-                    this.broadcastNotification('engine.notification.save.before');
+                    this.broadcastNotification('engine.notification.action.before');
 
                     if (event.defaultPrevented) {
-                        self.$scope.$broadcast('engine.common.save.prevented', {
+                        this.$scope.$broadcast('engine.common.action.prevented', {
                             'document': this.document,
                             'action': this,
                             'ctx': ctx,
                             'event': event
                         });
 
-                        self.broadcastNotification('engine.notification.save.prevented');
-                        return;
+                        this.broadcastNotification('engine.notification.action.prevented');
+                        return $q.reject();
+                    }
+
+                    if (this.isSave()) {
+                        event = self.$scope.$broadcast('engine.common.save.before', {
+                            'document': this.document,
+                            'action': this,
+                            'ctx': ctx,
+                            'promises': promises
+                        });
+
+                        this.broadcastNotification('engine.notification.save.before');
+
+                        if (event.defaultPrevented) {
+                            self.$scope.$broadcast('engine.common.save.prevented', {
+                                'document': this.document,
+                                'action': this,
+                                'ctx': ctx,
+                                'event': event
+                            });
+
+                            self.broadcastNotification('engine.notification.save.prevented');
+                            return $q.reject();
+                        }
                     }
                 }
-            }
-            return $q.all(promises).then(function () {
-                return engActionResource.invoke(self.actionId, self.dontSendTemp === true ? null : self.document, self.document.id, self.parentDocumentId).$promise;
-            }).then(function (result) {
-                $engLog.debug('engine.document.actions', 'action call returned', result);
-                if (self.$scope) {
-                    var ev1 = self.$scope.$broadcast('engine.common.action.after', {
+                return $q.all(promises).then(function () {
+                    return engActionResource.invoke(self.actionId, self.dontSendTemp === true ? null : self.document, self.document.id, self.parentDocumentId).$promise;
+                }).then(function (result) {
+                    $engLog.debug('engine.document.actions', 'action call returned', result);
+                    if (self.$scope) {
+                        var ev1 = self.$scope.$broadcast('engine.common.action.after', {
+                            'document': self.document,
+                            'action': self,
+                            'ctx': ctx,
+                            'result': result
+                        });
+                        var ev2 = self.$scope.$broadcast('engine.common.save.after', {
+                            'document': self.document,
+                            'action': self,
+                            'ctx': ctx,
+                            'result': result
+                        });
+
+                        self.broadcastNotification('engine.notification.action.after');
+
+                        if (self.isSave())
+                            self.broadcastNotification('engine.notification.save.after');
+
+                        if (ev1.defaultPrevented || ev2.defaultPrevented)
+                            return result;
+                    }
+                    return DocumentActionProcess(self.document, result, self.parentDocument, self.$scope);
+                }, function (result) {
+                    self.$scope.$broadcast('engine.common.action.error', {
                         'document': self.document,
                         'action': self,
                         'ctx': ctx,
                         'result': result
                     });
-                    var ev2 = self.$scope.$broadcast('engine.common.save.after', {
-                        'document': self.document,
-                        'action': self,
-                        'ctx': ctx,
-                        'result': result
-                    });
-
-                    self.broadcastNotification('engine.notification.action.after');
-
+                    self.broadcastNotification('engine.notification.action.error');
                     if (self.isSave())
-                        self.broadcastNotification('engine.notification.save.after');
-
-                    if (ev1.defaultPrevented || ev2.defaultPrevented)
-                        return result;
-                }
-                return DocumentActionProcess(self.document, result, self.parentDocument, self.$scope);
-            }, function (result) {
-                self.$scope.$broadcast('engine.common.action.error', {
-                    'document': self.document,
-                    'action': self,
-                    'ctx': ctx,
-                    'result': result
+                        self.broadcastNotification('engine.notification.save.error');
+                    return $q.reject(result);
                 });
-                self.broadcastNotification('engine.notification.action.error');
-                if (self.isSave())
-                    self.broadcastNotification('engine.notification.save.error');
-                return $q.reject(result);
             });
         };
 
@@ -239,10 +250,13 @@ angular.module('engine.document')
             return _.contains(this.LINK_ACTIONS, this.type);
         };
 
+        DocumentAction.prototype.isDelete = function isDelete() {
+            return _.contains(this.DELETE_ACTIONS, this.type);
+        };
+
         return DocumentAction;
     })
     .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q) {
-
         return function DocumentActionHandler(document, actionResponse, parentDocument, $scope) {
             if (actionResponse.type === 'REDIRECT') {
                 if (actionResponse.redirectToDocument === null)
