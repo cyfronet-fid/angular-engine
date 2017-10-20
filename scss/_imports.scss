@@ -1,0 +1,5 @@
+@import "variables";
+
+@if $eng-use-lato-font == true {
+  @import url('https://fonts.googleapis.com/css?family=Lato');
+}

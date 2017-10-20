@@ -1,0 +1,10 @@
+// should lato font be imported from the outside cnn
+$eng-use-lato-font: true !default;
+// should legacy styles from DUO be used?
+$eng-use-legacy-styles: false !default;
+
+$eng-default-font: 'Lato' !default;
+$eng-use-table-styling: true !default;
+$eng-text-color: #46494f !default;
+$eng-radio-color: #969fbd !default;
+$eng-muted-text-color: #9096a0 !default;
