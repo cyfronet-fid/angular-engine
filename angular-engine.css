@@ -1254,3 +1254,21 @@ removed by ng-if and ng-show
 .ng-hide.ng-hide-animate {
     display: none !important;
 }
+
+.scroll-rwd{
+    overflow: scroll;
+    min-height: 40px;
+
+}
+
+.fixed-sidebar-on-scroll{
+    position: fixed;
+    top: 5px;
+    padding-right: 100px;
+    width: inherit;
+    z-index: 99;
+}
+
+.sidebar-box-shadow > div{
+    box-shadow: 0px 0px 2px 2px #CCC !important;
+}
