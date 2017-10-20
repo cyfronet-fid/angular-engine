@@ -1257,7 +1257,7 @@ removed by ng-if and ng-show
 
 .scroll-rwd{
     overflow: scroll;
-    min-height: 40px;
+    min-height: 100px;
 
 }
 
