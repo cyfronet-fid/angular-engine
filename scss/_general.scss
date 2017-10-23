@@ -81,8 +81,8 @@ label + table {
 }
 
 .row-compensate {
-  margin-right: 0;
-  margin-left: 0;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
 }
 
 .row-label {
@@ -195,20 +195,6 @@ label + table {
   }
 }
 
-@media screen and (max-width: 1200px) {
-  .document-navi-toggle,
-  .sidebar-document-rwd {
-    display: block;
-  }
-
-  .sidebar-document {
-    display: none;
-  }
-
-  .engine-document {
-    width: 100%;
-  }
-}
 
 action-button + action-button:not(:first-child) {
   margin-left: 5px;

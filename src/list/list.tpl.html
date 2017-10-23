@@ -30,39 +30,48 @@
     </div>
     <div class="clear" ng-if="documents.$resolved || $ctrl.noParentDocument" ng-cloak>
         <table class="proposal-list table">
-            <tr>
-                <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;"
-                    eng-save-col-width
-                    ng-class="{'eng-col-index': column.name === '@index'}"
-                    ng-repeat="column in columns"><span translate>{{column.caption || column.name}}</span>
-                    <input type="text" class="form-control input-sm eng-table-filter-header-input"
-                           ng-show="$ctrl.showFilters === true" ng-change="$ctrl.filterQuery()"
-                           ng-model="$ctrl.filters[column.name]"
-                           ng-if="$ctrl.canShowInputFilterForColumn(column)"/>
-                </th>
-                <th class="text-right eng-cog-col"></th>
-            </tr>
-            <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument"
-                ng-init="$row=$index">
-                <td ng-repeat="column in columns" class="{{column.css}} {{column.style}}"
-                    ng-include="getCellTemplate(document_entry.document, column)"></td>
-                <td class="text-right cog-dropdown eng-cog-col">
-                    <div class="dropdown" ng-if="getActionsForDocument(document_entry).actions.length > 0">
-                        <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
-                           aria-expanded="true"><i
-                                class="fa fa-cog" aria-hidden="true"></i></a>
-                        <ul class="dropdown-menu">
-                            <li ng-repeat="action in getActionsForDocument(document_entry).actions"><a href=""
-                                                                                                       ng-click="engineAction(action)"
-                                                                                                       translate>{{action.label}}</a>
-                            </li>
-                            <li ng-if="!getActionsForDocument(document_entry).actions"><span
-                                    style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span>
-                            </li>
-                        </ul>
-                    </div>
-                </td>
-            </tr>
+            <thead>
+                <tr>
+                    <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;"
+                        eng-save-col-width
+                        ng-class="{'eng-col-index': column.name === '@index'}"
+                        ng-repeat="column in columns"><span translate>{{column.caption || column.name}}</span>
+                        <input type="text" class="form-control input-sm eng-table-filter-header-input"
+                               ng-show="$ctrl.showFilters === true" ng-change="$ctrl.filterQuery()"
+                               ng-model="$ctrl.filters[column.name]"
+                               ng-if="$ctrl.canShowInputFilterForColumn(column)"/>
+                    </th>
+                    <th class="text-right eng-cog-col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-if="documents.$resolved && documents.length == 0 && !documents.$error" class="query-info">
+                    <td colspan="{{::columns.length + 1}}">
+                        {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}
+                    </td>
+                </tr>
+                <tr ng-repeat="document_entry in documents" ng-if="!documents.$error && !$ctrl.noParentDocument"
+                    ng-init="$row=$index">
+                    <td ng-repeat="column in columns" class="{{column.css}} {{column.style}}"
+                        ng-include="getCellTemplate(document_entry.document, column)"></td>
+                    <td class="text-right cog-dropdown eng-cog-col">
+                        <div class="dropdown" ng-if="getActionsForDocument(document_entry).actions.length > 0">
+                            <a href="" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                               aria-expanded="true"><i
+                                    class="fa fa-cog" aria-hidden="true"></i></a>
+                            <ul class="dropdown-menu">
+                                <li ng-repeat="action in getActionsForDocument(document_entry).actions"><a href=""
+                                                                                                           ng-click="engineAction(action)"
+                                                                                                           translate>{{action.label}}</a>
+                                </li>
+                                <li ng-if="!getActionsForDocument(document_entry).actions"><span
+                                        style="margin-left: 5px; margin-right: 5px;" translate>No actions available</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
         </table>
         <div class="alert alert-warning" role="alert" ng-if="documents.$error" translate>
             {{documents.$errorMessage || 'An error occurred during document loading'}}
@@ -70,18 +79,18 @@
         <div class="alert alert-warning" role="alert" ng-if="$ctrl.noParentDocument" translate>
             {{$ctrl.noParentDocumentMessage || 'Parent document does not exist, save this document first'}}
         </div>
-        <div class="alert alert-info" role="alert"
-             ng-if="documents.$resolved && documents.length == 0 && !documents.$error"
-             translate>
-            {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}
-        </div>
+        <!--<div class="alert alert-info" role="alert"-->
+             <!--ng-if="documents.$resolved && documents.length == 0 && !documents.$error"-->
+             <!--translate>-->
+             <!--{{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}-->
+        <!--</div>-->
         <div ng-if="$ctrl.formlyOptions.templateOptions.serverErrors!=0"
              ng-repeat="error in $ctrl.formlyOptions.templateOptions.serverErrors">
             <div class="alert alert-danger"><span translate>{{ error }}</span></div>
         </div>
     </div>
 
-    <div class="eng-list-bottom-bar">
+    <div class="eng-list-bottom-bar" ng-if="customButtons || ($ctrl.showCreateButton !== false && canCreateDocument()) || $ctrl.canShowPagination()">
         <action-button ng-if="$ctrl.showCreateButton !== false && canCreateDocument()"
                        ng-show="documents.$resolved"
                        btn-class="btn-primary" on-click="onCreateDocument()"

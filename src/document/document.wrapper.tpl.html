@@ -12,17 +12,19 @@
     <div class="row">
         <engine-document step-list="stepList" show-validation-button="options.document.showValidationButton" processing="processing"
                          document-id="{{::documentId}}" document="document" step="$routeParams.step" options="options"
-                         class="col-lg-8 col-md-8 col-sm-12 engine-document" actions="actions" dirty="documentDirty"></engine-document>
-        <div class="col-lg-4 col-md-4 hidden-sm sidebar-document">
+                         ng-class="{'col-sm-8': !responsive, 'col-xs-8': !responsive, 'col-sm-12': responsive, 'col-xs-12': responsive}"
+                         class="col-lg-8 col-md-8 engine-document" actions="actions" dirty="documentDirty"></engine-document>
+        <div class="col-lg-4 col-md-4 sidebar-document"
+             ng-class="{'hidden-sm': responsive, 'hidden-xs': responsive, 'col-sm-4': !responsive, 'col-xs-4': !responsive}">
             <engine-steps ng-model="document" processing="processing" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
             <engine-document-details ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
         </div>
     </div>
 
-    <div class="document-navi-toggle" ng-click="toggleSideMenu()" ng-class="{active: sideMenuVisible}">
+    <div class="document-navi-toggle hidden-md-up" ng-click="toggleSideMenu()" ng-if="responsive" ng-class="{active: sideMenuVisible}">
         <i class="fa fa-file-text" aria-hidden="true"></i>
     </div>
-    <div class="sidebar-document-rwd" ng-show="sideMenuVisible">
+    <div class="sidebar-document-rwd" ng-show="sideMenuVisible" ng-if="responsive">
         <engine-steps ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
         <engine-document-details ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
     </div>

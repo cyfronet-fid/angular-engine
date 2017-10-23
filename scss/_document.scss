@@ -1,6 +1,4 @@
-.sidebar-document-rwd {
-    display: none;
-}
+@import "variables";
 
 .sidebar-details {
     margin-top: 20px;
@@ -130,8 +128,8 @@ li.ng-scope {
 }
 
 .multiselect-image.alert-success, .multiselect-image.alert-success .fa {
-    color: #75ad40;
-    border-color: #75ad40;
+    color: $eng-success-color;
+    border-color: $eng-success-color;
 }
 
 .multiselect-image.disabled {
@@ -166,19 +164,20 @@ li.ng-scope {
 }
 
 .document-pristine {
-    color: #75ad40;
+    color: $eng-success-color;
 }
 
 .document-dirty {
-    color: #d43f3a;
+    color: $eng-danger-color;
 }
 
 .document-dirty-warning-left {
-    color: orangered;
+    color: $eng-danger-color;
+    margin-right: 10px;
 }
 
 .document-dirty-warning-right {
-    color: orangered;
+    color: $eng-danger-color;
     margin-left: 10px;
 }
 
