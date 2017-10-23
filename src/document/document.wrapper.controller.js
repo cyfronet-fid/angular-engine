@@ -41,11 +41,10 @@ angular.module('engine.document')
         restrict: 'A',
         link: function (scope, element, attrs) {
             var topClass = attrs.fixedOnScroll;
-            var offsetTop =  element[0].getBoundingClientRect().top;
 
             $win.on("scroll", function () {
-
-                if ($window.pageYOffset >= offsetTop) {
+                scope.offsetTop =  element[0].parentNode.offsetTop + element[0].getBoundingClientRect().top;
+                if ($window.pageYOffset >= scope.offsetTop ) {
                     element.addClass(topClass);
                 } else {
                     element.removeClass(topClass);

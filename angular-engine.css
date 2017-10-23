@@ -1256,7 +1256,7 @@ removed by ng-if and ng-show
 }
 
 .scroll-rwd{
-    overflow: scroll;
+    overflow-y: scroll;
     min-height: 100px;
 
 }
@@ -1270,5 +1270,5 @@ removed by ng-if and ng-show
 }
 
 .sidebar-box-shadow > div{
-    box-shadow: 0px 0px 2px 2px #CCC !important;
+    box-shadow: 0px 0px 2px 2px #CCC;
 }
