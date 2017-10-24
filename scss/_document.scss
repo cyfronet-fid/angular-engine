@@ -1,0 +1,202 @@
+@import "variables";
+
+.sidebar-details {
+    margin-top: 20px;
+}
+
+.btn-file {
+    width: 100%;
+}
+
+.attachment-actions {
+    text-align: right;
+}
+
+.attachment-actions a {
+    margin-right: 4px;
+}
+
+/*--PROPOSAL--*/
+
+.proposal-header {
+    text-align: left;
+}
+
+.proposal-header, .show-header {
+    text-align: center;
+}
+
+#proposal_start,
+#proposal_end {
+    width: 100px;
+}
+
+.proposal-title,
+.proposal-title:hover {
+    color: #009fe3;
+}
+
+.proposal-list + .big-button {
+    margin-top: 20px;
+    display: inline-block;
+}
+
+[ng-click],
+[data-ng-click],
+[x-ng-click] {
+    cursor: pointer;
+}
+
+.text-content .list-group .list-group-item {
+    padding: 10px 0;
+    margin-bottom: 0;
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.text-content .list-group .list-group-item span:first-child {
+    font-size: 11px;
+    font-weight: 500;
+    display: block;
+    color: #ababab;
+    text-transform: uppercase;
+}
+
+li.ng-scope {
+    margin-bottom: 0;
+}
+
+.box-bottom-space {
+    padding-bottom: 30px;
+}
+
+.link-login {
+    font-size: 0.9em;
+    float: right;
+    margin-top: 6px;
+}
+
+.link-back {
+    margin-bottom: 20px;
+    display: block;
+    font-size: 0.9em;
+}
+
+.show-header {
+    width: 60px;
+}
+
+/* styles for Sample Chemical Risks*/
+
+.multiselect-image {
+    padding: 14px;
+    margin-bottom: 5px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 15px;
+}
+
+.multiselect-image span {
+    width: 80%;
+    display: inline-block;
+    line-height: 14px;
+}
+
+.alert-default {
+    color: #484a50;
+    background-color: #ffffff;
+    border-color: #bfc4da;
+}
+
+
+/*.multiselect-imagel{*/
+/*font-size: 1.063em;*/
+/*padding: 25px;*/
+/*padding-left: 90px;*/
+/*font-weight: bold;*/
+/*text-transform: uppercase;*/
+/*cursor: pointer;*/
+/*}*/
+.multiselect-image .fa {
+    font-size: 1.5em;
+    float: right;
+}
+
+.multiselect-image.alert-default i.fa.fa-check-circle {
+    color: #bfc4da !important;
+}
+
+.multiselect-image.alert-success, .multiselect-image.alert-success .fa {
+    color: $eng-success-color;
+    border-color: $eng-success-color;
+}
+
+.multiselect-image.disabled {
+    background-color: #eee !important;
+    cursor: not-allowed;
+}
+
+.multiselect-image.disabled .fa {
+    background: transparent !important;
+}
+
+.pr-category .btn-default, .input-group-datepicker .btn-default {
+    border-color: #bec5dc;
+}
+
+.input-group-datepicker .btn-default .glyphicon {
+    color: $eng-datepicker-controls-color;
+}
+
+.line-top {
+    border-top: 1px solid #BEC5DC;
+    width: 40%;
+}
+
+.line-right {
+    border-right: 1px solid #BEC5DC;
+}
+
+.document-changes-info {
+    font-size: 14px;
+    text-align: left;
+}
+
+.document-pristine {
+    color: $eng-success-color;
+}
+
+.document-dirty {
+    color: $eng-danger-color;
+}
+
+.document-dirty-warning-left {
+    color: $eng-danger-color;
+    margin-right: 10px;
+}
+
+.document-dirty-warning-right {
+    color: $eng-danger-color;
+    margin-left: 10px;
+}
+
+.category-loading {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 100000;
+    background-color: white;
+    opacity: 0.6;
+    top: 0;
+    left: 0;
+}
+
+.category-loading-spinner {
+    font-size: 25px !important;
+    position: relative;
+    float: left;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

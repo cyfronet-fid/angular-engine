@@ -1,5 +1,7 @@
 angular.module('engine.document')
-    .controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, engineResolve, StepList) {
+    .controller('engineDocumentWrapperCtrl', function ($scope, $route, $location, engineMetric, $routeParams, engineResolve, StepList, $engine) {
+        $scope.responsive = $engine.RESPONSIVE;
+
         $scope.engineResolve = engineResolve;
         $scope.options = $route.current.$$route.options;
 

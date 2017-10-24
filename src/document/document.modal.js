@@ -7,6 +7,7 @@ angular.module('engine.document')
                     keyboard: false,
                     backdrop: 'static',
                     windowTopClass: $engine.GLOBAL_CSS,
+                    appendTo: $($engine.MODAL_CONTAINER).eq(0),
 
                     controller: function ($scope, documentId, documentOptions, engineActionsAvailable, StepList, engineResolve, $uibModalInstance) {
                         $scope.engineResolve = engineResolve;

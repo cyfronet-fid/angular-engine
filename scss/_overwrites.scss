@@ -1,0 +1,24 @@
+@import "variables";
+
+body {
+  font-family: $eng-default-font, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+@if $eng-use-table-styling == true {
+  .table > thead > tr > th,
+  .table > tbody > tr > th,
+  .table > tfoot > tr > th {
+    border-top: none;
+    border-bottom: 2px solid #ddd;
+  }
+}
+
+/**
+This is hack which is important, because without it
+spinners and loaders has to finish animation before being
+removed by ng-if and ng-show
+ */
+.ng-hide.ng-hide-animate {
+  display: none !important;
+}

@@ -71,7 +71,10 @@ angular.module('engine')
             output: {
                 prefix: 'angular-engine'
             },
-            disabled: productionMode
+            // From version 0.7.12+ api check has been depreciated
+            // it will be removed in the future
+            // disabled: productionMode
+            disabled: true
         });
 
         this.$get = function () {
@@ -110,6 +113,8 @@ angular.module('engine')
         var documents_d = {};
         var QUERY_PAGE_SIZE = 50;
         var GLOBAL_CSS = '';
+        let MODAL_CONTAINER = 'body';
+        let RESPONSIVE = true;
         var DOCUMENT_MODEL_KEY = 'documentType';
 
         var _apiCheck = $engineApiCheckProvider.apiCheck;
@@ -180,6 +185,13 @@ angular.module('engine')
 
         this.setGlobalCSS = function (css) {
             GLOBAL_CSS = css;
+        };
+        this.setModalContainer = function (containerSelector) {
+            MODAL_CONTAINER = containerSelector;
+        };
+
+        this.setResponsive = function (responsive) {
+            RESPONSIVE = responsive;
         };
 
         this.setDocumentModelKey = function (key) {
@@ -690,6 +702,8 @@ angular.module('engine')
                 var self = this;
                 this.QUERY_PAGE_SIZE = QUERY_PAGE_SIZE;
                 this.GLOBAL_CSS = GLOBAL_CSS;
+                this.MODAL_CONTAINER = MODAL_CONTAINER;
+                this.RESPONSIVE = RESPONSIVE;
                 this.DOCUMENT_MODEL_KEY = DOCUMENT_MODEL_KEY;
                 this.apiCheck = _apiCheck;
                 this.formly = $engineFormly;

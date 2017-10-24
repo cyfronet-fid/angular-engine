@@ -1,0 +1,82 @@
+@import "variables";
+
+engine-document {
+  input[type=radio] {
+    margin: 3px 5px 0;
+  }
+
+  .form-group {
+    width: 100%;
+    margin-bottom: 20px;
+
+    label {
+      margin-bottom: 9px;
+      display: block;
+    }
+  }
+
+  .radio .form-group .control-label {
+    padding-left: 0;
+  }
+
+  .radio input[type="radio"] {
+    position: inherit;
+  }
+
+  .has-error .input-group-datepicker {
+    span.input-group-btn button {
+      border-color: $eng-state-danger-text;
+      span, i {
+        color: $eng-state-danger-text;
+      }
+    }
+  }
+
+  //.radio-box-first {
+  //  border: 1px solid #bec5dc;
+  //  -webkit-border-top-left-radius: 4px;
+  //  -webkit-border-bottom-left-radius: 4px;
+  //  -moz-border-radius-topleft: 4px;
+  //  -moz-border-radius-bottomleft: 4px;
+  //  border-top-left-radius: 4px;
+  //  border-bottom-left-radius: 4px;
+  //}
+  //
+  //.radio-box-active {
+  //  background-color: #969fbd;
+  //  color: #fff;
+  //}
+  //
+  //.radio-box-active .radio-desc {
+  //  color: #fff;
+  //}
+  //
+  //.radio-box-last {
+  //  border: 1px solid #bec5dc;
+  //  -webkit-border-top-right-radius: 4px;
+  //  -webkit-border-bottom-right-radius: 4px;
+  //  -moz-border-radius-topright: 4px;
+  //  -moz-border-radius-bottomright: 4px;
+  //  border-top-right-radius: 4px;
+  //  border-bottom-right-radius: 4px;
+  //}
+  //
+  //.radio-box {
+  //  border-top: 1px solid #bec5dc;
+  //  border-bottom: 1px solid #bec5dc;
+  //  padding: 7px 30px !important;
+  //  margin-right: -4px;
+  //  display: inline-block;
+  //}
+  //
+  //.radio-box:hover {
+  //  background-color: #e5e8f3;
+  //  cursor: pointer;
+  //}
+  .radio-desc {
+    font-size: 16px;
+    color: $eng-radio-color;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+}

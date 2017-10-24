@@ -11,8 +11,8 @@
     "assetsmanager-brunch": "^1.8.1",
     "auto-reload-brunch": "^2.0.0",
     "babel-brunch": "~6.0.0",
-    "babel-preset-es2015": "~6.3.13",
     "babel-preset-env": "^1.6.0",
+    "babel-preset-es2015": "~6.3.13",
     "babel-preset-es2015-ie8": "^1.0.0",
     "bower": "^1.7.7",
     "brunch": "^2.4.0",
@@ -41,6 +41,8 @@
     "ngdocs": "~0.1.0",
     "protractor": "^4.0.9",
     "replacement-brunch": "^2.0.4",
+    "sass": "^1.0.0-beta.2",
+    "sass-brunch": "^2.10.4",
     "uglify-js-brunch": "^2.10.0"
   },
   "scripts": {
