@@ -91,6 +91,9 @@ angular-engine package
 
 ## Changelog
 
+* **0.7.13** CSS are now generated from scss, which can be customized per build easily. 
+             Added radio type, for cases which there is more options than can be fit in a single row
+
 * **0.7.12** Added metrics recalculation after reloading document, added parsing of date objects to document detail's view
 
 * **0.7.11** Fixed problem with reloading document after redirect - no queries were reloaded - it's fixed now.

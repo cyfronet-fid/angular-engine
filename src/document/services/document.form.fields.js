@@ -156,6 +156,13 @@ angular.module('engine.document')
                 return field;
             }));
 
+            this.register(new DocumentField('radio', function (field, metric, ctx) {
+                field.type = 'radio';
+                field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+                return field;
+            }));
+
             this.register(new DocumentField({visualClass: 'date', inputType: 'DATE'}, function (field, metric, ctx) {
                 field.type = 'datepicker';
                 field.data.prepareValue = function (originalValue) {
