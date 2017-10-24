@@ -31,8 +31,12 @@
   font-size: 20px;
 }
 
-.dropdown-menu {
+.dropdown:not(.open) > .dropdown-menu {
   display: none;
+}
+
+.uib-datepicker-popup.dropdown-menu {
+  display: inherit;
 }
 
 //@media screen and (max-width: 1200px) {

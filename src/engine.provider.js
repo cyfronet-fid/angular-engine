@@ -71,7 +71,10 @@ angular.module('engine')
             output: {
                 prefix: 'angular-engine'
             },
-            disabled: productionMode
+            // From version 0.7.12+ api check has been depreciated
+            // it will be removed in the future
+            // disabled: productionMode
+            disabled: true
         });
 
         this.$get = function () {
