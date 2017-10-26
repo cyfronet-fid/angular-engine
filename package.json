@@ -39,6 +39,7 @@
     "lodash": "^4.17.4",
     "ng-annotate-brunch": "^1.7.2",
     "ngdocs": "~0.1.0",
+    "node-static": "^0.7.10",
     "protractor": "^4.0.9",
     "replacement-brunch": "^2.0.4",
     "sass": "^1.0.0-beta.2",

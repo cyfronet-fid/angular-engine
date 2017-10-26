@@ -38,7 +38,8 @@ module.exports = {
             joinTo: {
                 'angular-engine.js': ['src/**.js', 'src/templates.js'],
 
-                'docs/js/vendor.js': /^bower_components/
+                // 'docs/js/vendor.js': /^bower_components/,
+                'tests/e2e/vendor.js': /^bower_components/
             },
             order: {
                 before: [
