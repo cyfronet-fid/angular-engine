@@ -1,8 +1,17 @@
 @import "variables";
 
 engine-document {
-  input[type=radio] {
+  label, label.btn.btn-radio {
+    vertical-align: baseline;
+  }
+
+  input[type='radio'] {
+    vertical-align: bottom;
+  }
+
+  input[type='radio'].radio-group-button {
     margin: 3px 5px 0;
+    vertical-align: inherit;
   }
 
   .form-group {
@@ -12,6 +21,10 @@ engine-document {
     label {
       margin-bottom: 9px;
       display: block;
+    }
+
+    label.radio-label {
+      display: table-cell;
     }
   }
 
