@@ -196,11 +196,11 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
     };
 
     this.validateAfterInit = function validateAfterInit() {
-        var stepsToValidate = [];
-        var currentStep = self.stepList.getCurrentStepIndex();
+        let stepsToValidate = [];
+        let currentStep = self.stepList.getCurrentStepIndex();
 
-        for (i = 0; i < currentStep; i++) {
-            if (self.stepList.getStep(i).getState() == Step.STATE_BLANK) {
+        for (let i = 0; i < currentStep; i++) {
+            if (self.stepList.getStep(i).getState() === Step.STATE_BLANK) {
                 stepsToValidate.push(i);
             }
         }
