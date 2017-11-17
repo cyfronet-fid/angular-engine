@@ -18,14 +18,17 @@ angular.module('engine.document')
             var self = this;
             this.document = document;
 
+            if (this.steps != [])
+                this.steps = []
+
             this.documentSteps = _.filter(this.documentSteps, function (step) {
                 var cond = step.condition;
-                if(cond == null)
+                if (cond == null)
                     return true;
-                else if(_.isString(cond)) {
+                else if (_.isString(cond)) {
                     return $parse(cond)(self.document);
                 }
-                else if(_.isFunction(cond)) {
+                else if (_.isFunction(cond)) {
                     return cond(self.document);
                 } else
                     return false
@@ -40,7 +43,7 @@ angular.module('engine.document')
                 assert(_.isArray(self.documentSteps) && !_.isEmpty(self.documentSteps), 'documentSteps were not defined');
 
                 _.forEach(self.documentSteps, function (step, index) {
-                    if(_.isArray(step.categories)){
+                    if (_.isArray(step.categories)) {
                         var _categories = [];
                         _.forEach(step.categories, function (categoryId) {
                             _categories.push(metricCategories.getNames(categoryId));
@@ -50,7 +53,7 @@ angular.module('engine.document')
 
                     }
                     else { //is string (metricCategory) so we have to retrieve its children
-                        if(!(step.categories in metricCategories.metrics)){
+                        if (!(step.categories in metricCategories.metrics)) {
                             $engLog.error(step.categories, ' not in ', metricCategories.metrics, '. Make sure that metric category registered in document.steps exists');
                             throw new Error();
                         }
@@ -66,7 +69,7 @@ angular.module('engine.document')
         };
 
         StepList.prototype.isLast = function isLast(step) {
-            return step == this.steps.length-1;
+            return step == this.steps.length - 1;
         };
 
         StepList.prototype.getFirstInvalid = function getFirstInvalid() {
@@ -123,7 +126,7 @@ angular.module('engine.document')
         Step.defaultState = 'blank';
 
         Step.prototype.setState = function setState(state) {
-            assert(state != null, 'Privided state (',state,') is not in', Step.validStates);
+            assert(state != null, 'Privided state (', state, ') is not in', Step.validStates);
             $engineApiCheck([$engineApiCheck.oneOf(Step.validStates)], arguments);
             this.state = state;
         };
