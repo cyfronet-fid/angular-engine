@@ -133,9 +133,9 @@ angular.module('engine.document')
                 }
             });
 
+
             self.setDefaultMetricValues(newMetrics);
 
-            //add new metrics to the form, with respect to position
             _.forEach(newMetrics, function (newMetric) {
                 $engLog.log(self.categoriesDict[newMetric.categoryId]);
                 self.addMetric(newMetric);
@@ -172,8 +172,6 @@ angular.module('engine.document')
         var self = this;
         var _categoriesToPostProcess = [];
         newMetrics = (typeof newMetrics === 'undefined') ? self.metricList : newMetrics;
-
-        self.setDefaultMetricValues(newMetrics);
 
         _.forEach(newMetrics, function (newMetric) {
             $engLog.log(self.categoriesDict[newMetric.categoryId]);
@@ -220,6 +218,7 @@ angular.module('engine.document')
                     return;
                 if (_.contains(self.fields, field))
                     self.fields = _.without(self.fields)
+
                 self.categoriesDict[field.data.categoryId].fieldGroup.push(field);
                 step.fields[field.data.id] = field;
 
@@ -230,6 +229,7 @@ angular.module('engine.document')
 
         reorderFields();
 
+        return self.formStructure;
         function _parseMetricCategories(step, metricCategories) {
             var formCategories = [];
             _.forEach(metricCategories, function (metricCategory) {
