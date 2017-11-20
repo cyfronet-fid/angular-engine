@@ -136,6 +136,7 @@ angular.module('engine.document')
 
             self.setDefaultMetricValues(newMetrics);
 
+            //add new metrics to the form, with respect to position
             _.forEach(newMetrics, function (newMetric) {
                 $engLog.log(self.categoriesDict[newMetric.categoryId]);
                 self.addMetric(newMetric);
@@ -229,7 +230,6 @@ angular.module('engine.document')
 
         reorderFields();
 
-        return self.formStructure;
         function _parseMetricCategories(step, metricCategories) {
             var formCategories = [];
             _.forEach(metricCategories, function (metricCategory) {
