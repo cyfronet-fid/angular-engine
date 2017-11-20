@@ -46,7 +46,7 @@
             </thead>
             <tbody>
             <tr ng-if="documents.$resolved && documents.length == 0 && !documents.$error" class="query-info">
-                <td colspan="{{::columns.length + 1}}">
+                <td colspan="{{::columns.length + 1}}" translate>
                     {{ $ctrl.noDocumentsMessage || 'There are no documents to display'}}
                 </td>
             </tr>

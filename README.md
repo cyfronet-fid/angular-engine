@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.2**  Added missing translations (datepicker, list component)
+
 * **0.8.1**  Fixed radio controls scss
 
 * **0.8.0**  CSS are now generated from scss, which can be customized per build easily. 
