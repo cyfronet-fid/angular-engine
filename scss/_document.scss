@@ -200,3 +200,21 @@ li.ng-scope {
     left: 50%;
     transform: translate(-50%, -50%);
 }
+
+.scroll-rwd{
+    overflow-y: scroll;
+    min-height: 100px;
+
+}
+
+.fixed-sidebar-on-scroll{
+    position: fixed;
+    top: 5px;
+    padding-right: 100px;
+    width: inherit;
+    z-index: 99;
+}
+
+.sidebar-box-shadow > div{
+    box-shadow: 0 0 2px 2px #CCC;
+}
