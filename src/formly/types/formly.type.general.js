@@ -31,7 +31,10 @@ angular.module('engine.formly')
                 templateUrl: $engineFormly.templateUrls['radio'],
                 wrapper: ['engineLabel', 'engineHasError'],
                 defaultOptions: {
-                    noFormControl: false
+                    noFormControl: false,
+                    templateOptions: {
+                        className: 'radioGroup'
+                    }
                 },
                 // apiCheck: _apiCheck({
                 // templateOptions: {
@@ -47,7 +50,10 @@ angular.module('engine.formly')
                 templateUrl: $engineFormly.templateUrls['radioGroup'],
                 wrapper: ['engineLabel', 'engineHasError'],
                 defaultOptions: {
-                    noFormControl: false
+                    noFormControl: false,
+                    templateOptions: {
+                        className: 'radioGroup'
+                    }
                 }
         });
         formlyConfig.setType({

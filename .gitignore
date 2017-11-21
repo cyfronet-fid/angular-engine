@@ -64,3 +64,6 @@ fabric.properties
 /docs/js/vendor.js.map
 /docs/templates/out/
 /tests/e2e/driver/
+/angular-engine.css.map
+/tests/e2e/vendor.js
+/tests/e2e/vendor.js.map

@@ -63,8 +63,8 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
                 $scope.model[$scope.options.key] = new Date();
             };
             $scope.openPopUp = function ($event) {
-                $event.preventDefault();
-                $event.stopPropagation();
+                // $event.preventDefault();
+                // $event.stopPropagation();
                 $scope.openedDatePopUp = true;
             };
             //

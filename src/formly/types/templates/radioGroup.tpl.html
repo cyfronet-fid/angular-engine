@@ -1,7 +1,8 @@
 <div>
     <div class="pr-category btn-group row row-compensate">
-            <label class="btn btn-default" ng-repeat="(key, option) in to.options">
+            <label class="btn btn-radio btn-default" ng-repeat="(key, option) in to.options">
                 <input type="radio"
+                       class="radio-group-button"
                        id="{{id + '_'+ $index}}"
                        tabindex="0"
                        ng-value="option[to.valueProp || 'value']"

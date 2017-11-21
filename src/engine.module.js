@@ -32,12 +32,14 @@ var app = angular.module('engine',
  * Optimizating performance in production mode
  */
 app.config(function (formlyConfigProvider, formlyApiCheck, $engLogProvider, $provide, productionMode) {
+    // From version 0.7.12+ api check has been disabled
+    // for performance reasons
+    formlyApiCheck.config.disabled = true;
+    formlyConfigProvider.disableWarnings = true;
+    formlyConfigProvider.extras.ngModelAttrsManipulatorPreferBound = true;
+
     // turn on optimization if in production mode
     if (productionMode) {
-        formlyApiCheck.config.disabled = true;
-        formlyConfigProvider.disableWarnings = true;
-        formlyConfigProvider.extras.ngModelAttrsManipulatorPreferBound = true;
-
         // disable logs if in production mode
         $engLogProvider.setLogLevel('error');
     }

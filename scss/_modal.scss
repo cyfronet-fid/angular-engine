@@ -1,0 +1,23 @@
+@import "variables";
+
+.modal-body {
+    .text-box {
+        background-color: transparent;
+        border-radius: 0;
+        margin-bottom: 25px;
+        box-shadow: none;
+        padding: 0 0 15px;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+    }
+
+    .text-box:not(:last-child) {
+        border-bottom: $eng-modal-category-separator-color solid 2px;
+    }
+
+    .text-box:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+}

@@ -1,0 +1,49 @@
+
+/* PREVIOUS STYLES to check & delete **/
+.row-compensate {
+    margin: auto 0;
+}
+
+.id {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.table-package {
+    overflow-y: auto;
+}
+
+/* multi select with images style moved to main.css in duo*/
+.eng-cog-col {
+    width: 50px;
+}
+
+.cog-dropdown .dropdown {
+    position: relative;
+}
+
+.cog-dropdown .dropdown-menu {
+    position: absolute;
+    left: -140px;
+    z-index: 1000;
+}
+
+.cog-dropdown i {
+    margin-top: 4px;
+}
+
+.row-label {
+    font-size: 13px;
+    text-transform: uppercase;
+}
+.single-document-top {
+    height: 30px;
+}
+
+.single-document-top td {
+    background-color: #f0f2f7;
+}
+
+tr.query-info td {
+    text-align: center;
+}

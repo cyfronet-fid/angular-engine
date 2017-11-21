@@ -9,14 +9,14 @@ var isWin = /^win/.test(process.platform);
 
 var afterBuild = [];
 
-if(!_.isUndefined(process.env['AFTER_BUILD'])) {
+if (!_.isUndefined(process.env['AFTER_BUILD'])) {
     afterBuild.push(process.env['AFTER_BUILD']);
 }
 
 module.exports = {
     paths: {
         public: '',
-        watched: ['src', 'docs/js/src', 'docs/content', 'docs/templates']
+        watched: ['src', 'docs/js/src', 'docs/content', 'docs/templates', 'scss']
     },
     modules: {
         definition: false,
@@ -38,7 +38,8 @@ module.exports = {
             joinTo: {
                 'angular-engine.js': ['src/**.js', 'src/templates.js'],
 
-                'docs/js/vendor.js': /^bower_components/
+                // 'docs/js/vendor.js': /^bower_components/,
+                'tests/e2e/vendor.js': /^bower_components/
             },
             order: {
                 before: [
@@ -47,6 +48,11 @@ module.exports = {
                 after: [
                     'docs/js/src/init.js'
                 ]
+            }
+        },
+        stylesheets: {
+            joinTo: {
+                'angular-engine.css': ['scss/angular-engine.scss']
             }
         }
     },

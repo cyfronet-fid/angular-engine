@@ -1,4 +1,4 @@
-angular.module('engine-test-app', ['ngRoute', 'engine', 'ngMockE2E', 'ui.bootstrap'])
+angular.module('engine-test-app', ['ngRoute', 'ui.select', 'engine', 'ngMockE2E', 'ui.bootstrap'])
     .config(function ($engineProvider) {
         $engineProvider.document('proposal', '/proposal', {
                 caption: "Proposals list",
