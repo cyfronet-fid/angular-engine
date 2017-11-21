@@ -116,6 +116,7 @@ angular.module('engine')
         let MODAL_CONTAINER = 'body';
         let RESPONSIVE = true;
         var DOCUMENT_MODEL_KEY = 'documentType';
+        var IMMEDIATE_CREATE = false;
 
         var _apiCheck = $engineApiCheckProvider.apiCheck;
         _apiCheck.columnOptions = _apiCheck.arrayOf(_apiCheck.shape({
@@ -126,6 +127,7 @@ angular.module('engine')
         })).optional;
         _apiCheck.documentOptions = _apiCheck.shape({
             documentJSON: _apiCheck.object,
+            immediateCreate: _apiCheck.bool.optional,
             name: _apiCheck.string,
             list: _apiCheck.shape({
                 caption: _apiCheck.string,
@@ -198,6 +200,10 @@ angular.module('engine')
             DOCUMENT_MODEL_KEY = key;
         };
 
+        this.setImmediateCreate = function (immediate) {
+            IMMEDIATE_CREATE = immediate;
+        };
+
         /**
          * @ngdoc method
          * @name dashboard
@@ -237,6 +243,7 @@ angular.module('engine')
                         documentModelId: _apiCheck.string.optional,
                         columns: _apiCheck.columnOptions,
                         showCreateButton: _apiCheck.bool.optional,
+                        immediateCreate: _apiCheck.bool.optional,
                         customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({
                             'label': _apiCheck.string,
                             'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])
@@ -705,6 +712,7 @@ angular.module('engine')
                 this.MODAL_CONTAINER = MODAL_CONTAINER;
                 this.RESPONSIVE = RESPONSIVE;
                 this.DOCUMENT_MODEL_KEY = DOCUMENT_MODEL_KEY;
+                this.IMMEDIATE_CREATE = IMMEDIATE_CREATE;
                 this.apiCheck = _apiCheck;
                 this.formly = $engineFormly;
                 this.baseUrl = _baseUrl;
