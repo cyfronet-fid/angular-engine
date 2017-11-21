@@ -38,8 +38,13 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
 
         $scope.$on('engine.common.document.requestReload', function (event) {
             $engLog.debug('request reload for document');
+
             event.reloadPromise = self.getDocument(true).then(function () {
+                self.stepList.setDocument(self.document);
+                return self.stepList.$ready;
+            }).then(function() {
                 self.documentForm._setDocument(self.document);
+                self.documentForm.connectFieldToStep();
                 self.actionList._setDocument(self.document);
                 $scope.$broadcast('engine.list.reload');
             });
