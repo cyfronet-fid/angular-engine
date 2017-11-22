@@ -1,5 +1,4 @@
-<div>
-    <span ng-if="error" class="error-text">{{error}}</span>
+<div class="tpl-attachment">
     <!--ng-model="model[options.key]"-->
     <!--<input type="text" ng-model="username"><br/><br/>-->
     <!--watching model:-->
@@ -20,6 +19,7 @@
     </table>
 
     <button type="file" class="btn btn-primary btn-file"
+            ngf-model-invalid="invalidFile"
             ngf-select="upload($file)"
             ng-disabled="status != STATUS.normal"
             ngf-multiple="false"
@@ -31,4 +31,5 @@
         <span ng-if="status == STATUS.normal">{{ (attachment.label || 'Select File') | translate}}</span>
         <span ng-if="status == STATUS.disabled">{{ 'You must save document first' | translate}}</span>
     </button>
+    <p ng-if="error" class="error-text">{{error}}</p>
 </div>
