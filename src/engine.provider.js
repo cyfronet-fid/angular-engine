@@ -109,6 +109,7 @@ angular.module('engine')
         var self = this;
 
         var dashboards = [];
+        var dashboards_d = {};
         var documents = [];
         var documents_d = {};
         var QUERY_PAGE_SIZE = 50;
@@ -267,7 +268,7 @@ angular.module('engine')
             dashboardRoutingOptions.options = options;
 
             $routeProvider.when(url, dashboardRoutingOptions);
-
+            dashboards_d[url] = {dashboard: true};
             dashboards.push({'url': url, 'queries': queries, 'options': options});
         };
 
@@ -753,8 +754,10 @@ angular.module('engine')
                  */
                 this.getOptions = function (documentModelId) {
                     _apiCheck.string(documentModelId);
-
-                    return documents_d[documentModelId]
+                    let r = dashboards_d[documentModelId];
+                    if (r != null)
+                        return r;
+                    return documents_d[documentModelId];
                 };
 
                 /**

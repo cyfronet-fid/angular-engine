@@ -200,3 +200,7 @@ li.ng-scope {
     left: 50%;
     transform: translate(-50%, -50%);
 }
+
+textarea.engine-input {
+    resize: none;
+}

@@ -284,7 +284,7 @@ angular.module('engine.document')
                     // Split step & model
                     documentModelTypeAndSteps = documentModelTypeAndSteps.split('#');
                     let documentModelType = documentModelTypeAndSteps[0];
-                    let step = documentModelTypeAndSteps[0];
+                    let step = documentModelTypeAndSteps[1];
 
                     if (document.id != null && document.id !== actionResponse.redirectToDocument) {
                         $location.$$search.step = 0;
@@ -303,9 +303,10 @@ angular.module('engine.document')
 
                         throw new Error(message)
                     }
-
-
-                    if (documentOptions.subdocument == false) {
+                    if (documentOptions.dashboard == true) {
+                        $location.path(documentModelType);
+                    }
+                    else if (documentOptions.subdocument == false) {
                         $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
                         $location.$$compose();
                     }
