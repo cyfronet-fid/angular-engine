@@ -5,6 +5,7 @@
                 controller="{{query.controller || ''}}"
                 no-documents-message="{{query.noDocumentsMessage || options.list.noDocumentsMessage || ''}}"
                 no-parent-document-message="{{query.noParentDocumentMessage || options.list.noParentDocumentMessage || ''}}"
+                immediate-create="query.immediateCreate === true || (query.immediateCreate !== false && IMMEDIATE_CREATE === true)"
                 show-create-button="$last" query="query.id" options="options"></engine-document-list>
     </div>
 </div>

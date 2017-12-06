@@ -91,6 +91,11 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.4**  Fixed steps redirection, added dashboard redirection, removed option of scaling textareas
+
+* **0.8.3**  Reloading messages, Creating document after clicking create button ($engineProvider.setImmediateCreate(true)),
+             Redirecting to specified document step via `model#step` syntax.
+
 * **0.8.2**  Added missing translations (datepicker, list component)
 
 * **0.8.1**  Fixed radio controls scss

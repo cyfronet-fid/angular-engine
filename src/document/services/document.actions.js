@@ -108,7 +108,7 @@ angular.module('engine.document')
             this.engAction = engAction;
             this.type = engAction.type;
             this.parentDocument = parentDocument;
-            this.parentDocumentId = parentDocument.id;
+            this.parentDocumentId = parentDocument == null ? null : parentDocument.id;
             this.$scope = $scope;
         }
 
@@ -280,11 +280,18 @@ angular.module('engine.document')
                 }
 
                 //before redirecting, load document from engine to ascertain it's document type
-                return promise.then(function (documentModelType) {
+                return promise.then(function (documentModelTypeAndSteps) {
+                    // Split step & model
+                    documentModelTypeAndSteps = documentModelTypeAndSteps.split('#');
+                    let documentModelType = documentModelTypeAndSteps[0];
+                    let step = documentModelTypeAndSteps[1];
 
                     if (document.id != null && document.id !== actionResponse.redirectToDocument) {
                         $location.$$search.step = 0;
                     }
+
+                    if (step !== undefined)
+                        $location.$$search.step = step;
 
                     var documentOptions = $engine.getOptions(documentModelType);
 
@@ -296,9 +303,10 @@ angular.module('engine.document')
 
                         throw new Error(message)
                     }
-
-
-                    if (documentOptions.subdocument == false) {
+                    if (documentOptions.dashboard == true) {
+                        $location.path(documentModelType);
+                    }
+                    else if (documentOptions.subdocument == false) {
                         $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
                         $location.$$compose();
                     }

@@ -11,6 +11,7 @@
                               controller="{{query.controller || ''}}"
                               no-documents-message="{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}"
                               no-parent-document-message="{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}"
+                              immediate-create="query.immediateCreate === true || (query.immediateCreate !== false && IMMEDIATE_CREATE === true)"
                               query="query.queryId" options="$engine.getOptions(query.documentModelId)"
                               list-caption="query.label"></engine-document-list>
 

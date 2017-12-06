@@ -3,4 +3,5 @@ angular.module('engine.dashboard')
         $scope.$engine = $engine;
         $scope.options = $route.current.$$route.options;
         $scope.queries = $scope.options.queries;
+        $scope.IMMEDIATE_CREATE = $engine.IMMEDIATE_CREATE;
     });

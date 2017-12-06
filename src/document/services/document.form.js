@@ -133,6 +133,7 @@ angular.module('engine.document')
                 }
             });
 
+
             self.setDefaultMetricValues(newMetrics);
 
             //add new metrics to the form, with respect to position
@@ -167,6 +168,102 @@ angular.module('engine.document')
             self.documentScope.$broadcast('document.form.reloadingMetrics.after');
         }).$promise;
     };
+
+    DocumentForm.prototype.connectFieldToStep = function (newMetrics) {
+        var self = this;
+        var _categoriesToPostProcess = [];
+        newMetrics = (typeof newMetrics === 'undefined') ? self.metricList : newMetrics;
+
+        _.forEach(newMetrics, function (newMetric) {
+            $engLog.log(self.categoriesDict[newMetric.categoryId]);
+            self.addMetric(newMetric);
+
+            var field = DocumentFieldFactory.makeField(self.metricList, newMetric, {
+                document: self.document,
+                options: self.documentOptions,
+                documentForm: self
+            });
+
+            if (newMetric.categoryId in self.categoriesDict) {
+                //  field do not duplicate
+                // :TODO Make it prettier
+                if (!_.find(self.fieldList, field => field.key === newMetric.id)) {
+                    self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 1);
+                    self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 0, field);
+                    self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, function (metric) {
+                        return metric.data.position;
+                    });
+                }
+            }
+
+        });
+
+        self._setSteps(self.steps);
+        self.setFormlyState(self.formlyState);
+
+        _.forEach(self.steps.getSteps(), function (step) {
+            var formStepStructure = DocumentCategoryFactory.makeStepCategory(step);
+            formStepStructure.fieldGroup = _parseMetricCategories(step, step.metricCategories);
+            self.formStructure.push(formStepStructure);
+        });
+
+        _.forEach(self.steps.getSteps(), function (step) {
+            _.forEach(self.fieldList, function (field) {
+
+                if (self.categoriesDict[field.data.categoryId] === undefined) {
+                    $engLog.warn('$engine.document.DocumentForm There is a metric belonging to metric category which is not connected to any step!',
+                        'field', field, 'categoryId', field.data.categoryId);
+                    return ;
+                }
+                if (step.metrics[field.data.categoryId] === undefined)
+                    return;
+                if (_.contains(self.fields, field))
+                    self.fields = _.without(self.fields)
+
+                self.categoriesDict[field.data.categoryId].fieldGroup.push(field);
+                step.fields[field.data.id] = field;
+
+            });
+        });
+
+        postprocess();
+
+        reorderFields();
+
+        function _parseMetricCategories(step, metricCategories) {
+            var formCategories = [];
+            _.forEach(metricCategories, function (metricCategory) {
+
+                var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, {document: self.document});
+
+                formMetricCategory.fieldGroup =_parseMetricCategories(step, metricCategory.children);
+
+                self.categoriesDict[metricCategory.id] = formMetricCategory;
+                step.metrics[metricCategory.id] = formMetricCategory;
+                if(_.isFunction(formMetricCategory.data.$process))
+                    _categoriesToPostProcess.push(formMetricCategory);
+
+                formCategories.push(formMetricCategory);
+            });
+
+            return formCategories;
+        }
+
+        function postprocess() {
+            _.forEach(_categoriesToPostProcess, function (entry) {
+                entry.data.$process();
+            })
+        }
+
+        function reorderFields() {
+            _.forEach(self.categoriesDict, function (metricCategory) {
+                metricCategory.fieldGroup = _.sortBy(metricCategory.fieldGroup, function (field) {
+                    return field.data.position;
+                });
+            });
+        }
+    }
+
 
     DocumentForm.prototype.addMetric = function addMetric(metric) {
         if(metric.id in this.metricDict)

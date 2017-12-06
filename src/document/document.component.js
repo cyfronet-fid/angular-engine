@@ -22,7 +22,7 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                                                engineActionsAvailable, $location, engineActionUtils, DocumentEventCtx,
                                                engineAction, engineMetricCategories, StepList, DocumentForm,
                                                DocumentActionList, $q, $engLog, $attrs, Step, $parse, $element,
-                                               $compile, $interval) {
+                                               $compile, $interval, $http) {
     var self = this;
 
     $engLog.debug($scope);
@@ -38,11 +38,17 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
 
         $scope.$on('engine.common.document.requestReload', function (event) {
             $engLog.debug('request reload for document');
-            event.reloadPromise = self.getDocument(true).then(function () {
-                self.documentForm._setDocument(self.document);
-                self.actionList._setDocument(self.document);
-                $scope.$broadcast('engine.list.reload');
-            });
+
+            event.reloadPromise = self.getDocument(true)
+                .then(() => {
+                    self.stepList.setDocument(self.document);
+                    return self.stepList.$ready;
+                }).then(() => {
+                    self.documentForm._setDocument(self.document);
+                    self.documentForm.connectFieldToStep();
+                    self.actionList._setDocument(self.document);
+                    $scope.$broadcast('engine.list.reload');
+                });
         });
 
         $scope.$on('engine.common.document.validate', function (event) {
@@ -52,11 +58,16 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
             });
         });
 
+        $scope.$on('engine.list.reload', event => {
+            self.loadMessages();
+        });
+
         $scope.$on('engine.common.document.requestSave', function (event) {
             event.savePromise = self.save();
         });
 
         $scope.$on('engine.common.action.after', function (event, document, action, result) {
+            self.loadMessages();
         });
 
 
@@ -108,6 +119,9 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
         }
     };
 
+    this.loadMessages = () => {
+        $http.get('/document/messages?documentId=' + self.documentId).then(res => self.messages = res.data.data);
+    };
 
     this.getDocument = function (noReloadSteps) {
         var _actionsToPerform = [];

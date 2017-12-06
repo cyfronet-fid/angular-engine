@@ -109,6 +109,7 @@ angular.module('engine')
         var self = this;
 
         var dashboards = [];
+        var dashboards_d = {};
         var documents = [];
         var documents_d = {};
         var QUERY_PAGE_SIZE = 50;
@@ -116,6 +117,7 @@ angular.module('engine')
         let MODAL_CONTAINER = 'body';
         let RESPONSIVE = true;
         var DOCUMENT_MODEL_KEY = 'documentType';
+        var IMMEDIATE_CREATE = false;
 
         var _apiCheck = $engineApiCheckProvider.apiCheck;
         _apiCheck.columnOptions = _apiCheck.arrayOf(_apiCheck.shape({
@@ -126,6 +128,7 @@ angular.module('engine')
         })).optional;
         _apiCheck.documentOptions = _apiCheck.shape({
             documentJSON: _apiCheck.object,
+            immediateCreate: _apiCheck.bool.optional,
             name: _apiCheck.string,
             list: _apiCheck.shape({
                 caption: _apiCheck.string,
@@ -198,6 +201,10 @@ angular.module('engine')
             DOCUMENT_MODEL_KEY = key;
         };
 
+        this.setImmediateCreate = function (immediate) {
+            IMMEDIATE_CREATE = immediate;
+        };
+
         /**
          * @ngdoc method
          * @name dashboard
@@ -237,6 +244,7 @@ angular.module('engine')
                         documentModelId: _apiCheck.string.optional,
                         columns: _apiCheck.columnOptions,
                         showCreateButton: _apiCheck.bool.optional,
+                        immediateCreate: _apiCheck.bool.optional,
                         customButtons: _apiCheck.typeOrArrayOf(_apiCheck.shape({
                             'label': _apiCheck.string,
                             'callback': _apiCheck.oneOfType([_apiCheck.func, _apiCheck.string])
@@ -260,7 +268,7 @@ angular.module('engine')
             dashboardRoutingOptions.options = options;
 
             $routeProvider.when(url, dashboardRoutingOptions);
-
+            dashboards_d[url] = {dashboard: true};
             dashboards.push({'url': url, 'queries': queries, 'options': options});
         };
 
@@ -705,6 +713,7 @@ angular.module('engine')
                 this.MODAL_CONTAINER = MODAL_CONTAINER;
                 this.RESPONSIVE = RESPONSIVE;
                 this.DOCUMENT_MODEL_KEY = DOCUMENT_MODEL_KEY;
+                this.IMMEDIATE_CREATE = IMMEDIATE_CREATE;
                 this.apiCheck = _apiCheck;
                 this.formly = $engineFormly;
                 this.baseUrl = _baseUrl;
@@ -745,8 +754,10 @@ angular.module('engine')
                  */
                 this.getOptions = function (documentModelId) {
                     _apiCheck.string(documentModelId);
-
-                    return documents_d[documentModelId]
+                    let r = dashboards_d[documentModelId];
+                    if (r != null)
+                        return r;
+                    return documents_d[documentModelId];
                 };
 
                 /**

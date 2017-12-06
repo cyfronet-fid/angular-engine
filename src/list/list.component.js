@@ -4,6 +4,7 @@ app.component('engineDocumentList', {
     template: '<ng-include src="$ctrl.contentTemplateUrl || \'/src/list/list.component.tpl.html\'"></ng-include>',
     controller: 'engineListCtrl',
     bindings: {
+        immediateCreate: '<',
         options: '=',
         query: '=',
         formWidget: '@',
@@ -25,7 +26,7 @@ app.component('engineDocumentList', {
 
 app.controller('engineListCtrl', function ($scope, $route, $location, engineMetric, $engine, engineQuery, engineAction,
                                            engineActionsAvailable, engineActionUtils, engineResolve, DocumentModal, $engLog,
-                                           DocumentActionList, $timeout,
+                                           DocumentActionList, $timeout, DocumentAction,
                                            $injector, $rootScope, $parse, $controller) {
     var self = this;
     var _parentDocumentId = null;
@@ -313,9 +314,12 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                 // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
                 $rootScope.$broadcast('engine.list.reload', $scope.query);
             });
-        else
-            $location.path($scope.genDocumentLink('new'));
-
+        else {
+            if(self.immediateCreate === true) {
+                new DocumentAction(engineActionUtils.getCreateUpdateAction($scope.actions), $scope.options.documentJSON).call();
+            } else
+                $location.path($scope.genDocumentLink('new'));
+        }
     };
     $scope.canCreateDocument = function () {
         return engineActionUtils.getCreateUpdateAction($scope.actions) !== null;

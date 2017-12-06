@@ -1,6 +1,7 @@
 angular.module('engine.list')
-.controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard) {
+.controller('engineListWrapperCtrl', function ($scope, $route, engineDashboard, $engine) {
     $scope.options = $route.current.$$route.options;
+    $scope.IMMEDIATE_CREATE = $engine.IMMEDIATE_CREATE;
     var query = $route.current.$$route.options.query;
 
     if(angular.isArray(query)) {

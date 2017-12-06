@@ -102,7 +102,7 @@ angular.module('engine.document').filter('formatFileSize', function () {
     };
 });
 
-angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $engine, $timeout, engAttachment, $engLog) {
+angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $engine, $timeout, engAttachment, $engLog, $translate) {
     var self = this;
     var STATUS = {loading: 0, uploading: 1, disabled: 2, normal: 3};
 
@@ -123,6 +123,20 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
             return;
 
         $scope.attachment.loadMetadata();
+    });
+
+    $scope.$watch('invalidFile', function (newValue) {
+        if (!!newValue && newValue.$error === "pattern") {
+            $translate('ngfErrorPattern', {
+                pattern: newValue.$errorParam
+            }).then(function (translation) {
+                $scope.error = translation;
+            });
+        // when newValue is undefined, it means upload was successful
+        // null is set when file-chooser is opened after error occurred, so I use it to clear error msg
+        } else if (newValue === null) {
+            $scope.error = null;
+        }
     });
 
     $scope.delete = function (file) {
