@@ -16,6 +16,7 @@
                          class="col-lg-8 col-md-8 engine-document" actions="actions" dirty="documentDirty"></engine-document>
         <div class="col-lg-4 col-md-4 sidebar-document"
              ng-class="{'hidden-sm': responsive, 'hidden-xs': responsive, 'col-sm-4': !responsive, 'col-xs-4': !responsive}">
+            <div fixed-on-scroll="fixed-sidebar-on-scroll">
             <engine-steps ng-model="document" processing="processing" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
             <engine-document-details ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
         </div>
@@ -25,8 +26,8 @@
         <i class="fa fa-file-text" aria-hidden="true"></i>
     </div>
     <div class="sidebar-document-rwd" ng-show="sideMenuVisible" ng-if="responsive">
-        <engine-steps ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
-        <engine-document-details ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
+        <engine-steps class="sidebar-box-shadow" ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
+        <engine-document-detail class="sidebar-box-shadow" ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
     </div>
 
 </div>

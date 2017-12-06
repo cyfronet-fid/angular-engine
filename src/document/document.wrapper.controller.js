@@ -36,4 +36,24 @@ angular.module('engine.document')
                 $location.search({step: newVal || 0})
             }
         });
-    });
+    })
+    .directive('fixedOnScroll',['$window',function ( $window ) {
+    var $win = angular.element($window);
+    return {
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            var topClass = attrs.fixedOnScroll;
+
+            $win.on("scroll", function () {
+                scope.offsetTop =  element[0].parentNode.offsetTop + element[0].getBoundingClientRect().top;
+                if ($window.pageYOffset >= scope.offsetTop ) {
+                    element.addClass(topClass);
+                } else {
+                    element.removeClass(topClass);
+                }
+                scope.$digest();
+            });
+
+        }
+    };
+}]);
