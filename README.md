@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.5**  Fixed file upload extension checking, fixed document navigation
+
 * **0.8.4**  Fixed steps redirection, added dashboard redirection, removed option of scaling textareas
 
 * **0.8.3**  Reloading messages, Creating document after clicking create button ($engineProvider.setImmediateCreate(true)),
