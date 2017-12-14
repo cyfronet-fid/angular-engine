@@ -260,12 +260,13 @@ angular.module('engine.document')
             ctx.document.metrics[metric.id] = metric.queryId;
 
             field = {
-                data: _.extend(field.data, {queries: ctx.options.document.queries[metric.id]}),
+                data: _.extend(field.data, {queries: ctx.options.document.queries[metric.id], IMMEDIATE_CREATE: $engine.IMMEDIATE_CREATE}),
                 key: metric.id, //THIS FIELD IS REQUIRED
                 template: '<engine-document-list form-widget="true" parent-document="options.templateOptions.document" '+
                 'options="options.templateOptions.options" class="' + metric.visualClass.join(' ') + '" ' +
                 ' list-caption="\''+metric.label+'\'"'+
                 ' metric-id="'+metric.id+'"'+
+                ' immediate-create="options.data.queries.immediateCreate || (options.data.queries.immediateCreate !== false && options.data.IMMEDIATE_CREATE === true)"' +
                 ' single-document="options.data.queries.singleDocument || '+(_.find(metric.visualClass, function (visualClass) {
                     return visualClass == '@singleDocument'
                 }) != null ? true : false)+'"'+

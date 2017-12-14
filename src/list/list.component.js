@@ -309,11 +309,22 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     $scope.onCreateDocument = function () {
-        if ($scope.options.subdocument === true)
-            DocumentModal(undefined, $scope.options, self.parentDocument, function () {
+        if ($scope.options.subdocument === true) {
+            const openModal = (documentId) =>
+            DocumentModal(documentId, $scope.options, self.parentDocument, function () {
                 // $scope.documents = engineQuery.get($scope.query, self.parentDocument);
                 $rootScope.$broadcast('engine.list.reload', $scope.query);
             });
+
+            if(self.immediateCreate === true) {
+                new DocumentAction(engineActionUtils.getCreateUpdateAction($scope.actions), $scope.options.documentJSON, self.parentDocument).call().then((data) => {
+                    if(data.redirectToDocument != null)
+                        openModal(data.redirectToDocument)
+                });
+            }
+            else
+                openModal();
+        }
         else {
             if(self.immediateCreate === true) {
                 new DocumentAction(engineActionUtils.getCreateUpdateAction($scope.actions), $scope.options.documentJSON).call();

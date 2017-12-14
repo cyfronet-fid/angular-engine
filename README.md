@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.6**  Added support for immediateCreate for subdocuments
+
 * **0.8.5**  Fixed file upload extension checking, fixed document navigation
 
 * **0.8.4**  Fixed steps redirection, added dashboard redirection, removed option of scaling textareas
