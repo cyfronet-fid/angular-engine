@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.7**  Added support for dynamic reloading of metric's options via `availableOptions`
+
 * **0.8.6**  Added support for immediateCreate for subdocuments
 
 * **0.8.5**  Fixed file upload extension checking, fixed document navigation

@@ -64,6 +64,12 @@ angular.module('engine.document')
         DocumentFieldFactory.prototype._registerBasicCategories = function _registerBasicFields(metric) {
             var self = this;
 
+            // this is a default handler which will reload metric's options in place according to availableOption
+            const optionsReloadHandler = (newMetricData, field) => {
+                $engLog.debug('reloading options in place', newMetricData, field);
+                field.templateOptions.options = self._engineOptionsToFormly(_.filter(newMetricData.options, option => _.contains(newMetricData.availableOptions, option.value)));
+            };
+
             this.register(new DocumentField({inputType: 'TEXT'}, function (field, metric, ctx) {
                 return field;
             }));
@@ -83,6 +89,8 @@ angular.module('engine.document')
             this.register(new DocumentField({visualClass: 'select', inputType: 'SELECT'}, function (field, metric, ctx) {
                 field.type = 'select';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+                field.data.reloadInPlace = true;
+                field.data.reloadHandler = optionsReloadHandler;
 
                 return field;
             }));
@@ -90,10 +98,12 @@ angular.module('engine.document')
             this.register(new DocumentField({visualClass: 'multiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelect';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+                field.data.reloadInPlace = true;
+                field.data.reloadHandler = optionsReloadHandler;
 
                 field.data.isDisabled = function () {
                     return field.data.form.disabled;
-                }
+                };
 
                 return field;
             }));
@@ -101,10 +111,12 @@ angular.module('engine.document')
             this.register(new DocumentField({visualClass: '@verticalMultiSelect', inputType: 'MULTISELECT'}, function (field, metric, ctx) {
                 field.type = 'multiSelectVertical';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+                field.data.reloadInPlace = true;
+                field.data.reloadHandler = optionsReloadHandler;
 
                 field.data.isDisabled = function () {
                     return field.data.form.disabled;
-                }
+                };
 
                 return field;
             }));
@@ -140,7 +152,7 @@ angular.module('engine.document')
 
                 field.data.isDisabled = function () {
                     return field.data.form.disabled;
-                }
+                };
 
                 field.data.isActive = function(element) {
                     return _.contains(field.model[field.key], element)
@@ -150,8 +162,13 @@ angular.module('engine.document')
             }));
 
             this.register(new DocumentField('radioGroup', function (field, metric, ctx) {
+
+
                 field.type = 'radioGroup';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+
+                field.data.reloadInPlace = true;
+                field.data.reloadHandler = optionsReloadHandler;
 
                 return field;
             }));
@@ -159,6 +176,8 @@ angular.module('engine.document')
             this.register(new DocumentField('radio', function (field, metric, ctx) {
                 field.type = 'radio';
                 field.templateOptions.options = self._engineOptionsToFormly(metric.options);
+                field.data.reloadInPlace = true;
+                field.data.reloadHandler = optionsReloadHandler;
 
                 return field;
             }));
@@ -295,7 +314,7 @@ angular.module('engine.document')
 
         return new DocumentFieldFactory();
     })
-    .factory('DocumentField', function (ConditionBuilder) {
+    .factory('DocumentField', function (ConditionBuilder, $engLog) {
         function DocumentField(fieldCondition, fieldBuilder) {
             if(fieldBuilder == null)
                 fieldBuilder = function (formlyField, metric, ctx) {return formlyField;};
@@ -351,7 +370,9 @@ angular.module('engine.document')
                     categoryId: metric.categoryId,
                     unit: metric.unit,
                     id: metric.id, //this is required for DocumentForm
-                    onChangeHandlers: []
+                    onChangeHandlers: [],
+                    reloadInPlace: false,
+                    reloadHandler: (newMetric, field) => {}
                 },
                 templateOptions: {
                     type: 'text',
