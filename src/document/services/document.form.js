@@ -133,7 +133,6 @@ angular.module('engine.document')
                 }
             });
 
-
             self.setDefaultMetricValues(newMetrics);
 
             //add new metrics to the form, with respect to position
@@ -162,6 +161,12 @@ angular.module('engine.document')
                     step.fields[field.data.id] = field;
                     break;
                 }
+            });
+
+            //reload metrics that can be reload in place (options, selects, etc)
+            _.forEach(_.filter(self.fieldList, metric => metric.data.reloadInPlace === true), metric => {
+                let newMetricData = _.find(metricList, metricData => metricData.id === metric.key);
+                metric.data.reloadHandler(newMetricData, metric);
             });
 
             // Notify document and every element under it that metrics have been reladed
@@ -487,7 +492,7 @@ angular.module('engine.document')
     };
 
     DocumentForm.prototype.prepareMetrics = function () {
-        console.log(this);
+        $engLog.debug(this);
     };
 
     DocumentForm.prototype.validateCurrentStep = function validateCurrentStep(fillNull) {
