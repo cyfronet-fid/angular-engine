@@ -102,7 +102,7 @@ angular.module('engine.document')
                 field.data.reloadHandler = optionsReloadHandler;
 
                 field.data.isDisabled = function () {
-                    return field.data.form.disabled;
+                    return field.data.form.disabled || metric.nooverwrite;
                 };
 
                 return field;
@@ -115,7 +115,7 @@ angular.module('engine.document')
                 field.data.reloadHandler = optionsReloadHandler;
 
                 field.data.isDisabled = function () {
-                    return field.data.form.disabled;
+                    return field.data.form.disabled || metric.nooverwrite;
                 };
 
                 return field;
@@ -151,7 +151,7 @@ angular.module('engine.document')
                 };
 
                 field.data.isDisabled = function () {
-                    return field.data.form.disabled;
+                    return field.data.form.disabled || metric.nooverwrite;
                 };
 
                 field.data.isActive = function(element) {
@@ -391,7 +391,7 @@ angular.module('engine.document')
                 },
                 expressionProperties: {
                     'templateOptions.disabled': function ($viewValue, $modelValue, scope) {
-                        return scope.options.data.form.disabled; //|| !(scope.options.data.metric.editable == true); //enable it when it's supported by the backend
+                        return metric.nooverwrite || scope.options.data.form.disabled; //|| !(scope.options.data.metric.editable == true); //enable it when it's supported by the backend
                     }
                 },
                 validation: {
