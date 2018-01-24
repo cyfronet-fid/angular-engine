@@ -25,13 +25,18 @@ angular.module('engine.document')
         $scope.$routeParams = $routeParams;
 
         $scope.$watch('$routeParams.step', function (newVal, oldVal) {
-
-
             if(angular.isString(newVal)) {
                 newVal = parseInt(newVal);
                 $routeParams.step = newVal;
             }
-            // $scope.stepList.setCurrentStep(newVal);
+
+            // handle cases where step is "out of bounds" - we'll silently handle the error and
+            // substitute it for first step
+            if($routeParams.step > $scope.stepList.steps.length-1 || $routeParams.step < 0) {
+                $routeParams.step = 0;
+                newVal = 0;
+            }
+
             if(newVal !== oldVal) {
                 $location.search({step: newVal || 0})
             }
