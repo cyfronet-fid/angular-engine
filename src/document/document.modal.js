@@ -85,12 +85,10 @@ angular.module('engine.document')
                         }
                     }
                 });
-                modalInstance.result.then(function (result) {
+                return modalInstance.result.then(function (result) {
                     if (callback)
                         callback(result);
-                }, function () {
-                });
-
-
+                    }, function () {}
+                );
             }
         });
