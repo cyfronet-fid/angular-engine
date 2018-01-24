@@ -91,6 +91,11 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.8**  Added support for `nooverwrite` option
+             Fixed bug when double click could fire document creation action multiple times
+             Fixed bug where step from query url was not validated
+             Added translation to textarea placeholder text
+
 * **0.8.7**  Added support for dynamic reloading of metric's options via `availableOptions`
 
 * **0.8.6**  Added support for immediateCreate for subdocuments
