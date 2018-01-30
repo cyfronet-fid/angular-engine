@@ -21,6 +21,7 @@
     "deasync": "^0.1.12",
     "dgeni": "^0.4.2",
     "dgeni-packages": "^0.16.1",
+    "ecstatic": "^2.0.0",
     "environment-brunch": "^1.0.0",
     "grunt": "^0.4.5",
     "grunt-cli": "^1.2.0",
@@ -37,6 +38,7 @@
     "karma-jasmine": "^0.3.8",
     "lite-server": "^2.2.2",
     "lodash": "^4.17.4",
+    "marked": "^0.3.9",
     "ng-annotate-brunch": "^1.7.2",
     "ngdocs": "^0.1.0",
     "node-static": "^0.7.10",
@@ -44,7 +46,8 @@
     "replacement-brunch": "^2.0.4",
     "sass": "^1.0.0-beta.2",
     "sass-brunch": "^2.10.4",
-    "uglify-js-brunch": "^2.10.0"
+    "uglify-js-brunch": "^2.10.0",
+    "uglify-js": "^2.6.0"
   },
   "scripts": {
     "ssl": "openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem",
@@ -59,5 +62,4 @@
     "protractor": "protractor tests/e2e/protractor.conf.js",
     "update-index-async": "node -e \"var fs=require('fs'),indexFile='app/index-async.html',loaderFile='app/bower_components/angular-loader/angular-loader.min.js',loaderText=fs.readFileSync(loaderFile,'utf-8').split(/sourceMappingURL=angular-loader.min.js.map/).join('sourceMappingURL=bower_components/angular-loader/angular-loader.min.js.map'),indexText=fs.readFileSync(indexFile,'utf-8').split(/\\/\\/@@NG_LOADER_START@@[\\s\\S]*\\/\\/@@NG_LOADER_END@@/).join('//@@NG_LOADER_START@@\\n'+loaderText+'    //@@NG_LOADER_END@@');fs.writeFileSync(indexFile,indexText);\""
   },
-  "dependencies": {}
 }
