@@ -10,9 +10,11 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
         if(this.isList)
             self.dataDict = {};
         this.documentId = documentId;
+        this.documentStates = document.states;
         this.metricId = metricId;
         this.metricExists = !_.isEmpty(document.metrics[metricId]);
         this.action = null;
+        this.deleteAction = null;
         this.data = null;
         this.label = 'Select file';
         this.ready = $q.all([this.loadActions(), $q.when(function () {
@@ -70,12 +72,19 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
     };
     EngineAttachment.prototype.loadActions = function loadActions() {
         var self = this;
+        var deferred = $q.defer();
         return $http.post($engineConfig.baseUrl + 'action/available/attachment' + '?documentId=' + this.documentId + '&metricId=' + this.metricId).then(function (response) {
             if (response.data.data.length == 0)
-                $engLog.error("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
+                $engLog.debug("No Attachment action available for document: ", self.documentId, " and metric ", self.metricId);
 
-            self.action = response.data.data[0];
-            self.label = self.action.label;
+            response.data.data.forEach(function (action) {
+                if (action.type === 'CREATE_ATTACHMENT') {
+                    self.action = action;
+                } else if (action.type === 'DELETE_ATTACHMENT') {
+                    self.deleteAction = action;
+                }
+            });
+            self.label = self.action && self.action.label;
         }, function (response) {
             //TODO ERROR MANAGEMENT
         });
@@ -89,6 +98,14 @@ angular.module('engine.document').factory('engAttachment', function ($engineConf
             url: $engineConfig.baseUrl + '/action/invoke/' + self.baseUrl + '?documentId=' + this.documentId + '&metricId=' + this.metricId + '&actionId=' + this.action.id,
             data: data
         })
+    };
+    EngineAttachment.prototype.remove = function (file) {
+        var url = $engineConfig.baseUrl + 'action/invoke/attachment' +
+          '?documentId=' + this.documentId +
+          '&actionId=' + this.deleteAction.id +
+          '&metricId=' + this.metricId +
+          '&attachmentId=' + file;
+        return $http.delete(url);
     };
 
     return EngineAttachment
@@ -104,7 +121,8 @@ angular.module('engine.document').filter('formatFileSize', function () {
 
 angular.module('engine.document').controller('engAttachmentCtrl', function ($scope, Upload, $engine, $timeout, engAttachment, $engLog, $translate) {
     var self = this;
-    var STATUS = {loading: 0, uploading: 1, disabled: 2, normal: 3};
+    var STATUS = {loading: 0, uploading: 1, disabled: 2, normal: 3, unauthorized: 4};
+    var loading = {};
 
     if($scope.model[$scope.metric.id] == null)
         $scope.model[$scope.metric.id] = $scope.isList ? [] : null;
@@ -140,28 +158,45 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
     });
 
     $scope.delete = function (file) {
+        if ($scope.status != STATUS.normal) {
+            return;
+        }
         $engine.confirm('Delete file', 'Do you really want to delete this file?').then(() => {
             $scope.status = STATUS.loading;
-            if ($scope.isList) {
-                var indexOf = _.indexOf($scope.model[$scope.options.key], file);
-                if (indexOf !== -1) {
-                    $scope.model[$scope.options.key].splice(indexOf, 1);
+            loading[file] = true;
+            $scope.attachment.remove(file).then(function () {
+                if ($scope.isList) {
+                    var indexOf = _.indexOf($scope.model[$scope.options.key], file);
+                    if (indexOf !== -1) {
+                        $scope.model[$scope.options.key].splice(indexOf, 1);
+                    }
+                } else {
+                    $scope.model[$scope.options.key] = null;
                 }
-            } else {
-                $scope.model[$scope.options.key] = null;
-            }
-            $scope.attachment.clear();
+                $scope.attachment.clear();
+                var event = $scope.$emit('engine.common.document.requestReload');
 
-            var event = $scope.$emit('engine.common.document.requestSave');
-
-            event.savePromise.then(function () {
+                delete loading[file];
                 $scope.error = null;
                 $scope.status = STATUS.normal;
-            }, function () {
+            }, function (res) {
+                delete loading[file];
                 $scope.error = 'Could not save document';
                 $scope.status = STATUS.normal;
-            })
+            });
         });
+    };
+
+    $scope.delete.available = function () {
+        return $scope.attachment && $scope.attachment.deleteAction;
+    };
+
+    $scope.delete.loading = function (file) {
+        if ($scope.isList) {
+            return loading[file] !== undefined;
+        } else {
+            return loading[$scope.model[$scope.options.key]] !== undefined;
+        }
     };
 
     $scope.upload = function (file) {
@@ -212,7 +247,11 @@ angular.module('engine.document').controller('engAttachmentCtrl', function ($sco
         if ($scope.ctx.document.id != null) {
             $scope.attachment = new engAttachment($scope.ctx.document, $scope.metric.id, $scope.isList);
             $scope.attachment.ready.then(function () {
-                $scope.status = STATUS.normal;
+                if ($scope.attachment.action) {
+                    $scope.status = STATUS.normal;
+                } else {
+                    $scope.status = STATUS.unauthorized;
+                }
             });
         } else {
             $scope.status = STATUS.disabled;
