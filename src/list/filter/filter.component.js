@@ -12,6 +12,7 @@ app.component('filterInput', {
         constructor() {
             this.openedDatePopUp = false;
             this._choices = [];
+            this._ngModel = undefined;
         }
         $onInit() {
         }
@@ -26,8 +27,33 @@ app.component('filterInput', {
                 return;
             let a = Array.from(array);
             a.splice(0, 0, {id: undefined, caption: ''});
-            console.log(a);
             return a;
+        }
+
+        formatText(val) {
+            if(!val)
+                return null;
+            return {$regex: val, $options: 'i'};
+        }
+
+        formatDate(val) {
+            if(val == null)
+                return null;
+            // return only date, skip time information, engine stores dates as strings,
+            // so this regexp should find all documents created on a given date
+            // let date = `^${val.getFullYear()}-${val.getMonth()}-${val.getDate()}`;
+            return {$regex: `^${val.toISOString().substr(0, 10)}`};
+        }
+
+        formatChoice(val) {
+            if(val == null)
+                return null;
+            return {$eq: val};
+        }
+
+        _ngChange(val) {
+            this.ngModel = val;
+            this.ngChange();
         }
     }
 });
