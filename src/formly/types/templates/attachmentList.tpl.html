@@ -12,13 +12,15 @@
             <td><a href="{{attachment.getDownloadLink(file)}}">{{ attachment.getFilename(file) }}</a></td>
             <td>{{ attachment.getSize(file) | formatFileSize }}</td>
             <td class="attachment-actions">
-                <a href="" class="" ng-click="delete(file)"><span class="fa fa-trash-o"></span></a>
+                <a href="" class="" ng-click="delete(file)" ng-if="delete.available() && !delete.loading(file)"><span class="fa fa-trash-o"></span></a>
+                <i class="fa fa-spinner fa-spin" aria-hidden="true" ng-if="delete.available() && delete.loading(file)"></i>
             </td>
         </tr>
 
     </table>
 
     <button type="file" class="btn btn-primary btn-file"
+            ng-if="status != STATUS.unauthorized"
             ngf-model-invalid="invalidFile"
             ngf-select="upload($file)"
             ng-disabled="status != STATUS.normal"
