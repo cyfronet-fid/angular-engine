@@ -169,7 +169,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     this.canShowInputFilterForColumn = function (column) {
-        return column.name !== '@index' && (_.isUndefined(column.type) || column.type === 'text' || column.type === 'link');
+        return column.name !== '@index' && column.filter !== false;
     };
 
 
@@ -200,7 +200,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
             self.allDocumentsLoaded = false;
         }
 
-        let filters = _.pick(this.filters, value => value !== "");
+        let filters = _.pick(this.filters, value => value !== "" && value !== undefined);
 
         filters = _.isEmpty(filters) ? null : {$and: _.map(filters, (val, key) => {
                 return {[key]: {$regex: val, $options: 'i'}};

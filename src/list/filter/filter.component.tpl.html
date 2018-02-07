@@ -1,0 +1,25 @@
+<input ng-if="$ctrl.options.type === 'text' || $ctrl.options.type === 'link'"
+       ng-change="$ctrl.ngChange()"
+       ng-model="$ctrl.ngModel"
+       type="text"
+       class="form-control input-sm eng-table-filter-header-input" />
+
+<input ng-if="$ctrl.options.type === 'date'"
+       ng-change="$ctrl.ngChange()"
+       ng-model="$ctrl.ngModel"
+       type="text"
+       uib-datepicker-popup="{{to.datepickerOptions.format || 'yyyy-MM-dd'}}"
+       datepicker-popup-template-url="/src/formly/types/templates/overrides/datepickerPopup.tpl.html"
+       show-button-bar="false"
+       datepicker-options="{}"
+       on-open-focus="false"
+       is-open="openedDatePopUp"
+       placeholder="{{options.templateOptions.placeholder | translate}}"
+       ng-click="$ctrl.openedDatePopUp = !$ctrl.openedDatePopUp"
+       class="form-control eng-table-filter-header-input datepicker" />
+
+<select ng-if="$ctrl.options.type === 'choice'"
+        ng-change="$ctrl.ngChange()"
+        ng-model="$ctrl.ngModel"
+        ng-options="op.id as op.caption for op in $ctrl._choices">
+</select>

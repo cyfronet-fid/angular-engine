@@ -32,14 +32,18 @@
         <table class="proposal-list table">
             <thead>
             <tr>
-                <th class="{{column.css_header || column.css}}" style="text-transform: uppercase;"
+                <th class="{{column.css_header || column.css}} engine-table-header" style="text-transform: uppercase;"
                     eng-save-col-width
                     ng-class="{'eng-col-index': column.name === '@index'}"
                     ng-repeat="column in columns"><span translate>{{column.caption || column.name}}</span>
-                    <input type="text" class="form-control input-sm eng-table-filter-header-input"
-                           ng-show="$ctrl.showFilters === true" ng-change="$ctrl.filterQuery()"
-                           ng-model="$ctrl.filters[column.name]"
-                           ng-if="$ctrl.canShowInputFilterForColumn(column)"/>
+                    <filter-input
+                            ng-show="$ctrl.showFilters === true"
+                            ng-change="$ctrl.filterQuery()"
+                            ng-if="$ctrl.canShowInputFilterForColumn(column)"
+                            column="column"
+                            options="{choices: column.filterChoices, type: column.filterChoices != null ? 'choice' : (column.type || 'text')}"
+                            ng-model="$ctrl.filters[column.filterKey || column.name]">
+                    </filter-input>
                 </th>
                 <th class="text-right eng-cog-col"></th>
             </tr>
