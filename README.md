@@ -91,6 +91,9 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.9**  Added support for filtering and sorting of query lists.
+             Sorting has been disabled, and waits when backend fixes.
+
 * **0.8.8**  Added support for `nooverwrite` option
              Fixed bug when double click could fire document creation action multiple times
              Fixed bug where step from query url was not validated

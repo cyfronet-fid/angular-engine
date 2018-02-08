@@ -342,7 +342,8 @@ angular.module('engine')
          *                                {name: 'id', type: 'link', style: 'id'},
          *                                {name: 'name'},
          *                                {name: 'author'},
-         *                                {name: 'beamlineChoice'},
+         *                                {name: 'beamlineChoice', filterKey: 'beamlineChoiceB',
+         *                                 filterChoices: [{id: 'draft', caption: 'Draft'}]},
          *                                {name: 'states.documentState'},
          *                            ],
          *                            //Caption shown in list view, will be translated
@@ -412,6 +413,11 @@ angular.module('engine')
          *      * **type** {String, one of: ['link', 'text', 'date', 'array']} specifies what type of data is stored in this
          *      document field, will be formatted accordingly. 'link' field will be formatted as text, but will be wrapped
          *      in `<a>` tag allowing navigation to the selected document.
+         *
+         *      * **filterKey** {String} this field will be used instead of name when constructing filtering query for the list
+         *
+         *      * **filterChoices** {Array} array of: {id: {String}, caption: {String}} if specified in table filter
+         *        selectbox with provided options will be shown. Caption parameter will be translated
          *
          *      * **iterator** {String|Function} only if type of column was specified as `array` it can be either a function
          *      or a js expression in string. It will be called on every element of the array, returned value will be
