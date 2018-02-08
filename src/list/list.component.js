@@ -142,23 +142,21 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     this.sortByColumn = (column) => {
-        // TODO - enable it when sorting has been fixed in the backend library
-        return;
-
+        self.skip = 0;
         if(this.sort.column === column) {
-            if(this.sort.direction === '+')
+            if(this.sort.direction === '%2B')
                 this.sort.column = null;
             else
-                this.sort.direction = '+';
+                this.sort.direction = '%2B';
         } else {
             this.sort = {column: column, direction: '-'};
         }
         if(this.sort.column === null)
             this.ordering = [];
         else
-            this.ordering = [this.sort.direction + (this.sort.column.filterKey || this.sort.column.name)];
+            this.ordering = [(this.sort.column.filterKey || this.sort.column.name) + this.sort.direction];
 
-        this.loadDocuments();
+        this.loadDocuments(true);
     };
 
     this.filterQuery = function () {

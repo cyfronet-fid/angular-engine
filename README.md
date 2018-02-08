@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.10** Sorting has been enabled, and fixed according to new backend specification.
+
 * **0.8.9**  Added support for filtering and sorting of query lists.
              Sorting has been disabled, and waits when backend fixes.
 

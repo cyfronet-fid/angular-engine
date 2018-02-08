@@ -39,7 +39,7 @@
                     <span ng-class="{'table-header-sort': column.name !== '@index'}" ng-click="$ctrl.sortByColumn(column)">
                         <span translate>{{column.caption || column.name}}</span>
                         <span class="glyphicon"
-                              ng-class="{'glyphicon-chevron-up': $ctrl.sort.column === column && $ctrl.sort.direction === '+', 'glyphicon-chevron-down': $ctrl.sort.column === column && $ctrl.sort.direction === '-'}">
+                              ng-class="{'glyphicon-chevron-up': $ctrl.sort.column === column && $ctrl.sort.direction === '%2B', 'glyphicon-chevron-down': $ctrl.sort.column === column && $ctrl.sort.direction === '-'}">
                         </span>
                     </span>
                     <filter-input
