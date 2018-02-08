@@ -67,3 +67,12 @@ select.eng-table-filter-header-input {
   width: 100%;
 }
 
+.table-header-sort {
+  cursor: pointer;
+  outline: none;
+}
+
+.eng-col-index > span {
+  cursor: auto;
+  outline: none;
+}

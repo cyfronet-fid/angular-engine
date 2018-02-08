@@ -32,6 +32,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     var _parentDocumentId = null;
 
     this.$onInit = function () {
+        this.sort = {column: null, direction: '-'};
         this.loadedOnce = false;
         this.biggestDocumentSize = 0;
         /** These vars below are required for pagination */
@@ -138,6 +139,26 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
             return false;
 
         return true;
+    };
+
+    this.sortByColumn = (column) => {
+        // TODO - enable it when sorting has been fixed in the backend library
+        return;
+
+        if(this.sort.column === column) {
+            if(this.sort.direction === '+')
+                this.sort.column = null;
+            else
+                this.sort.direction = '+';
+        } else {
+            this.sort = {column: column, direction: '-'};
+        }
+        if(this.sort.column === null)
+            this.ordering = [];
+        else
+            this.ordering = [this.sort.direction + (this.sort.column.filterKey || this.sort.column.name)];
+
+        this.loadDocuments();
     };
 
     this.filterQuery = function () {

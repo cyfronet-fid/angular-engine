@@ -35,7 +35,13 @@
                 <th class="{{column.css_header || column.css}} engine-table-header" style="text-transform: uppercase;"
                     eng-save-col-width
                     ng-class="{'eng-col-index': column.name === '@index'}"
-                    ng-repeat="column in columns"><span translate>{{column.caption || column.name}}</span>
+                    ng-repeat="column in columns">
+                    <span ng-class="{'table-header-sort': column.name !== '@index'}" ng-click="$ctrl.sortByColumn(column)">
+                        <span translate>{{column.caption || column.name}}</span>
+                        <span class="glyphicon"
+                              ng-class="{'glyphicon-chevron-up': $ctrl.sort.column === column && $ctrl.sort.direction === '+', 'glyphicon-chevron-down': $ctrl.sort.column === column && $ctrl.sort.direction === '-'}">
+                        </span>
+                    </span>
                     <filter-input
                             ng-show="$ctrl.showFilters === true"
                             ng-change="$ctrl.filterQuery()"
