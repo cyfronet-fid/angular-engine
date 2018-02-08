@@ -32,6 +32,9 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     var _parentDocumentId = null;
 
     this.$onInit = function () {
+        this.sort = {column: null, direction: '-'};
+        this.loadedOnce = false;
+        this.biggestDocumentSize = 0;
         /** These vars below are required for pagination */
         this.documentPages = [];
         this.currentPage = 0;
@@ -123,7 +126,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     this.canShowPagination = function () {
-        if ($scope.documents.length < this.DOCUMENT_QUERY_LIMIT && this.documentPages.length <= 1)
+        if (self.biggestDocumentSize < this.DOCUMENT_QUERY_LIMIT && this.documentPages.length <= 1)
             return false;
 
         if (this.noParentDocument === true)
@@ -132,10 +135,30 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         if ($scope.documents.$error != null)
             return false;
 
-        if (!$scope.documents.$resolved)
+        if (!$scope.documents.$resolved && !self.loadedOnce)
             return false;
 
         return true;
+    };
+
+    this.sortByColumn = (column) => {
+        // TODO - enable it when sorting has been fixed in the backend library
+        return;
+
+        if(this.sort.column === column) {
+            if(this.sort.direction === '+')
+                this.sort.column = null;
+            else
+                this.sort.direction = '+';
+        } else {
+            this.sort = {column: column, direction: '-'};
+        }
+        if(this.sort.column === null)
+            this.ordering = [];
+        else
+            this.ordering = [this.sort.direction + (this.sort.column.filterKey || this.sort.column.name)];
+
+        this.loadDocuments();
     };
 
     this.filterQuery = function () {
@@ -169,7 +192,7 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     };
 
     this.canShowInputFilterForColumn = function (column) {
-        return column.name !== '@index' && (_.isUndefined(column.type) || column.type === 'text' || column.type === 'link');
+        return column.name !== '@index' && column.filter !== false;
     };
 
 
@@ -200,16 +223,18 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
             self.allDocumentsLoaded = false;
         }
 
-        let filters = _.pick(this.filters, value => value !== "");
+        let filters = _.pick(this.filters, value => value != null);
 
         filters = _.isEmpty(filters) ? null : {$and: _.map(filters, (val, key) => {
-                return {[key]: {$regex: val, $options: 'i'}};
+            return {[key]: val};
         })};
 
         if ((this.parentDocument == null) || (this.parentDocument != null && this.parentDocument.id != null)) {
             $scope.documents = engineQuery.get($scope.query, this.parentDocument, undefined, undefined, self.documentPages.length * self.DOCUMENT_QUERY_LIMIT, self.DOCUMENT_QUERY_LIMIT,
                 this.ordering, filters);
             $scope.documents.$promise.then(function (documents) {
+                self.loadedOnce = true;
+                self.biggestDocumentSize = documents.length > self.biggestDocumentSize ? documents.length : self.biggestDocumentSize;
                 $scope.documents = documents;
                 // there are no documents for this page, loaded everything
                 if (documents.length === 0) {
