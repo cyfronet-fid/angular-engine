@@ -21,6 +21,6 @@
         class="form-control input-sm eng-table-filter-header-input"
         ng-change="$ctrl._ngChange($ctrl.formatChoice($ctrl._ngModel))"
         ng-model="$ctrl._ngModel"
-        ng-options="op.id as op.caption for op in $ctrl._choices">
+        ng-options="op.id as op.caption | translate for op in $ctrl._choices">
 </select>
 

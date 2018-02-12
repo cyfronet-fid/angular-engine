@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.11** Added translation support for captions in list filter select box
+
 * **0.8.10** Sorting has been enabled, and fixed according to new backend specification.
 
 * **0.8.9**  Added support for filtering and sorting of query lists.
