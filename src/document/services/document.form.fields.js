@@ -220,6 +220,7 @@ angular.module('engine.document')
                 //this will be automatically added to input with ng-model
                 field.templateOptions.floatConvert = 'true';
 
+
                 field.data.prepareValue = function(value) {
                     var parsedValue = parseFloat(value);
 
@@ -233,6 +234,7 @@ angular.module('engine.document')
                 field.templateOptions.type = 'text';
                 //this will be automatically added to input with ng-model
                 field.templateOptions.numberConvert = 'true';
+                field.templateOptions.numberFormat = 'true';
 
                 field.data.prepareValue = function(value) {
                     var parsedValue = parseInt(value);
@@ -503,4 +505,22 @@ angular.module('engine.document')
                 });
             }
         };
+    }).directive('numberFormat', function ($translate) {
+        return{
+            require: 'ngModel',
+
+            link: function (scope, element, attrs, ngModelCtrl, ) {
+
+                ngModelCtrl.$formatters.push(function(value){
+                    var number = Number(value);
+
+                    if(!_.isNaN(number) && (scope.options.data.form.disabled || scope.options.data.metric.nooverwrite) ){
+                        return number.toLocaleString($translate.use())
+                    }else{
+                        return value
+                    }
+                })
+
+            }
+        }
     })
