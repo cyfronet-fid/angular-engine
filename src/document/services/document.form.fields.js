@@ -506,19 +506,17 @@ angular.module('engine.document')
     }).directive('numberFormat', function ($translate) {
         return{
             require: 'ngModel',
-
             link: function (scope, element, attrs, ngModelCtrl, ) {
-
                 ngModelCtrl.$formatters.push(function(value){
                     var number = Number(value);
 
                     if(!_.isNaN(number) && (scope.options.data.form.disabled || scope.options.data.metric.nooverwrite) ){
-                        return number.toLocaleString($translate.use())
+                        return number.toLocaleString($translate.use());
                     }else{
-                        return value
+                        return value;
                     }
                 })
 
             }
         }
-    })
+    });

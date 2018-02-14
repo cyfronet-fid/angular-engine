@@ -79,4 +79,4 @@ angular.module('engine.document')
                 }
             }
         }
-    }])
+    }]);
