@@ -220,7 +220,6 @@ angular.module('engine.document')
                 //this will be automatically added to input with ng-model
                 field.templateOptions.floatConvert = 'true';
 
-
                 field.data.prepareValue = function(value) {
                     var parsedValue = parseFloat(value);
 
@@ -234,7 +233,6 @@ angular.module('engine.document')
                 field.templateOptions.type = 'text';
                 //this will be automatically added to input with ng-model
                 field.templateOptions.numberConvert = 'true';
-                field.templateOptions.numberFormat = 'true';
 
                 field.data.prepareValue = function(value) {
                     var parsedValue = parseInt(value);
