@@ -43,13 +43,16 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                 .then(() => {
                     self.stepList.setDocument(self.document);
                     return self.stepList.$ready;
-                }).then(() => {
-                    self.documentForm._setDocument(self.document);
-                    self.documentForm.connectFieldToStep();
+                })
+                // .then(() => self.documentForm._setSteps(self.stepList))
+                .then(() => self.documentForm._setDocument(self.document))
+                // .then(() => self.documentForm._onReload())
+                .then(() => self.documentForm.connectFieldToStep())
+                .then(() => {
                     self.actionList._setDocument(self.document);
                     $scope.$broadcast('engine.list.reload');
                 });
-        });
+            });
 
         $scope.$on('engine.common.document.validate', function (event) {
             event.$promise = self.documentForm.validate(null, true).then(function (valid) {

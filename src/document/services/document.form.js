@@ -106,11 +106,9 @@ angular.module('engine.document')
          */
         return engineMetric(options, function (metricList) {
             $engLog.log('New loaded metrics: ', metricList);
-            var metricDict = _.indexBy(metricList, 'id');
+            let metricDict = _.indexBy(metricList, 'id');
 
-            var newMetrics = _.reject(metricList, function (metric) {
-                return metric.id in self.metricDict;
-            });
+            let newMetrics = _.reject(metricList, metric => metric.id in self.metricDict);
 
             $engLog.log('New metrics: ', newMetrics);
 
@@ -118,11 +116,14 @@ angular.module('engine.document')
             _.forEach(self.metricList, function (metric) {
                 if(!(metric.id in metricDict)) {
 
-                    var metricIndex = _.findIndex(self.categoriesDict[metric.categoryId].fieldGroup, function (field) {
-                        return field.data.id == metric.id;
+                    let metricIndex = _.findIndex(self.categoriesDict[metric.categoryId].fieldGroup, function (field) {
+                        return field.data.id === metric.id;
                     });
-                    if(metricIndex == -1)
+                    if(metricIndex === -1)
                         return;
+
+                    // also remove fields from form
+                    self.fieldList.splice(self.fieldList.findIndex(field => field.key === metric.id), 1);
 
                     $engLog.log('Metric to remove: ', metric, 'index: ', metricIndex);
 
@@ -166,6 +167,10 @@ angular.module('engine.document')
             //reload metrics that can be reload in place (options, selects, etc)
             _.forEach(_.filter(self.fieldList, metric => metric.data.reloadInPlace === true), metric => {
                 let newMetricData = _.find(metricList, metricData => metricData.id === metric.key);
+                if(newMetricData == null) {
+                    $engLog.error(`newMetricData with id ${metric.key} has not been found in `, metricList);
+                    return;
+                }
                 metric.data.reloadHandler(newMetricData, metric);
             });
 
@@ -174,42 +179,14 @@ angular.module('engine.document')
         }).$promise;
     };
 
-    DocumentForm.prototype.connectFieldToStep = function (newMetrics) {
-        var self = this;
-        var _categoriesToPostProcess = [];
-        newMetrics = (typeof newMetrics === 'undefined') ? self.metricList : newMetrics;
+    DocumentForm.prototype.connectFieldToStep = function () {
+        const self = this;
+        const _categoriesToPostProcess = [];
 
-        _.forEach(newMetrics, function (newMetric) {
-            $engLog.log(self.categoriesDict[newMetric.categoryId]);
-            self.addMetric(newMetric);
-
-            var field = DocumentFieldFactory.makeField(self.metricList, newMetric, {
-                document: self.document,
-                options: self.documentOptions,
-                documentForm: self
-            });
-
-            if (newMetric.categoryId in self.categoriesDict) {
-                //  field do not duplicate
-                // :TODO Make it prettier
-                if (!_.find(self.fieldList, field => field.key === newMetric.id)) {
-                    self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 1);
-                    self.categoriesDict[newMetric.categoryId].fieldGroup.splice(newMetric.position, 0, field);
-                    self.categoriesDict[newMetric.categoryId].fieldGroup = _.sortBy(self.categoriesDict[newMetric.categoryId].fieldGroup, function (metric) {
-                        return metric.data.position;
-                    });
-                }
-            }
-
-        });
-
-        self._setSteps(self.steps);
         self.setFormlyState(self.formlyState);
 
-        _.forEach(self.steps.getSteps(), function (step) {
-            var formStepStructure = DocumentCategoryFactory.makeStepCategory(step);
-            formStepStructure.fieldGroup = _parseMetricCategories(step, step.metricCategories);
-            self.formStructure.push(formStepStructure);
+        _.forEach(self.steps.getSteps(), step => {
+            reconnectFieldsToStep(step, step.metricCategories);
         });
 
         _.forEach(self.steps.getSteps(), function (step) {
@@ -223,51 +200,32 @@ angular.module('engine.document')
                 if (step.metrics[field.data.categoryId] === undefined)
                     return;
                 if (_.contains(self.fields, field))
-                    self.fields = _.without(self.fields)
+                    self.fields = _.without(self.fields, field);
 
-                self.categoriesDict[field.data.categoryId].fieldGroup.push(field);
                 step.fields[field.data.id] = field;
-
             });
         });
 
-        postprocess();
+        // process categories
+        _.forEach(_categoriesToPostProcess, entry => entry.data.$process());
 
-        reorderFields();
-
-        function _parseMetricCategories(step, metricCategories) {
-            var formCategories = [];
+        function reconnectFieldsToStep(step, metricCategories) {
             _.forEach(metricCategories, function (metricCategory) {
+                // metricCategory.children can only be a category, not field (metric)
+                if(metricCategory.children)
+                    reconnectFieldsToStep(step, metricCategory.children);
+                // formMetricCategory.fieldGroup =
+                let category = self.categoriesDict[metricCategory.id];
+                if(category == null)
+                    return;
 
-                var formMetricCategory = DocumentCategoryFactory.makeCategory(metricCategory, {document: self.document});
+                if(_.isFunction(category.data.$process))
+                    _categoriesToPostProcess.push(category);
 
-                formMetricCategory.fieldGroup =_parseMetricCategories(step, metricCategory.children);
-
-                self.categoriesDict[metricCategory.id] = formMetricCategory;
-                step.metrics[metricCategory.id] = formMetricCategory;
-                if(_.isFunction(formMetricCategory.data.$process))
-                    _categoriesToPostProcess.push(formMetricCategory);
-
-                formCategories.push(formMetricCategory);
-            });
-
-            return formCategories;
-        }
-
-        function postprocess() {
-            _.forEach(_categoriesToPostProcess, function (entry) {
-                entry.data.$process();
-            })
-        }
-
-        function reorderFields() {
-            _.forEach(self.categoriesDict, function (metricCategory) {
-                metricCategory.fieldGroup = _.sortBy(metricCategory.fieldGroup, function (field) {
-                    return field.data.position;
-                });
+                step.metrics[metricCategory.id] = category;
             });
         }
-    }
+    };
 
 
     DocumentForm.prototype.addMetric = function addMetric(metric) {
@@ -337,7 +295,8 @@ angular.module('engine.document')
     DocumentForm.prototype.setValidator = function (validator) {
         this.validator = validator;
         this.$validationReadyDeferred.resolve();
-    }
+    };
+
     DocumentForm.prototype.setFormlyState = function (formlyState) {
         this.formlyState = formlyState;
         if(this.formlyState != null) {

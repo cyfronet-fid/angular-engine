@@ -27,7 +27,8 @@ var app = angular.module('engine',
         'ngMessages',
         'ngFileUpload',
         'pascalprecht.translate',
-        'engine.document'])
+        'engine.document']);
+
 /**
  * Optimizating performance in production mode
  */
