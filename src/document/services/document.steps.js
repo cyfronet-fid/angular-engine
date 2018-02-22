@@ -19,7 +19,7 @@ angular.module('engine.document')
             this.document = document;
 
             if (this.steps != [])
-                this.steps = []
+                this.steps = [];
 
             this.documentSteps = _.filter(this.documentSteps, function (step) {
                 var cond = step.condition;

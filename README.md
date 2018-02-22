@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.12** Fixed attachment uploading which broke document field connection to model
+
 * **0.8.11** Added translation support for captions in list filter select box
 
 * **0.8.10** Sorting has been enabled, and fixed according to new backend specification.
