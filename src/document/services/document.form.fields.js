@@ -325,11 +325,16 @@ angular.module('engine.document')
             this.fieldCustomizer = fieldBuilder;
         }
 
+        DocumentField.saveOnChange = function ($viewValue, $modelValue, $scope) {
+            return $scope.$emit('engine.common.document.requestSave').savePromise
+        }
+
         //make it class method, to not instantiate it for every field
-        DocumentField.onChange = function($viewValue, $modelValue, $scope) {
-            _.forEach($scope.options.data.onChangeHandlers, function (callback) {
-                callback($viewValue, $modelValue, $scope);
-            })
+        DocumentField.onChange = async function($viewValue, $modelValue, $scope) {
+
+            await Promise.all($scope.options.data.onChangeHandlers.map(async (callback) => {
+                await callback($viewValue, $modelValue, $scope);
+            }))
         };
         DocumentField.validate = function ($viewValue, $modelValue, $scope) {
 
@@ -347,7 +352,6 @@ angular.module('engine.document')
         DocumentField.onValidate = function($viewValue, $modelValue, $scope) {
             //emit validate request for dom element which wants to listen (eg. document)
             $scope.$emit('document.form.requestValidate');
-
             $scope.options.data.form.validateCurrentStep(false);
         };
 
@@ -407,8 +411,13 @@ angular.module('engine.document')
             if(metric.unit != null)
                 formlyField.wrapper = 'unit';
 
+
             if (metric.reloadOnChange == true) {
                 formlyField.data.onChangeHandlers.push(DocumentField.onReload);
+            }
+
+            if (metric.saveOnChange == true) {
+                formlyField.data.onChangeHandlers.push(DocumentField.saveOnChange);
             }
 
             //if validateOnChange is true all other metrics should be validated after this one changes
