@@ -91,6 +91,9 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.13** Added translation for checkbox control, added number formatting depending on locale for
+             non editable controls, table cells and details
+
 * **0.8.12** Fixed attachment uploading which broke document field connection to model
 
 * **0.8.11** Added translation support for captions in list filter select box
