@@ -340,13 +340,11 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
             });
 
             if(self.immediateCreate === true) {
-                return new DocumentAction(engineActionUtils.getCreateUpdateAction($scope.actions), $scope.options.documentJSON, self.parentDocument).call().then((data) => {
-                    if(data.redirectToDocument != null)
-                        return openModal(data.redirectToDocument)
-                });
+                // modal is created in DocumentActionProcess
+                return new DocumentAction(engineActionUtils.getCreateUpdateAction($scope.actions), $scope.options.documentJSON, self.parentDocument).call();
+            } else {
+                return DocumentModal(undefined, $scope.options, self.parentDocument, () => $rootScope.$broadcast('engine.list.reload', $scope.query));
             }
-            else
-                return openModal();
         }
         else {
             if(self.immediateCreate === true) {
