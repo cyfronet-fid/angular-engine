@@ -334,11 +334,6 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
     $scope.onCreateDocument = function () {
         console.log('onCreateDocument')
         if ($scope.options.subdocument === true) {
-            const openModal = (documentId) =>
-            DocumentModal(documentId, $scope.options, self.parentDocument, function () {
-                $rootScope.$broadcast('engine.list.reload', $scope.query);
-            });
-
             if(self.immediateCreate === true) {
                 // modal is created in DocumentActionProcess
                 return new DocumentAction(engineActionUtils.getCreateUpdateAction($scope.actions), $scope.options.documentJSON, self.parentDocument).call();

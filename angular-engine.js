@@ -4038,7 +4038,7 @@ angular.module('engine').factory('engineResolve', function () {
 });
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2018-02-28T11:27:53.946Z';
+var ENGINE_COMPILATION_DATE = '2018-02-28T11:43:52.095Z';
 var ENGINE_VERSION = '0.8.13';
 var ENGINE_BACKEND_VERSION = '1.2.9';
 
@@ -4725,12 +4725,6 @@ app.controller('engineListCtrl', ["$scope", "$route", "$location", "engineMetric
     $scope.onCreateDocument = function () {
         console.log('onCreateDocument');
         if ($scope.options.subdocument === true) {
-            var openModal = function openModal(documentId) {
-                return DocumentModal(documentId, $scope.options, self.parentDocument, function () {
-                    $rootScope.$broadcast('engine.list.reload', $scope.query);
-                });
-            };
-
             if (self.immediateCreate === true) {
                 // modal is created in DocumentActionProcess
                 return new DocumentAction(engineActionUtils.getCreateUpdateAction($scope.actions), $scope.options.documentJSON, self.parentDocument).call();
