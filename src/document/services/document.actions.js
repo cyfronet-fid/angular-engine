@@ -256,7 +256,7 @@ angular.module('engine.document')
 
         return DocumentAction;
     })
-    .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q, DocumentModal) {
+    .factory('DocumentActionProcess', function ($location, $engine, engineDocument, $engLog, $q, DocumentModal, $rootScope) {
         return function DocumentActionHandler(document, actionResponse, parentDocument, $scope) {
             if (actionResponse.type === 'REDIRECT') {
                 if (actionResponse.redirectToDocument === null)
@@ -310,7 +310,7 @@ angular.module('engine.document')
                         $location.$$path = $engine.pathToDocument(documentOptions, actionResponse.redirectToDocument);
                         $location.$$compose();
                     } else {
-                        DocumentModal(actionResponse.redirectToDocument, documentOptions, parentDocument.id);
+                        DocumentModal(actionResponse.redirectToDocument, documentOptions, parentDocument.id, () => $rootScope.$broadcast('engine.list.reload'));
                     }
 
                     return actionResponse;
