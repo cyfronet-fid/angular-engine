@@ -91,6 +91,8 @@ angular-engine package
 
 ## Changelog
 
+* **0.8.14** Fixed double subdocument modal when clicking create action
+
 * **0.8.13** Added translation for checkbox control, added number formatting depending on locale for
              non editable controls, table cells and details
 
