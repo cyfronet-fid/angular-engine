@@ -207,9 +207,7 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
 
     this.save = function () {
         self.processing = true;
-        return self.actionList.callSave().finally(function () {
-            self.processing = false;
-        });
+        return self.actionList.callSave().finally(() => self.processing = false);
     };
 
     this.validateAfterInit = function validateAfterInit() {

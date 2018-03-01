@@ -314,7 +314,7 @@ angular.module('engine.document')
 
         return new DocumentFieldFactory();
     })
-    .factory('DocumentField', function (ConditionBuilder, $engLog) {
+    .factory('DocumentField', function (ConditionBuilder, $engLog, $q) {
         function DocumentField(fieldCondition, fieldBuilder) {
             if(fieldBuilder == null)
                 fieldBuilder = function (formlyField, metric, ctx) {return formlyField;};
@@ -327,9 +327,13 @@ angular.module('engine.document')
 
         //make it class method, to not instantiate it for every field
         DocumentField.onChange = function($viewValue, $modelValue, $scope) {
-            _.forEach($scope.options.data.onChangeHandlers, function (callback) {
-                callback($viewValue, $modelValue, $scope);
-            })
+            let promise = $q.when();
+
+            _.forEach($scope.options.data.onChangeHandlers, callback => {
+                promise = promise.then(() => callback($viewValue, $modelValue, $scope));
+            });
+
+            return promise;
         };
         DocumentField.validate = function ($viewValue, $modelValue, $scope) {
 
@@ -337,8 +341,13 @@ angular.module('engine.document')
         DocumentField.onReload = function($viewValue, $modelValue, $scope) {
             //emit reload request for dom element which wants to listen (eg. document)
             $scope.$emit('document.form.requestReload');
-            $scope.options.data.form._onReload();
+            return $scope.options.data.form._onReload();
         };
+
+        DocumentField.onSave = function($viewValue, $modelValue, $scope) {
+            return $scope.$emit('engine.common.document.requestSave').savePromise;
+        };
+
         DocumentField.onValidateSelf = function($viewValue, $modelValue, $scope) {
             var metricToValidate = {};
             metricToValidate[$scope.options.data.metric.id] = $viewValue == null ? null : $viewValue;
@@ -348,7 +357,7 @@ angular.module('engine.document')
             //emit validate request for dom element which wants to listen (eg. document)
             $scope.$emit('document.form.requestValidate');
 
-            $scope.options.data.form.validateCurrentStep(false);
+            return $scope.options.data.form.validateCurrentStep(false);
         };
 
 
@@ -407,13 +416,17 @@ angular.module('engine.document')
             if(metric.unit != null)
                 formlyField.wrapper = 'unit';
 
-            if (metric.reloadOnChange == true) {
+            if (metric.saveOnChange === true) {
+                formlyField.data.onChangeHandlers.push(DocumentField.onSave);
+            }
+
+            if (metric.reloadOnChange === true) {
                 formlyField.data.onChangeHandlers.push(DocumentField.onReload);
             }
 
             //if validateOnChange is true all other metrics should be validated after this one changes
-            if (metric.validateOnChange == true) {
-                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+            if (metric.validateOnChange === true) {
+                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) !== -1) {
                     formlyField.templateOptions.onBlur = DocumentField.onValidate;
                 } else {
                     formlyField.data.onChangeHandlers.push(DocumentField.onValidate);
@@ -421,7 +434,7 @@ angular.module('engine.document')
             }
             //otherwise only this metrics
             else {
-                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) != -1) {
+                if (['TEXT', 'TEXTAREA', 'NUMBER', 'FLOAT', 'INTEGER'].indexOf(metric.inputType) !== -1) {
                     formlyField.templateOptions.onBlur = DocumentField.onValidateSelf;
                 } else {
                     formlyField.data.onChangeHandlers.push(DocumentField.onValidateSelf);

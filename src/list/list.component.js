@@ -231,6 +231,9 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
             $scope.documents = engineQuery.get($scope.query, this.parentDocument, undefined, undefined, self.documentPages.length * self.DOCUMENT_QUERY_LIMIT, self.DOCUMENT_QUERY_LIMIT,
                 this.ordering, filters);
             $scope.documents.$promise.then(function (documents) {
+                if(documents == null)
+                    return;
+
                 self.loadedOnce = true;
                 self.biggestDocumentSize = documents.length > self.biggestDocumentSize ? documents.length : self.biggestDocumentSize;
                 $scope.documents = documents;
