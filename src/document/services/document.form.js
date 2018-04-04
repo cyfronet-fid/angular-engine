@@ -338,7 +338,7 @@ angular.module('engine.document')
 
     DocumentForm.prototype._onReload = function onReload() {
         $engLog.debug('Form reload called');
-        this._reloadForm();
+        return this._reloadForm();
     };
 
     DocumentForm.prototype._makeForm = function makeForm() {
