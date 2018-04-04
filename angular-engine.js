@@ -1866,7 +1866,7 @@ angular.module('engine.document').factory('DocumentFieldFactory', ["DocumentFiel
     };
 
     return new DocumentFieldFactory();
-}]).factory('DocumentField', ["ConditionBuilder", "$engLog", "$q", function (ConditionBuilder, $engLog, $q) {
+}]).factory('DocumentField', ["ConditionBuilder", "$engLog", "$q", "$rootScope", function (ConditionBuilder, $engLog, $q, $rootScope) {
     function DocumentField(fieldCondition, fieldBuilder) {
         if (fieldBuilder == null) fieldBuilder = function fieldBuilder(formlyField, metric, ctx) {
             return formlyField;
@@ -1899,7 +1899,9 @@ angular.module('engine.document').factory('DocumentFieldFactory', ["DocumentFiel
     };
 
     DocumentField.onSave = function ($viewValue, $modelValue, $scope) {
-        return $scope.$emit('engine.common.document.requestSave').savePromise;
+        return $scope.$emit('engine.common.document.requestSave').savePromise.then(function () {
+            return $rootScope.$broadcast('engine.list.reload', $scope.query);
+        });
     };
 
     DocumentField.onValidateSelf = function ($viewValue, $modelValue, $scope) {
@@ -4143,7 +4145,7 @@ angular.module('engine').factory('engineResolve', function () {
 
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2018-04-04T13:24:10.010Z';
+var ENGINE_COMPILATION_DATE = '2018-04-04T13:53:12.379Z';
 var ENGINE_VERSION = '0.8.14';
 var ENGINE_BACKEND_VERSION = '1.2.9';
 
