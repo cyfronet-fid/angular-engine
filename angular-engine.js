@@ -384,6 +384,27 @@ angular.module('engine.common').factory('engActionResource', ["$engineConfig", "
 
 'use strict';
 
+var _module = angular.module('engine.common');
+
+_module.directive('sidebarAddon', ["$compile", function SidebarAddonDirective($compile) {
+    return {
+        templateUrl: '/src/common/sidebar-addon/sidebar-addon.tpl.html',
+        restrict: 'E',
+        scope: {
+            tag: '@',
+            document: '=',
+            ctx: '=',
+            caption: '@'
+        },
+        link: function link($scope, $element, attrs) {
+            var newElement = $compile('<' + $scope.tag + ' document="document" ctx="ctx"></' + $scope.tag + '>')($scope);
+            $element.children().eq(0).children().eq(0).append(newElement);
+        }
+    };
+}]);
+
+'use strict';
+
 angular.module('engine.dashboard').controller('engineDashboardCtrl', ["$scope", "$route", "$engine", function ($scope, $route, $engine) {
     $scope.$engine = $engine;
     $scope.options = $route.current.$$route.options;
@@ -800,6 +821,10 @@ angular.module('engine.document').controller('engineDocumentWrapperCtrl', ["$sco
     };
 
     $scope.$routeParams = $routeParams;
+
+    $scope.conditionFulfilled = function (addon) {
+        return addon.condition($scope.document);
+    };
 
     $scope.$watch('$routeParams.step', function (newVal, oldVal) {
         if (angular.isString(newVal)) {
@@ -3063,7 +3088,12 @@ angular.module('engine').provider('$engLog', function () {
             steps: _apiCheck.arrayOf(_apiCheck.object),
             showValidateButton: _apiCheck.bool.optional,
             caption: _apiCheck.string.optional,
-            queries: _apiCheck.object.optional
+            queries: _apiCheck.object.optional,
+            sidebarAddons: _apiCheck.arrayOf(_apiCheck.shape({
+                'component': _apiCheck.string,
+                'position': _apiCheck.object.optional,
+                'ctx': _apiCheck.string.optional
+            })).optional
         })
     });
 
@@ -3087,6 +3117,20 @@ angular.module('engine').provider('$engLog', function () {
         if (options.list.customButtons == null) options.list.customButtons = [];
 
         if (!_.isArray(options.list.customButtons)) options.list.customButtons = [options.list.customButtons];
+
+        if (options.document.sidebarAddons == null) options.document.sidebarAddons = [];
+
+        options.document.sidebarAddons = options.document.sidebarAddons.map(function (addon) {
+            return {
+                position: addon.position || 'middle',
+                caption: addon.caption || '',
+                condition: addon.condition || function (document) {
+                    return true;
+                },
+                component: addon.component,
+                ctx: addon.ctx || {}
+            };
+        });
     }
 
     self._disableOnReload = false;
@@ -3428,6 +3472,19 @@ angular.module('engine').provider('$engLog', function () {
      *
      *    * **titleSrc** {String}, *Optional*, default `''`. dotted notation referencing element of the document which
      *    will be used as title in existing document's forms. (eg. `'metrics.proposalName'`)
+     *
+     *    * **sidebarAddons** {Array}, *Optional*, default `[]`. Specifies additional custom components which will
+     *    be displayed in the sidebar. Custom components can be specified using following fields:
+     *      * **caption** {String}, *Optional* Displayed caption, will be translated
+     *      * **component** {String}, Component which will be injected must be in `dasherized-notation`
+     *      * **condition** {Function}, *Optional* function taking as an argument document and returning boolean,
+     *      if returned value is false this particular addon will not be displayed
+     *      * **ctx** {Object}, *Optional* context object which will be passed to the addon
+     *
+     *      Component which will be injected should have 2 bindings specified: ctx: '=' and document: '='
+     *
+     *    Example:
+     *      [{component: 'chat-sidebar-addon', ctx: {debug: true}, caption: 'Chat', condition: document => true]
      *
      *    * **details** {Object}, *Optional*, defines additional information displayed in details box, available fields
      *    are:
@@ -4086,7 +4143,7 @@ angular.module('engine').factory('engineResolve', function () {
 
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2018-03-01T13:58:14.093Z';
+var ENGINE_COMPILATION_DATE = '2018-04-04T13:24:10.010Z';
 var ENGINE_VERSION = '0.8.14';
 var ENGINE_BACKEND_VERSION = '1.2.9';
 
@@ -4873,6 +4930,9 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/common/document-actions/document-actions.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n\n<button type=\"submit\" class=\"btn btn-primary dark-blue-btn\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\"\n        ng-if=\"$ctrl.steps.getSteps().length >= 1\"\n        ng-show=\"!$ctrl.steps.isLast($ctrl.step)\" translate>Next Step:</button>\n\n<button type=\"submit\" class=\"btn btn-primary\" ng-click=\"$ctrl.changeStep($ctrl.step+1)\"\n        ng-if=\"$ctrl.steps.getSteps().length >= 1\"\n        ng-show=\"!$ctrl.steps.isLast($ctrl.step)\">\n    {{$ctrl.step+2}}. {{$ctrl.steps.getStep($ctrl.step+1).name}}\n</button>\n\n<span ng-if=\"$ctrl.saveAlertLeft == true\" ng-show=\"!$ctrl.loading && $ctrl.dirty && $ctrl.steps.isLast($ctrl.step)\" class=\"document-changes-info document-dirty-warning-left\" translate>You must save document to perform actions</span>\n\n<!--Always show save button-->\n<action-button ng-show=\"$ctrl.actionList.getSaveAction() != null && $ctrl.dirty == true && !$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\"\n               on-click=\"$ctrl.actionList.callSave()\" label=\"{{$ctrl.actionList.getSaveAction().label}}\"></action-button>\n\n<!--Validate should be visible only on pristine document-->\n<action-button ng-show=\"$ctrl.dirty == false && !$ctrl.loading && $ctrl.actionList.getSaveAction()!=null && $ctrl.showValidationButton && $ctrl.steps.isLast($ctrl.step)\"\n               on-click=\"$ctrl.validate()\" label=\"Validate\"></action-button>\n\n<!--Show all engine actions-->\n<action-button ng-repeat=\"action in $ctrl.actionList.actions\" ng-show=\"$ctrl.dirty == false && !$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\"\n               on-click=\"action.call()\" label=\"{{action.label}}\"></action-button>\n\n<!--Show custom user actions-->\n<action-button ng-repeat=\"button in $ctrl.customButtons\" ng-show=\"!$ctrl.loading && $ctrl.steps.isLast($ctrl.step)\"\n               on-click=\"button.action()\" label=\"{{button.label}}\"></action-button>\n\n\n<span ng-if=\"$ctrl.saveAlertLeft == false\" ng-show=\"!$ctrl.loading && $ctrl.dirty && $ctrl.steps.isLast($ctrl.step)\" class=\"document-changes-info document-dirty-warning-right\" translate>You must save document to perform actions</span>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
+  $templateCache.put("/src/common/sidebar-addon/sidebar-addon.tpl.html", "<div scroll-rwd class=\"text-box sidebar-details\">\n    <div class=\"text-content\">\n        <h3 style=\"margin-top: 0\" ng-if=\"caption\">{{caption | translate}}</h3>\n\n    </div>\n</div>");
+}]);
+angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/dashboard/dashboard.tpl.html", "<div class=\"row\">\n    <div class=\"col-md-12\">\n        <h1 translate>{{options.caption}}</h1>\n    </div>\n</div>\n<div class=\"text-box\" ng-repeat=\"query in queries\">\n    <div class=\"text-content\">\n        <engine-document-list show-create-button=\"query.showCreateButton\" columns=\"query.columns\"\n                              custom-buttons=\"query.customButtons\"\n                              content-template-url=\"query.contentTemplateUrl\"\n                              controller=\"{{query.controller || ''}}\"\n                              no-documents-message=\"{{query.noDocumentsMessage || $engine.getOptions(query.documentModelId).list.noDocumentsMessage || ''}}\"\n                              no-parent-document-message=\"{{query.noParentDocumentMessage || $engine.getOptions(query.documentModelId).list.noParentDocumentMessage || ''}}\"\n                              immediate-create=\"query.immediateCreate === true || (query.immediateCreate !== false && IMMEDIATE_CREATE === true)\"\n                              query=\"query.queryId\" options=\"$engine.getOptions(query.documentModelId)\"\n                              list-caption=\"query.label\"></engine-document-list>\n\n    </div>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
@@ -4885,7 +4945,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.$ready.$$state.status === 0\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n\n<div ng-if=\"$ctrl.$ready.$$state.status === 1\" ng-cloak>\n    <div ng-repeat=\"message in $ctrl.messages\" class=\"alert alert-{{message.type}} alert-document\" role=\"alert\" translate>{{message.body}}</div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.formlyOptions\" form=\"$ctrl.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"$ctrl.documentScope\" dirty=\"$ctrl.dirty\"\n                                     actions=\"$ctrl.actions\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"\n                                     save-alert-left=\"false\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>\n\n<div ng-show=\"!$ctrl.$ready.$$state.status === 2\" ng-cloak translate>\n    REJECTED\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <div class=\"row\">\n        <div class=\"col-md-12\">\n            <h1>\n                <span ng-if=\"!document.id\" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>\n                <span ng-if=\"document.id\" ><span translate>{{options.name}}</span>{{engineResolve(document, options.document.titleSrc)}}</span>\n\n                <span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">{{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span>\n            </h1>\n        </div>\n    </div>\n    <div class=\"row\">\n        <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\" processing=\"processing\"\n                         document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\"\n                         ng-class=\"{'col-sm-8': !responsive, 'col-xs-8': !responsive, 'col-sm-12': responsive, 'col-xs-12': responsive}\"\n                         class=\"col-lg-8 col-md-8 engine-document\" actions=\"actions\" dirty=\"documentDirty\"></engine-document>\n        <div class=\"col-lg-4 col-md-4 sidebar-document\"\n             ng-class=\"{'hidden-sm': responsive, 'hidden-xs': responsive, 'col-sm-4': !responsive, 'col-xs-4': !responsive}\">\n            <div fixed-on-scroll=\"fixed-sidebar-on-scroll\">\n            <engine-steps ng-model=\"document\" processing=\"processing\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n            <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\" dirty=\"documentDirty\"></engine-document-details>\n        </div>\n    </div>\n\n    <div class=\"document-navi-toggle hidden-md-up\" ng-click=\"toggleSideMenu()\" ng-if=\"responsive\" ng-class=\"{active: sideMenuVisible}\">\n        <i class=\"fa fa-file-text\" aria-hidden=\"true\"></i>\n    </div>\n    <div class=\"sidebar-document-rwd\" ng-show=\"sideMenuVisible\" ng-if=\"responsive\">\n        <engine-steps class=\"sidebar-box-shadow\" ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n        <engine-document-detail class=\"sidebar-box-shadow\" ng-model=\"document\" options=\"options\" actions=\"actions\" dirty=\"documentDirty\"></engine-document-details>\n    </div>\n\n</div>");
+  $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <div class=\"row\">\n        <div class=\"col-md-12\">\n            <h1>\n                <span ng-if=\"!document.id\" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>\n                <span ng-if=\"document.id\" ><span translate>{{options.name}}</span>{{engineResolve(document, options.document.titleSrc)}}</span>\n\n                <span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">{{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span>\n            </h1>\n        </div>\n    </div>\n    <div class=\"row\">\n        <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\" processing=\"processing\"\n                         document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\"\n                         ng-class=\"{'col-sm-8': !responsive, 'col-xs-8': !responsive, 'col-sm-12': responsive, 'col-xs-12': responsive}\"\n                         class=\"col-lg-8 col-md-8 engine-document\" actions=\"actions\" dirty=\"documentDirty\"></engine-document>\n        <div class=\"col-lg-4 col-md-4 sidebar-document\"\n             ng-class=\"{'hidden-sm': responsive, 'hidden-xs': responsive, 'col-sm-4': !responsive, 'col-xs-4': !responsive}\">\n            <div fixed-on-scroll=\"fixed-sidebar-on-scroll\">\n            <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'top' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n            <engine-steps ng-model=\"document\" processing=\"processing\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n            <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'middle' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n            <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\" dirty=\"documentDirty\"></engine-document-details>\n            <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'bottom' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n        </div>\n    </div>\n\n    <div class=\"document-navi-toggle hidden-md-up\" ng-click=\"toggleSideMenu()\" ng-if=\"responsive\" ng-class=\"{active: sideMenuVisible}\">\n        <i class=\"fa fa-file-text\" aria-hidden=\"true\"></i>\n    </div>\n    <div class=\"sidebar-document-rwd\" ng-show=\"sideMenuVisible\" ng-if=\"responsive\">\n        <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'top' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n        <engine-steps class=\"sidebar-box-shadow\" ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n        <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'middle' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n        <engine-document-detail class=\"sidebar-box-shadow\" ng-model=\"document\" options=\"options\" actions=\"actions\" dirty=\"documentDirty\"></engine-document-details>\n        <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'bottom' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n    </div>\n\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/steps.tpl.html", "<div class=\"text-box text-box-nav\">\n    <div ng-show=\"$ctrl.processing\" class=\"category-loading\">\n        <i class=\"category-loading-spinner fa fa-spinner fa-spin\" style=\"\" aria-hidden=\"true\"></i>\n    </div>\n    <ul class=\"nav nav-pills nav-stacked nav-steps\">\n        <li ng-repeat=\"_step in $ctrl.stepList.steps\" ng-class=\"{active: $ctrl.stepList.getCurrentStep() == _step}\">\n            <a href=\"\" ng-click=\"$ctrl.changeStep($index)\">\n                <span class=\"menu-icons\">\n                    <i class=\"fa\" aria-hidden=\"true\" style=\"display: inline-block\"\n                       ng-class=\"{'fa-check-circle' : _step.getState() == 'valid',\n                                  'fa-circle-o': _step.getState() == 'blank',\n                                  'fa-cog fa-spin': _step.getState() == 'loading',\n                                  'fa-times-circle': _step.getState() == 'invalid'}\"></i>\n                </span>\n                <span class=\"menu-steps-desc ng-binding\">{{$index + 1}}. {{_step.name}}</span>\n            </a>\n        </li>\n    </ul>\n</div>");
