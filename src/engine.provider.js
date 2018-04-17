@@ -108,6 +108,7 @@ angular.module('engine')
     .provider('$engine', function ($routeProvider, $engineApiCheckProvider, $engineFormlyProvider, $injector) {
         var self = this;
 
+        var ERROR_HANDLER = (currentRoute, error) => {};
         var dashboards = [];
         var dashboards_d = {};
         var documents = [];
@@ -219,6 +220,10 @@ angular.module('engine')
 
         this.setImmediateCreate = function (immediate) {
             IMMEDIATE_CREATE = immediate;
+        };
+
+        this.setErrorHandler = (callback) => {
+            ERROR_HANDLER = callback;
         };
 
         /**
@@ -743,6 +748,7 @@ angular.module('engine')
 
             return new function () {
                 var self = this;
+                this.ERROR_HANDLER = _.isString(ERROR_HANDLER) ? $injector.get(ERROR_HANDLER) : ERROR_HANDLER;
                 this.QUERY_PAGE_SIZE = QUERY_PAGE_SIZE;
                 this.GLOBAL_CSS = GLOBAL_CSS;
                 this.MODAL_CONTAINER = MODAL_CONTAINER;

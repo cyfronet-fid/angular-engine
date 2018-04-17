@@ -179,7 +179,7 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                 self.formlyOptions);
             //load metrics to form
             return self.documentForm.loadForm();
-        });
+        }).catch((error) => $engine.ERROR_HANDLER($location.hash(), error));
     };
 
     /**
