@@ -90,6 +90,11 @@ angular-engine package
 
 
 ## Changelog
+* **0.8.15** Added support for multi context via documentModelId (it is sent in TEMP in states)
+             Added customizable error handling
+             saveOnChange will now reload queries by default
+             Custom sidebar components can now be registered
+             Fixed css spacing of document action buttons
 
 * **0.8.14** Fixed double subdocument modal when clicking create action
 
