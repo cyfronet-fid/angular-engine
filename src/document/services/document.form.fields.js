@@ -314,7 +314,7 @@ angular.module('engine.document')
 
         return new DocumentFieldFactory();
     })
-    .factory('DocumentField', function (ConditionBuilder, $engLog, $q) {
+    .factory('DocumentField', function (ConditionBuilder, $engLog, $q, $rootScope) {
         function DocumentField(fieldCondition, fieldBuilder) {
             if(fieldBuilder == null)
                 fieldBuilder = function (formlyField, metric, ctx) {return formlyField;};
@@ -345,7 +345,9 @@ angular.module('engine.document')
         };
 
         DocumentField.onSave = function($viewValue, $modelValue, $scope) {
-            return $scope.$emit('engine.common.document.requestSave').savePromise;
+            return $scope.$emit('engine.common.document.requestSave').savePromise.then(() =>
+                $rootScope.$broadcast('engine.list.reload', $scope.query)
+            );
         };
 
         DocumentField.onValidateSelf = function($viewValue, $modelValue, $scope) {

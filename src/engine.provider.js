@@ -144,7 +144,12 @@ angular.module('engine')
                 steps: _apiCheck.arrayOf(_apiCheck.object),
                 showValidateButton: _apiCheck.bool.optional,
                 caption: _apiCheck.string.optional,
-                queries: _apiCheck.object.optional
+                queries: _apiCheck.object.optional,
+                sidebarAddons: _apiCheck.arrayOf(_apiCheck.shape({
+                    'component': _apiCheck.string,
+                    'position': _apiCheck.object.optional,
+                    'ctx': _apiCheck.string.optional
+                })).optional
             })
         });
 
@@ -170,6 +175,17 @@ angular.module('engine')
 
             if (!_.isArray(options.list.customButtons))
                 options.list.customButtons = [options.list.customButtons];
+
+            if(options.document.sidebarAddons == null)
+                options.document.sidebarAddons = [];
+
+            options.document.sidebarAddons = options.document.sidebarAddons.map(addon => ({
+                position: addon.position || 'middle',
+                caption: addon.caption || '',
+                condition: addon.condition || ((document) => true),
+                component: addon.component,
+                ctx: addon.ctx || {}
+            }));
         }
 
         self._disableOnReload = false;
@@ -515,6 +531,19 @@ angular.module('engine')
          *
          *    * **titleSrc** {String}, *Optional*, default `''`. dotted notation referencing element of the document which
          *    will be used as title in existing document's forms. (eg. `'metrics.proposalName'`)
+         *
+         *    * **sidebarAddons** {Array}, *Optional*, default `[]`. Specifies additional custom components which will
+         *    be displayed in the sidebar. Custom components can be specified using following fields:
+         *      * **caption** {String}, *Optional* Displayed caption, will be translated
+         *      * **component** {String}, Component which will be injected must be in `dasherized-notation`
+         *      * **condition** {Function}, *Optional* function taking as an argument document and returning boolean,
+         *      if returned value is false this particular addon will not be displayed
+         *      * **ctx** {Object}, *Optional* context object which will be passed to the addon
+         *
+         *      Component which will be injected should have 2 bindings specified: ctx: '=' and document: '='
+         *
+         *    Example:
+         *      [{component: 'chat-sidebar-addon', ctx: {debug: true}, caption: 'Chat', condition: document => true]
          *
          *    * **details** {Object}, *Optional*, defines additional information displayed in details box, available fields
          *    are:

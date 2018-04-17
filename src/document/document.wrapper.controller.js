@@ -24,6 +24,10 @@ angular.module('engine.document')
 
         $scope.$routeParams = $routeParams;
 
+        $scope.conditionFulfilled = (addon) => {
+            return addon.condition($scope.document);
+        };
+
         $scope.$watch('$routeParams.step', function (newVal, oldVal) {
             if(angular.isString(newVal)) {
                 newVal = parseInt(newVal);
