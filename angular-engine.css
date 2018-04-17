@@ -115,6 +115,9 @@ label + table {
 .margin-top {
   margin-top: 20px; }
 
+.document-actions action-button button[type="submit"] {
+  margin-bottom: 5px; }
+
 /*--raczej nie sa używane--*/
 .general-box {
   background-color: #ffffff;

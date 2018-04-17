@@ -338,7 +338,12 @@ angular.module('engine.common').component('engineDocumentActions', {
                     self.loading = false;
                     return;
                 }
-                self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
+
+                var document = _.clone(self.document);
+                document.states = _.clone(self.document.states);
+                document.states.documentModelId = self.options.documentModelType;
+
+                self.actionList = new DocumentActionList(null, document, self.documentParent, self._documentScope);
                 self.actionList.$ready.finally(function () {
                     self.loading = false;
                 });
@@ -655,14 +660,20 @@ app.controller('engineDocumentCtrl', ["$scope", "$route", "engineMetric", "$rout
 
         self.stepList.setCurrentStep(self.step);
 
+        var document = _.clone(self.document);
+        document.states = _.clone(self.document.states);
+        document.states.documentModelId = self.options.documentModelType;
+
         // return chained promise, which will do all other common required operations:
-        self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
+        self.actionList = new DocumentActionList(null, document, self.parentDocument, $scope);
         return $q.all([self.actionList.$ready]).then(function () {
             //assign actions only if binding is present
             if ($attrs.actions) self.actions = self.actionList;
             self.documentForm.init(self.document, self.options, self.stepList, self.actionList, self.formlyState, self.formlyOptions);
             //load metrics to form
             return self.documentForm.loadForm();
+        }).catch(function (error) {
+            return $engine.ERROR_HANDLER($location.hash(), error);
         });
     };
 
@@ -3054,6 +3065,7 @@ angular.module('engine').provider('$engLog', function () {
 
     var self = this;
 
+    var ERROR_HANDLER = function ERROR_HANDLER(currentRoute, error) {};
     var dashboards = [];
     var dashboards_d = {};
     var documents = [];
@@ -3166,6 +3178,10 @@ angular.module('engine').provider('$engLog', function () {
 
     this.setImmediateCreate = function (immediate) {
         IMMEDIATE_CREATE = immediate;
+    };
+
+    this.setErrorHandler = function (callback) {
+        ERROR_HANDLER = callback;
     };
 
     /**
@@ -3676,6 +3692,7 @@ angular.module('engine').provider('$engLog', function () {
 
         return new function () {
             var self = this;
+            this.ERROR_HANDLER = _.isString(ERROR_HANDLER) ? $injector.get(ERROR_HANDLER) : ERROR_HANDLER;
             this.QUERY_PAGE_SIZE = QUERY_PAGE_SIZE;
             this.GLOBAL_CSS = GLOBAL_CSS;
             this.MODAL_CONTAINER = MODAL_CONTAINER;
@@ -4145,7 +4162,7 @@ angular.module('engine').factory('engineResolve', function () {
 
 'use strict';
 
-var ENGINE_COMPILATION_DATE = '2018-04-04T13:53:12.379Z';
+var ENGINE_COMPILATION_DATE = '2018-04-17T16:00:43.710Z';
 var ENGINE_VERSION = '0.8.14';
 var ENGINE_BACKEND_VERSION = '1.2.9';
 
@@ -4944,7 +4961,7 @@ angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document-modal.tpl.html", "<div class=\"modal-header\">\n    <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" ng-click=\"closeModal()\">&times;</button>\n    <h4 ng-if=\"!documentId\" class=\"modal-title\" id=\"myModalLabel\" translate>{{ documentOptions.document.caption || 'CREATE ' + documentOptions.name }}</h4>\n    <h4 ng-if=\"documentId\" ><span translate>{{documentOptions.name}}</span> {{engineResolve(document, documentOptions.document.titleSrc)}}</h4>\n\n</div>\n<div class=\"modal-body\">\n    <div class=\"container-fluid\">\n        <engine-document parent-document=\"parentDocument\" dirty=\"documentDirty\"\n                         document-scope=\"documentScope\" step-list=\"stepList\"\n                         document=\"document\" document-id=\"{{documentId}}\"\n                         step=\"step\" options=\"documentOptions\">\n        </engine-document>\n    </div>\n</div>\n<div class=\"modal-footer\">\n    <engine-document-actions show-validation-button=\"documentOptions.document.showValidationButton\" custom-buttons=\"customButtons\"\n                             document=\"document\" document-scope=\"documentScope\" document-parent=\"parentDocument\" dirty=\"documentDirty\"\n                             steps=\"stepList\" step=\"step\" class=\"btn-group float-right\" save-alert-left=\"true\">\n    </engine-document-actions>\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
-  $templateCache.put("/src/document/document.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.$ready.$$state.status === 0\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n\n<div ng-if=\"$ctrl.$ready.$$state.status === 1\" ng-cloak>\n    <div ng-repeat=\"message in $ctrl.messages\" class=\"alert alert-{{message.type}} alert-document\" role=\"alert\" translate>{{message.body}}</div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.formlyOptions\" form=\"$ctrl.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"$ctrl.documentScope\" dirty=\"$ctrl.dirty\"\n                                     actions=\"$ctrl.actions\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group\"\n                                     save-alert-left=\"false\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>\n\n<div ng-show=\"!$ctrl.$ready.$$state.status === 2\" ng-cloak translate>\n    REJECTED\n</div>");
+  $templateCache.put("/src/document/document.tpl.html", "<div class=\"eng-loading-box\" ng-show=\"$ctrl.$ready.$$state.status === 0\">\n    <i class=\"fa fa-spinner fa-spin\" aria-hidden=\"true\"></i>\n</div>\n\n<div ng-if=\"$ctrl.$ready.$$state.status === 1\" ng-cloak>\n    <div ng-repeat=\"message in $ctrl.messages\" class=\"alert alert-{{message.type}} alert-document\" role=\"alert\" translate>{{message.body}}</div>\n    <form ng-submit=\"$ctrl.onSubmit()\" name=\"$ctrl.documentForm.formlyState\" novalidate>\n        <formly-form model=\"$ctrl.document\" fields=\"$ctrl.documentForm.formStructure\" class=\"horizontal\"\n                     options=\"$ctrl.formlyOptions\" form=\"$ctrl.formlyState\">\n\n            <engine-document-actions show-validation-button=\"$ctrl.showValidationButton\" ng-if=\"!$ctrl.options.subdocument\"\n                                     document=\"$ctrl.document\" document-scope=\"$ctrl.documentScope\" dirty=\"$ctrl.dirty\"\n                                     actions=\"$ctrl.actions\"\n                                     options=\"$ctrl.options\"\n                                     steps=\"$ctrl.stepList\" step=\"$ctrl.step\" class=\"btn-group document-actions\"\n                                  save-alert-left=\"false\"></engine-document-actions>\n        </formly-form>\n    </form>\n</div>\n\n<div ng-show=\"!$ctrl.$ready.$$state.status === 2\" ng-cloak translate>\n    REJECTED\n</div>");
 }]);
 angular.module("engine").run(["$templateCache", function ($templateCache) {
   $templateCache.put("/src/document/document.wrapper.tpl.html", "<div>\n    <div class=\"row\">\n        <div class=\"col-md-12\">\n            <h1>\n                <span ng-if=\"!document.id\" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>\n                <span ng-if=\"document.id\" ><span translate>{{options.name}}</span>{{engineResolve(document, options.document.titleSrc)}}</span>\n\n                <span class=\"bold\" ng-if=\"stepList.getSteps().length > 0\">{{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span>\n            </h1>\n        </div>\n    </div>\n    <div class=\"row\">\n        <engine-document step-list=\"stepList\" show-validation-button=\"options.document.showValidationButton\" processing=\"processing\"\n                         document-id=\"{{::documentId}}\" document=\"document\" step=\"$routeParams.step\" options=\"options\"\n                         ng-class=\"{'col-sm-8': !responsive, 'col-xs-8': !responsive, 'col-sm-12': responsive, 'col-xs-12': responsive}\"\n                         class=\"col-lg-8 col-md-8 engine-document\" actions=\"actions\" dirty=\"documentDirty\"></engine-document>\n        <div class=\"col-lg-4 col-md-4 sidebar-document\"\n             ng-class=\"{'hidden-sm': responsive, 'hidden-xs': responsive, 'col-sm-4': !responsive, 'col-xs-4': !responsive}\">\n            <div fixed-on-scroll=\"fixed-sidebar-on-scroll\">\n            <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'top' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n            <engine-steps ng-model=\"document\" processing=\"processing\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n            <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'middle' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n            <engine-document-details ng-model=\"document\" options=\"options\" actions=\"actions\" dirty=\"documentDirty\"></engine-document-details>\n            <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'bottom' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n        </div>\n    </div>\n\n    <div class=\"document-navi-toggle hidden-md-up\" ng-click=\"toggleSideMenu()\" ng-if=\"responsive\" ng-class=\"{active: sideMenuVisible}\">\n        <i class=\"fa fa-file-text\" aria-hidden=\"true\"></i>\n    </div>\n    <div class=\"sidebar-document-rwd\" ng-show=\"sideMenuVisible\" ng-if=\"responsive\">\n        <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'top' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n        <engine-steps class=\"sidebar-box-shadow\" ng-model=\"document\" step=\"$routeParams.step\" step-list=\"stepList\" options=\"options\"></engine-steps>\n        <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'middle' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n        <engine-document-detail class=\"sidebar-box-shadow\" ng-model=\"document\" options=\"options\" actions=\"actions\" dirty=\"documentDirty\"></engine-document-details>\n        <sidebar-addon ng-repeat=\"addon in options.document.sidebarAddons | filter: { position: 'bottom' } | filter: conditionFulfilled\" caption=\"{{::addon.caption}}\" tag=\"{{::addon.component}}\" document=\"document\" ctx=\"addon.ctx\"></sidebar-addon>\n    </div>\n\n</div>");

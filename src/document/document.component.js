@@ -52,7 +52,7 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
                     self.actionList._setDocument(self.document);
                     $scope.$broadcast('engine.list.reload');
                 });
-            });
+        });
 
         $scope.$on('engine.common.document.validate', function (event) {
             event.$promise = self.documentForm.validate(null, true).then(function (valid) {
@@ -165,8 +165,14 @@ app.controller('engineDocumentCtrl', function ($scope, $route, engineMetric, $ro
 
         self.stepList.setCurrentStep(self.step);
 
+
+        var document = _.clone(self.document);
+        document.states = _.clone(self.document.states);
+        document.states.documentModelId = self.options.documentModelType;
+
         // return chained promise, which will do all other common required operations:
-        self.actionList = new DocumentActionList(null, self.document, self.parentDocument, $scope);
+        self.actionList = new DocumentActionList(null, document,
+            self.parentDocument, $scope);
         return $q.all([self.actionList.$ready]).then(function () {
             //assign actions only if binding is present
             if ($attrs.actions)

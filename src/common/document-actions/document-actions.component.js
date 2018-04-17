@@ -66,7 +66,12 @@ angular.module('engine.common')
                         self.loading = false;
                         return;
                     }
-                    self.actionList = new DocumentActionList(null, self.document, self.documentParent, self._documentScope);
+
+                    var document = _.clone(self.document);
+                    document.states = _.clone(self.document.states);
+                    document.states.documentModelId = self.options.documentModelType;
+
+                    self.actionList = new DocumentActionList(null, document, self.documentParent, self._documentScope);
                     self.actionList.$ready.finally(function () {
                         self.loading = false;
                     });
