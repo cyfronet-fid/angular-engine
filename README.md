@@ -90,6 +90,8 @@ angular-engine package
 
 
 ## Changelog
+* **0.8.16** Fixed bug where actions in subdocuments would not load properly
+
 * **0.8.15** Added support for multi context via documentModelId (it is sent in TEMP in states)
              Added customizable error handling
              saveOnChange will now reload queries by default
