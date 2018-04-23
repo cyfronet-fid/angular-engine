@@ -90,6 +90,11 @@ angular-engine package
 
 
 ## Changelog
+* **0.8.17** Fixed PS-242 (with $engineProvider.setOnMetricChange)
+             Fixed PS-232 (with not allowing to input integer bigger then JAVA allows)
+             Added option to specify angular expression for extracting document's id for
+             links in lists (column with type 'link')
+
 * **0.8.16** Fixed bug where actions in subdocuments would not load properly
 
 * **0.8.15** Added support for multi context via documentModelId (it is sent in TEMP in states)

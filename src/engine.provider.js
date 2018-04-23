@@ -115,6 +115,7 @@ angular.module('engine')
         var documents_d = {};
         var QUERY_PAGE_SIZE = 50;
         var GLOBAL_CSS = '';
+        let ON_METRIC_CHANGE = (metricId, document, metrics) => {};
         let MODAL_CONTAINER = 'body';
         let RESPONSIVE = true;
         var DOCUMENT_MODEL_KEY = 'documentType';
@@ -189,8 +190,28 @@ angular.module('engine')
             }));
         }
 
-        self._disableOnReload = false;
 
+
+        /**
+         * @ngdoc method
+         * @name setOnMetricChange
+         * @methodOf engine.provider:$engineProvider
+         *
+         * @description
+         * Register handler which will be called when metrics is changed, this will allow manipulation
+         * of other metrics or input controls
+         *
+         * @param {Function} function conforming to: (metricId: String, document: Object, dictOfAllMetricScopes: {[key: String]: Object}) => {}
+         * document is a document of which metric has been changed
+         * dictOfAllMetricScopes is a dict mapping `metricId` to metric form control scope, which allows to modify some
+         * template variables (for example datepicker min and max fields)
+         *
+         */
+        this.setOnMetricChange = (handler) => {
+            ON_METRIC_CHANGE = handler;
+        };
+
+        self._disableOnReload = false;
         this.disableOnReload = function () {
             self._disableOnReload = true;
         };
@@ -477,6 +498,10 @@ angular.module('engine')
          *      * **style** {String} css classes which will be appended to the fields (to `<td>` element. one of the
          *      prepared styles is `id` which formats field in monospace font family.
          *
+         *      * **id** {String} default `id` angular expression - used only in 'link' type. Extracted variable will be used
+         *      instead of document.id for the purpose of creating href attribute to the document. Scope of the expression
+         *      is a document, so you can retrive id by `id` and metrics by `metrics.metricName`
+         *
          *    * **customButtons** {Array|Object} custom button or array of custom buttons appended at the bottom of
          *    the view. Object must have following fields:
          *      * **label** {String} button's label
@@ -752,6 +777,7 @@ angular.module('engine')
                 this.QUERY_PAGE_SIZE = QUERY_PAGE_SIZE;
                 this.GLOBAL_CSS = GLOBAL_CSS;
                 this.MODAL_CONTAINER = MODAL_CONTAINER;
+                this.ON_METRIC_CHANGE = ON_METRIC_CHANGE;
                 this.RESPONSIVE = RESPONSIVE;
                 this.DOCUMENT_MODEL_KEY = DOCUMENT_MODEL_KEY;
                 this.IMMEDIATE_CREATE = IMMEDIATE_CREATE;
