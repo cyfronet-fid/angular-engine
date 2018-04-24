@@ -328,10 +328,12 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
         return true;
     };
 
-    $scope.genDocumentLink = function (documentId, hash) {
+    $scope.genDocumentLink = function (documentId, hash, column, document) {
+        let idExpression = documentId || $parse(column.id || 'id')(document);
+
         if (!$scope.options.documentUrl || !$scope.canGenerateHref())
             return '';
-        return (hash == true ? '#' : '') + $scope.options.documentUrl.replace(':id', documentId);
+        return (hash == true ? '#' : '') + $scope.options.documentUrl.replace(':id', idExpression);
     };
 
     $scope.onCreateDocument = function () {

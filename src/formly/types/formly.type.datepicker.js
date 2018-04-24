@@ -67,12 +67,6 @@ angular.module('engine.formly').run(function (formlyConfig, $engineFormly, $engi
                 // $event.stopPropagation();
                 $scope.openedDatePopUp = true;
             };
-            //
-            $scope.dateOptions = {
-                formatYear: 'yy',
-                startingDay: 1
-            };
-
         }
     });
 
