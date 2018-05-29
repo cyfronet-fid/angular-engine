@@ -90,6 +90,8 @@ angular-engine package
 
 
 ## Changelog
+* **0.8.18** Fixed PS-246 (conditions for SingleDocument list view)
+
 * **0.8.17** Fixed PS-242 (with $engineProvider.setOnMetricChange)
              Fixed PS-232 (with not allowing to input integer bigger then JAVA allows)
              Added option to specify angular expression for extracting document's id for
