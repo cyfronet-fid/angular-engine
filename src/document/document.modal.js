@@ -55,7 +55,7 @@ angular.module('engine.document')
                                 if (ctx.action.isSave() || ctx.action.isCreate())
                                     return;
 
-                                if(ctx.result.redirectContext !== null && documentOptions.subdocument === true) {
+                                if (documentOptions.subdocument === true) {
                                     $timeout($scope.closeModal);
                                     return;
                                 }
