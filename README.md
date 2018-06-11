@@ -90,6 +90,9 @@ angular-engine package
 
 
 ## Changelog
+* **0.8.19** Fixed PS-247 (reloading metrics)
+             Fixed PS-241 (subdocument to subdocument redirection)   
+
 * **0.8.18** Fixed PS-246 (conditions for SingleDocument list view)
 
 * **0.8.17** Fixed PS-242 (with $engineProvider.setOnMetricChange)
