@@ -123,7 +123,9 @@ angular.module('engine.document')
                         return;
 
                     // also remove fields from form
-                    self.fieldList.splice(self.fieldList.findIndex(field => field.key === metric.id), 1);
+                    let fieldIndex = self.fieldList.findIndex(field => field.key === metric.id);
+                    if(fieldIndex !== -1)
+                        self.fieldList.splice(fieldIndex, 1);
 
                     $engLog.log('Metric to remove: ', metric, 'index: ', metricIndex);
 
