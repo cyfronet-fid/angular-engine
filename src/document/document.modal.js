@@ -55,6 +55,11 @@ angular.module('engine.document')
                                 if (ctx.action.isSave() || ctx.action.isCreate())
                                     return;
 
+                                if (documentOptions.subdocument === true) {
+                                    $timeout($scope.closeModal);
+                                    return;
+                                }
+
                                 if (ctx.result.type == 'REDIRECT') {
                                     event.preventDefault();
                                     // this must be done in the next digest cycle, so that form $dirty state is cleared beforehand
