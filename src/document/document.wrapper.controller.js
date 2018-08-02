@@ -36,7 +36,9 @@ angular.module('engine.document')
 
             // handle cases where step is "out of bounds" - we'll silently handle the error and
             // substitute it for first step
-            if($routeParams.step > $scope.stepList.steps.length-1 || $routeParams.step < 0) {
+            var stepNumber = ($scope.stepList.steps.length != 0)?$scope.stepList.steps.length:$scope.stepList.documentSteps.length;
+
+            if($routeParams.step > stepNumber || $routeParams.step < 0) {
                 $routeParams.step = 0;
                 newVal = 0;
             }
