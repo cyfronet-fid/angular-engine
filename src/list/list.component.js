@@ -262,6 +262,10 @@ app.controller('engineListCtrl', function ($scope, $route, $location, engineMetr
                         self.parentDocument.$ext.queries = {};
                     self.parentDocument.$ext.queries[self.metricId] = documents;
                 }
+
+                // if list is updated and message error are showed run validation to reload error messages
+                if (self.formlyOptions.templateOptions.serverErrors.length != 0)
+                    self.formlyOptions.data.form.validateCurrentStep(true);
             });
         }
         else {
