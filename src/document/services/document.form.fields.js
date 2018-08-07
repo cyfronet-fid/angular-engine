@@ -73,6 +73,12 @@ angular.module('engine.document')
             };
 
             this.register(new DocumentField({inputType: 'TEXT'}, function (field, metric, ctx) {
+                field.controller = function ($scope) {
+                    $scope.onkeypress = function (event) {
+                        if (event.which === 13)
+                            event.preventDefault();
+                    };
+                }
                 return field;
             }));
 

@@ -1,1 +1,1 @@
-<input class="form-control"  ng-model="model[options.key]" placeholder="{{options.templateOptions.placeholder | translate}}" number-format>
+<input class="form-control"  ng-model="model[options.key]" placeholder="{{options.templateOptions.placeholder | translate}}" number-format ng-keypress="onkeypress($event)">
