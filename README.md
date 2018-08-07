@@ -90,6 +90,10 @@ angular-engine package
 
 
 ## Changelog
+* **0.8.20** Fixed PS-260, PS-261, PS-262
+             Fixed displaying error messages on list
+             Fixed redirection to specified step
+             Added events handler to input which catch pressed enter
 * **0.8.19** Fixed PS-247 (reloading metrics)
              Fixed PS-241 (subdocument to subdocument redirection)   
 
