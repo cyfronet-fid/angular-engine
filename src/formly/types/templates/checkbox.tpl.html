@@ -3,7 +3,7 @@
 		<input type="checkbox"
            class="formly-field-checkbox"
 		       ng-model="model[options.key]">
-		{{to.label | translate}}
-		{{to.required ? '*' : ''}}
+		<span>{{to.label | translate}}</span>
+		<span class="text-danger">{{options.data.metric.required  ? '*' : ''}}</span>
 	</label>
 </div>

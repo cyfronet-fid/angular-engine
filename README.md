@@ -90,6 +90,8 @@ angular-engine package
 
 
 ## Changelog
+* **0.8.21** Fixed PS-262
+             Fixed visibility of "required" mark in the checkbox metric
 * **0.8.20** Fixed PS-260, PS-261, PS-262
              Fixed displaying error messages on list
              Fixed redirection to specified step
