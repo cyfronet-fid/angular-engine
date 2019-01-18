@@ -72,7 +72,6 @@ angular.module('engine.document')
                                 if(ctx.action.isCreate() === true && ctx.result.type === 'REDIRECT') {
                                     $scope.stepList = new StepList($scope.documentOptions.document.steps);
                                     $scope.document = {};
-                                    $scope.step = 0;
                                     $scope.documentId = ctx.result.redirectToDocument;
                                 }
                             }));

@@ -22,18 +22,19 @@
             <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'middle' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
             <engine-document-details ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
             <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'bottom' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
+            </div>
         </div>
-    </div>
 
-    <div class="document-navi-toggle hidden-md-up" ng-click="toggleSideMenu()" ng-if="responsive" ng-class="{active: sideMenuVisible}">
-        <i class="fa fa-file-text" aria-hidden="true"></i>
-    </div>
-    <div class="sidebar-document-rwd" ng-show="sideMenuVisible" ng-if="responsive">
-        <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'top' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
-        <engine-steps class="sidebar-box-shadow" ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
-        <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'middle' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
-        <engine-document-detail class="sidebar-box-shadow" ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
-        <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'bottom' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
-    </div>
+        <div class="document-navi-toggle hidden-md-up" ng-click="toggleSideMenu()" ng-if="responsive" ng-class="{active: sideMenuVisible}">
+            <i class="fa fa-file-text" aria-hidden="true"></i>
+            </div>
+            <div class="sidebar-document-rwd" ng-show="sideMenuVisible" ng-if="responsive">
+            <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'top' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
+            <engine-steps class="sidebar-box-shadow" ng-model="document" step="$routeParams.step" step-list="stepList" options="options"></engine-steps>
+            <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'middle' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
+            <engine-document-details class="sidebar-box-shadow" ng-model="document" options="options" actions="actions" dirty="documentDirty"></engine-document-details>
+            <sidebar-addon ng-repeat="addon in options.document.sidebarAddons | filter: { position: 'bottom' } | filter: conditionFulfilled" caption="{{::addon.caption}}" tag="{{::addon.component}}" document="document" ctx="addon.ctx"></sidebar-addon>
+            </div>
 
+        </div>
 </div>
