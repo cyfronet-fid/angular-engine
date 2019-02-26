@@ -1,1 +1,1 @@
-<select class="form-control" ng-model="model[options.key]"></select>
+<select class="form-control" ng-model="model[options.key]" ng-options="option[to.valueProp || 'value'] as option[to.labelProp || 'name'] | translate for option in to.options"></select>

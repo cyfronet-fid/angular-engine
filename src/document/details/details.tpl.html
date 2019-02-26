@@ -1,6 +1,6 @@
 <div  scroll-rwd  is-visible="{{$ctrl.isVisible()}}" class="text-box sidebar-details">
     <div class="text-content" ng-clock>
-        <h3 style="margin-top: 0px">{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>
+        <h3 style="margin-top: 0px" translate>{{$ctrl.options.document.details.caption || $ctrl.options.name}}</h3>
 
         <span ng-show="$ctrl.dirty || $ctrl.ngModel.id == null" class="document-changes-info document-dirty" translate>Document has unsaved changes</span>
         <span ng-show="!$ctrl.dirty && $ctrl.ngModel.id != null" class="document-changes-info document-pristine" translate>All changes have been saved</span>
