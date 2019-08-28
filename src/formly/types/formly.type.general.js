@@ -86,7 +86,7 @@ angular.module('engine.formly')
                 templateUrl: $engineFormly.templateUrls['select'],
                 wrapper: ['engineLabel', 'engineHasError'],
                 defaultOptions: function(options) {
-                    var ngOptions = options.templateOptions.ngOptions || "option[to.valueProp || 'value'] as option[to.labelProp || 'name'] group by option[to.groupProp || 'group'] for option in to.options";
+                    var ngOptions = options.templateOptions.ngOptions || "option[to.valueProp || 'value'] as option[to.labelProp || 'name'] | translate group by option[to.groupProp || 'group'] for option in to.options";
                     var _options = {
                         ngModelAttrs: {
                         }

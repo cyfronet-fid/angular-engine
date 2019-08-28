@@ -5,7 +5,7 @@
                 <span ng-if="!document.id" translate>{{ options.document.caption || 'CREATE ' + options.name }}</span>
                 <span ng-if="document.id" ><span translate>{{options.name}}</span>{{engineResolve(document, options.document.titleSrc)}}</span>
 
-                <span class="bold" ng-if="stepList.getSteps().length > 0">{{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span>
+                <span class="bold" ng-if="stepList.getSteps().length > 1">{{stepList.getStep($routeParams.step).name | translate}} {{$routeParams.step + 1}}/{{stepList.getSteps().length}}</span>
             </h1>
         </div>
     </div>
