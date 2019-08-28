@@ -333,7 +333,7 @@ angular.module('engine.document')
                 return {
                     data: field.data,
                     key: metric.id, //THIS FIELD IS REQUIRED
-                    template: '<engine-link><a class="' + metric.visualClass.join(' ') + '" href="' + metric.url + '" target="' + metric.target + '">"' + metric.label + '"</a></engine-link>',
+                    template: '<engine-link><a class="' + metric.visualClass.join(' ') + '" href="' + metric.url + '" target="' + metric.target + '" translate>' + metric.label + '</a></engine-link>',
                     templateOptions: {ngModel: ctx.document, options: ctx.options}
                 };
             }));
