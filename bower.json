@@ -27,7 +27,7 @@
     "tests",
     "src",
     "docs",
-    "build",comm
+    "build",
     ".bowerrc",
     ".gitignore",
     ".jshintignore",
